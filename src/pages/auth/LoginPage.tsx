@@ -39,7 +39,9 @@ export function LoginPage() {
     } catch (err) {
       const message = axios.isAxiosError(err)
         ? (err.response?.data?.message ?? 'Erro ao conectar com o servidor')
-        : 'Erro inesperado'
+        : err instanceof Error
+          ? err.message
+          : 'Erro inesperado'
       toast.error(message)
     } finally {
       setLoading(false)
