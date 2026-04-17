@@ -11,7 +11,6 @@ import { AuthLayout } from '@/components/layout/AuthLayout'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { useAuth } from '@/hooks/useAuth'
 
 const loginSchema = z.object({
@@ -49,48 +48,46 @@ export function LoginPage() {
 
   return (
     <AuthLayout>
-      <Card>
-        <CardHeader>
-          <CardTitle>Entrar</CardTitle>
-          <CardDescription>Acesse sua conta para continuar</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="email">E-mail</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="seu@email.com"
-                autoComplete="email"
-                {...register('email')}
-              />
-              {errors.email && (
-                <p className="text-xs text-destructive">{errors.email.message}</p>
-              )}
-            </div>
+      <div className="bg-white/5 border border-white/10 rounded-2xl p-8 backdrop-blur-sm">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+          <div className="space-y-1.5">
+            <Label className="text-white/70 text-sm">E-mail</Label>
+            <Input
+              type="email"
+              placeholder="seu@email.com"
+              autoComplete="email"
+              className="bg-white/5 border-white/10 text-white placeholder:text-white/20 focus-visible:ring-[#116DFF]"
+              {...register('email')}
+            />
+            {errors.email && (
+              <p className="text-xs text-red-400">{errors.email.message}</p>
+            )}
+          </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="password">Senha</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                autoComplete="current-password"
-                {...register('password')}
-              />
-              {errors.password && (
-                <p className="text-xs text-destructive">{errors.password.message}</p>
-              )}
-            </div>
+          <div className="space-y-1.5">
+            <Label className="text-white/70 text-sm">Senha</Label>
+            <Input
+              type="password"
+              placeholder="••••••••"
+              autoComplete="current-password"
+              className="bg-white/5 border-white/10 text-white placeholder:text-white/20 focus-visible:ring-[#116DFF]"
+              {...register('password')}
+            />
+            {errors.password && (
+              <p className="text-xs text-red-400">{errors.password.message}</p>
+            )}
+          </div>
 
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-              {loading ? 'Entrando...' : 'Entrar'}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+          <Button
+            type="submit"
+            className="w-full bg-[#116DFF] hover:bg-[#2F5DFF] text-white border-0 h-10 font-medium mt-2"
+            disabled={loading}
+          >
+            {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+            {loading ? 'Entrando...' : 'Entrar'}
+          </Button>
+        </form>
+      </div>
     </AuthLayout>
   )
 }

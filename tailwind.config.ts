@@ -5,7 +5,20 @@ const config: Config = {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Barlow', 'Arial', 'Helvetica', 'sans-serif'],
+        display: ['"Cormorant Garamond"', 'Georgia', 'serif'],
+      },
       colors: {
+        brand: {
+          blue: '#116DFF',
+          'blue-dark': '#2F5DFF',
+          'blue-light': '#F5F7FF',
+          'blue-mid': '#EAEFFF',
+          dark: '#080808',
+          'dark-2': '#151414',
+          gray: '#5D5D61',
+        },
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
@@ -34,6 +47,10 @@ const config: Config = {
         card: {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
+        },
+        popover: {
+          DEFAULT: 'hsl(var(--popover))',
+          foreground: 'hsl(var(--popover-foreground))',
         },
         sidebar: {
           DEFAULT: 'hsl(var(--sidebar-background))',
