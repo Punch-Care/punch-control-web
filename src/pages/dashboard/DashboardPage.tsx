@@ -13,9 +13,9 @@ export function DashboardPage() {
   const { user } = useAuth()
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">Dashboard</h2>
+        <h2 className="text-xl sm:text-2xl font-bold tracking-tight">Dashboard</h2>
         <p className="text-muted-foreground text-sm mt-0.5">
           Bem-vindo, {user?.name}
         </p>
