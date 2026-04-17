@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuth } from '@/hooks/useAuth'
 
 const summaryCards = [
-  { label: 'Conjuntos Ativos', value: '—', icon: Package, color: 'text-blue-500' },
+  { label: 'Conjuntos Ativos', value: '—', icon: Package, color: 'text-orange-500' },
   { label: 'Em Reparo', value: '—', icon: RefreshCw, color: 'text-yellow-500' },
   { label: 'Ocorrências Abertas', value: '—', icon: AlertTriangle, color: 'text-red-500' },
   { label: 'Descartados (30d)', value: '—', icon: Activity, color: 'text-slate-400' },

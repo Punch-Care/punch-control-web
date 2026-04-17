@@ -11,7 +11,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
       {/* Header */}
       <header className="px-6 py-5 border-b border-white/10">
         <Link to="/" className="inline-flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-md bg-[#116DFF] flex items-center justify-center">
+          <div className="w-7 h-7 rounded-md bg-[#F05922] flex items-center justify-center">
             <span className="text-white font-bold text-xs">PC</span>
           </div>
           <span className="text-white font-semibold tracking-tight">Punch Control</span>
@@ -20,7 +20,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
 
       {/* Background glow */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#116DFF]/8 rounded-full blur-[100px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#F05922]/8 rounded-full blur-[100px]" />
       </div>
 
       {/* Content */}

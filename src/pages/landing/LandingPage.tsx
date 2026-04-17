@@ -43,7 +43,7 @@ function Navbar() {
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between h-16">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-md bg-[#116DFF] flex items-center justify-center">
+          <div className="w-7 h-7 rounded-md bg-[#F05922] flex items-center justify-center">
             <span className="text-white font-bold text-xs">PC</span>
           </div>
           <span className="text-white font-semibold tracking-tight">Punch Control</span>
@@ -78,7 +78,7 @@ function Navbar() {
             </Button>
           </Link>
           <Link to="/login">
-            <Button size="sm" className="bg-[#116DFF] hover:bg-[#2F5DFF] text-white border-0">
+            <Button size="sm" className="bg-[#F05922] hover:bg-[#F3931F] text-white border-0">
               Solicitar Demo
             </Button>
           </Link>
@@ -111,7 +111,7 @@ function Navbar() {
             </button>
           ))}
           <Link to="/login" onClick={() => setMenuOpen(false)}>
-            <Button size="sm" className="w-full bg-[#116DFF] hover:bg-[#2F5DFF] text-white border-0 mt-2">
+            <Button size="sm" className="w-full bg-[#F05922] hover:bg-[#F3931F] text-white border-0 mt-2">
               Acessar o sistema
             </Button>
           </Link>
@@ -130,8 +130,8 @@ function Hero() {
     <section className="relative min-h-screen bg-[#080808] flex items-center overflow-hidden">
       {/* Background glow */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#116DFF]/10 rounded-full blur-[120px]" />
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-[#116DFF]/5 rounded-full blur-[80px]" />
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#F05922]/10 rounded-full blur-[120px]" />
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-[#F05922]/5 rounded-full blur-[80px]" />
       </div>
 
       {/* Grid texture */}
@@ -147,7 +147,7 @@ function Hero() {
       <div className="relative z-10 max-w-7xl mx-auto px-6 pt-24 pb-16 grid lg:grid-cols-2 gap-16 items-center w-full">
         {/* Left — Copy */}
         <div>
-          <span className="inline-flex items-center gap-2 text-[#116DFF] text-xs font-semibold tracking-[0.15em] uppercase border border-[#116DFF]/30 rounded-full px-3 py-1 bg-[#116DFF]/10">
+          <span className="inline-flex items-center gap-2 text-[#F05922] text-xs font-semibold tracking-[0.15em] uppercase border border-[#F05922]/30 rounded-full px-3 py-1 bg-[#F05922]/10">
             by Punch Care
           </span>
 
@@ -164,7 +164,7 @@ function Hero() {
             <Button
               size="lg"
               onClick={() => navigate('/login')}
-              className="bg-[#116DFF] hover:bg-[#2F5DFF] text-white border-0 h-12 px-8 text-base font-medium"
+              className="bg-[#F05922] hover:bg-[#F3931F] text-white border-0 h-12 px-8 text-base font-medium"
             >
               Acessar o sistema <ArrowRight className="h-4 w-4" />
             </Button>
@@ -223,14 +223,14 @@ function DashboardMockup() {
       <div className="flex">
         {/* Sidebar mockup */}
         <div className="w-12 bg-[#0A0A0A] border-r border-white/5 flex flex-col items-center py-4 gap-4">
-          <div className="w-7 h-7 rounded-md bg-[#116DFF] flex items-center justify-center">
+          <div className="w-7 h-7 rounded-md bg-[#F05922] flex items-center justify-center">
             <span className="text-white font-bold text-[9px]">PC</span>
           </div>
           {[LayoutDashboard, Package, Ruler, AlertTriangle, RefreshCw, FileText].map((Icon, i) => (
             <div
               key={i}
               className={`w-7 h-7 rounded-md flex items-center justify-center transition-colors ${
-                i === 0 ? 'bg-[#116DFF]/20 text-[#116DFF]' : 'text-white/20'
+                i === 0 ? 'bg-[#F05922]/20 text-[#F05922]' : 'text-white/20'
               }`}
             >
               <Icon className="h-3.5 w-3.5" />
@@ -245,7 +245,7 @@ function DashboardMockup() {
           {/* KPI cards */}
           <div className="grid grid-cols-2 gap-2">
             {[
-              { label: 'Conjuntos Ativos', value: '47', color: '#116DFF' },
+              { label: 'Conjuntos Ativos', value: '47', color: '#F05922' },
               { label: 'Em Reparo', value: '8', color: '#F4A623' },
               { label: 'Ocorrências', value: '3', color: '#E84A43' },
               { label: 'Descartados', value: '12', color: '#5D5D61' },
@@ -268,12 +268,12 @@ function DashboardMockup() {
               <div key={name} className="space-y-1">
                 <div className="flex justify-between">
                   <span className="text-[8px] text-white/40 font-mono">{name}</span>
-                  <span className="text-[8px]" style={{ color: ok ? '#116DFF' : '#E84A43' }}>{pct}%</span>
+                  <span className="text-[8px]" style={{ color: ok ? '#F05922' : '#E84A43' }}>{pct}%</span>
                 </div>
                 <div className="h-1 bg-white/10 rounded-full overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all"
-                    style={{ width: `${pct}%`, backgroundColor: ok ? '#116DFF' : '#E84A43' }}
+                    style={{ width: `${pct}%`, backgroundColor: ok ? '#F05922' : '#E84A43' }}
                   />
                 </div>
               </div>
@@ -325,7 +325,7 @@ function Features() {
     <section id="features" className="bg-white py-24 px-6">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16">
-          <span className="text-[#116DFF] text-xs font-semibold tracking-[0.15em] uppercase">
+          <span className="text-[#F05922] text-xs font-semibold tracking-[0.15em] uppercase">
             Funcionalidades
           </span>
           <h2 className="font-display text-4xl lg:text-5xl font-semibold text-[#080808] mt-3">
@@ -340,10 +340,10 @@ function Features() {
           {features.map(({ icon: Icon, title, desc }) => (
             <div
               key={title}
-              className="group p-6 rounded-2xl border border-gray-100 hover:border-[#116DFF]/30 hover:shadow-lg hover:shadow-[#116DFF]/5 transition-all duration-300 bg-white"
+              className="group p-6 rounded-2xl border border-gray-100 hover:border-[#F05922]/30 hover:shadow-lg hover:shadow-[#F05922]/5 transition-all duration-300 bg-white"
             >
-              <div className="w-10 h-10 rounded-xl bg-[#F5F7FF] flex items-center justify-center mb-4 group-hover:bg-[#116DFF]/10 transition-colors">
-                <Icon className="h-5 w-5 text-[#116DFF]" />
+              <div className="w-10 h-10 rounded-xl bg-[#FFF4EF] flex items-center justify-center mb-4 group-hover:bg-[#F05922]/10 transition-colors">
+                <Icon className="h-5 w-5 text-[#F05922]" />
               </div>
               <h3 className="font-semibold text-[#080808] mb-2">{title}</h3>
               <p className="text-[#5D5D61] text-sm leading-relaxed">{desc}</p>
@@ -377,10 +377,10 @@ const benefits = [
 
 function Benefits() {
   return (
-    <section id="benefits" className="bg-[#F5F7FF] py-24 px-6">
+    <section id="benefits" className="bg-[#FFF4EF] py-24 px-6">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16">
-          <span className="text-[#116DFF] text-xs font-semibold tracking-[0.15em] uppercase">
+          <span className="text-[#F05922] text-xs font-semibold tracking-[0.15em] uppercase">
             Por que Punch Control
           </span>
           <h2 className="font-display text-4xl lg:text-5xl font-semibold text-[#080808] mt-3">
@@ -391,7 +391,7 @@ function Benefits() {
         <div className="grid md:grid-cols-3 gap-8">
           {benefits.map(({ icon: Icon, title, desc }) => (
             <div key={title} className="text-center">
-              <div className="w-14 h-14 rounded-2xl bg-[#116DFF] flex items-center justify-center mx-auto mb-5">
+              <div className="w-14 h-14 rounded-2xl bg-[#F05922] flex items-center justify-center mx-auto mb-5">
                 <Icon className="h-6 w-6 text-white" />
               </div>
               <h3 className="font-semibold text-[#080808] text-lg mb-3">{title}</h3>
@@ -411,7 +411,7 @@ function About() {
     <section id="about" className="bg-white py-24 px-6">
       <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
         <div>
-          <span className="text-[#116DFF] text-xs font-semibold tracking-[0.15em] uppercase">
+          <span className="text-[#F05922] text-xs font-semibold tracking-[0.15em] uppercase">
             Sobre
           </span>
           <h2 className="font-display text-4xl lg:text-5xl font-semibold text-[#080808] mt-3 leading-tight">
@@ -429,11 +429,11 @@ function About() {
           </p>
           <div className="mt-8 flex flex-col sm:flex-row gap-4 text-sm text-[#5D5D61]">
             <div className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-[#116DFF]" />
+              <div className="w-1.5 h-1.5 rounded-full bg-[#F05922]" />
               Taboão da Serra, SP — Brasil
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-[#116DFF]" />
+              <div className="w-1.5 h-1.5 rounded-full bg-[#F05922]" />
               punchcare@punchcare.com.br
             </div>
           </div>
@@ -441,7 +441,7 @@ function About() {
 
         {/* Accent block */}
         <div className="relative">
-          <div className="aspect-square max-w-sm mx-auto rounded-3xl bg-gradient-to-br from-[#116DFF] to-[#2F5DFF] flex items-center justify-center p-12">
+          <div className="aspect-square max-w-sm mx-auto rounded-3xl bg-gradient-to-br from-[#F05922] to-[#F3931F] flex items-center justify-center p-12">
             <div className="text-center text-white">
               <p className="font-display text-6xl font-semibold">PC</p>
               <p className="text-white/70 mt-2 text-sm tracking-widest uppercase">Punch Control</p>
@@ -461,8 +461,8 @@ function About() {
             </div>
           </div>
           {/* Decorative dots */}
-          <div className="absolute -top-4 -right-4 w-24 h-24 rounded-full border-2 border-[#116DFF]/20" />
-          <div className="absolute -bottom-6 -left-6 w-16 h-16 rounded-full bg-[#EAEFFF]" />
+          <div className="absolute -top-4 -right-4 w-24 h-24 rounded-full border-2 border-[#F05922]/20" />
+          <div className="absolute -bottom-6 -left-6 w-16 h-16 rounded-full bg-[#FFE3D5]" />
         </div>
       </div>
     </section>
@@ -477,7 +477,7 @@ function CTASection() {
   return (
     <section className="bg-[#080808] py-24 px-6 relative overflow-hidden">
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-[#116DFF]/15 rounded-full blur-[80px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-[#F05922]/15 rounded-full blur-[80px]" />
       </div>
 
       <div className="relative max-w-3xl mx-auto text-center">
@@ -491,7 +491,7 @@ function CTASection() {
           <Button
             size="lg"
             onClick={() => navigate('/login')}
-            className="bg-[#116DFF] hover:bg-[#2F5DFF] text-white border-0 h-12 px-10 text-base font-medium"
+            className="bg-[#F05922] hover:bg-[#F3931F] text-white border-0 h-12 px-10 text-base font-medium"
           >
             Acessar o sistema <ArrowRight className="h-4 w-4" />
           </Button>
@@ -517,7 +517,7 @@ function Footer() {
     <footer className="bg-[#080808] border-t border-white/10 px-6 py-10">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="flex items-center gap-2.5">
-          <div className="w-6 h-6 rounded-md bg-[#116DFF] flex items-center justify-center">
+          <div className="w-6 h-6 rounded-md bg-[#F05922] flex items-center justify-center">
             <span className="text-white font-bold text-[9px]">PC</span>
           </div>
           <div>

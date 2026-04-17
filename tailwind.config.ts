@@ -11,10 +11,14 @@ const config: Config = {
       },
       colors: {
         brand: {
-          blue: '#116DFF',
-          'blue-dark': '#2F5DFF',
-          'blue-light': '#F5F7FF',
-          'blue-mid': '#EAEFFF',
+          orange: '#F05922',
+          'orange-dark': '#C94410',
+          'orange-light': '#FFF4EF',
+          'orange-mid': '#FFE3D5',
+          amber: '#F3931F',
+          'amber-light': '#FFF8EE',
+          navy: '#012E4B',
+          'navy-dark': '#011E32',
           dark: '#080808',
           'dark-2': '#151414',
           gray: '#5D5D61',

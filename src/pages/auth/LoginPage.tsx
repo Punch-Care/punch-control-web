@@ -56,7 +56,7 @@ export function LoginPage() {
               type="email"
               placeholder="seu@email.com"
               autoComplete="email"
-              className="bg-white/5 border-white/10 text-white placeholder:text-white/20 focus-visible:ring-[#116DFF]"
+              className="bg-white/5 border-white/10 text-white placeholder:text-white/20 focus-visible:ring-[#F05922]"
               {...register('email')}
             />
             {errors.email && (
@@ -70,7 +70,7 @@ export function LoginPage() {
               type="password"
               placeholder="••••••••"
               autoComplete="current-password"
-              className="bg-white/5 border-white/10 text-white placeholder:text-white/20 focus-visible:ring-[#116DFF]"
+              className="bg-white/5 border-white/10 text-white placeholder:text-white/20 focus-visible:ring-[#F05922]"
               {...register('password')}
             />
             {errors.password && (
@@ -80,7 +80,7 @@ export function LoginPage() {
 
           <Button
             type="submit"
-            className="w-full bg-[#116DFF] hover:bg-[#2F5DFF] text-white border-0 h-10 font-medium mt-2"
+            className="w-full bg-[#F05922] hover:bg-[#2F5DFF] text-white border-0 h-10 font-medium mt-2"
             disabled={loading}
           >
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
