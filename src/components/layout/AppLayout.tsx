@@ -17,6 +17,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
+import { DeveloperCredit } from '@/components/layout/DeveloperCredit'
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -181,6 +182,9 @@ export function AppLayout() {
         <main className="flex-1 overflow-y-auto min-w-0">
           <Outlet />
         </main>
+        <footer className="border-t border-border px-4 py-3 sm:px-6">
+          <DeveloperCredit />
+        </footer>
       </div>
     </div>
   )

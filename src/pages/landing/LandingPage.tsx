@@ -16,6 +16,7 @@ import {
   X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { DeveloperCredit } from '@/components/layout/DeveloperCredit'
 
 // ─── Navbar ──────────────────────────────────────────────────────────────────
 
@@ -514,32 +515,38 @@ function CTASection() {
 
 function Footer() {
   return (
-    <footer className="bg-background border-t border-border px-6 py-10">
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="flex items-center gap-2.5">
-          <div className="w-6 h-6 rounded-md bg-[#F05922] flex items-center justify-center">
-            <span className="text-white font-bold text-[9px]">PC</span>
+    <>
+      <footer className="bg-background border-t border-border px-6 py-10">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-2.5">
+            <div className="w-6 h-6 rounded-md bg-[#F05922] flex items-center justify-center">
+              <span className="text-white font-bold text-[9px]">PC</span>
+            </div>
+            <div>
+              <span className="text-foreground font-semibold text-sm">Punch Control</span>
+              <span className="text-muted-foreground text-sm"> · by Punch Care</span>
+            </div>
           </div>
-          <div>
-            <span className="text-foreground font-semibold text-sm">Punch Control</span>
-            <span className="text-muted-foreground text-sm"> · by Punch Care</span>
+
+          <p className="text-muted-foreground text-xs text-center">
+            © {new Date().getFullYear()} Punch Care Ltda. · CNPJ 27.735.726/0001-29 · Taboão da Serra, SP
+          </p>
+
+          <div className="flex items-center gap-6 text-xs text-muted-foreground">
+            <a href="https://www.punchcare.com.br" target="_blank" rel="noreferrer" className="hover:text-foreground transition-colors">
+              punchcare.com.br
+            </a>
+            <Link to="/login" className="hover:text-foreground transition-colors">
+              Entrar
+            </Link>
           </div>
         </div>
+      </footer>
 
-        <p className="text-muted-foreground text-xs text-center">
-          © {new Date().getFullYear()} Punch Care Ltda. · CNPJ 27.735.726/0001-29 · Taboão da Serra, SP
-        </p>
-
-        <div className="flex items-center gap-6 text-xs text-muted-foreground">
-          <a href="https://www.punchcare.com.br" target="_blank" rel="noreferrer" className="hover:text-foreground transition-colors">
-            punchcare.com.br
-          </a>
-          <Link to="/login" className="hover:text-foreground transition-colors">
-            Entrar
-          </Link>
-        </div>
+      <div className="w-full bg-black py-3 px-4">
+        <DeveloperCredit tone="inverted" className="text-center" />
       </div>
-    </footer>
+    </>
   )
 }
 

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
+import { DeveloperCredit } from '@/components/layout/DeveloperCredit'
 
 interface AuthLayoutProps {
   children: ReactNode
@@ -38,6 +39,9 @@ export function AuthLayout({ children }: AuthLayoutProps) {
               ← Voltar ao site
             </Link>
           </p>
+          <div className="mt-4 flex justify-center">
+            <DeveloperCredit />
+          </div>
         </div>
       </div>
     </div>
