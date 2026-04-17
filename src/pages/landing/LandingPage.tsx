@@ -37,7 +37,7 @@ function Navbar() {
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled ? 'bg-[#080808]/95 backdrop-blur-md border-b border-white/10' : 'bg-transparent'
+        scrolled ? 'bg-white/95 backdrop-blur-md border-b border-border' : 'bg-white/80 backdrop-blur-sm'
       }`}
     >
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between h-16">
@@ -46,7 +46,7 @@ function Navbar() {
           <div className="w-7 h-7 rounded-md bg-[#F05922] flex items-center justify-center">
             <span className="text-white font-bold text-xs">PC</span>
           </div>
-          <span className="text-white font-semibold tracking-tight">Punch Control</span>
+          <span className="text-foreground font-semibold tracking-tight">Punch Control</span>
         </Link>
 
         {/* Desktop nav */}
@@ -59,7 +59,7 @@ function Navbar() {
             <button
               key={id}
               onClick={() => scrollTo(id)}
-              className="text-white/60 hover:text-white text-sm font-medium transition-colors"
+              className="text-muted-foreground hover:text-foreground text-sm font-medium transition-colors"
             >
               {label}
             </button>
@@ -72,7 +72,7 @@ function Navbar() {
             <Button
               variant="outline"
               size="sm"
-              className="border-white/20 text-white bg-transparent hover:bg-white/10 hover:text-white"
+              className="border-border text-foreground bg-white hover:bg-muted hover:text-foreground"
             >
               Entrar
             </Button>
@@ -86,7 +86,7 @@ function Navbar() {
 
         {/* Mobile menu toggle */}
         <button
-          className="md:hidden text-white"
+          className="md:hidden text-foreground"
           onClick={() => setMenuOpen((v) => !v)}
           aria-label="Menu"
         >
@@ -96,7 +96,7 @@ function Navbar() {
 
       {/* Mobile dropdown */}
       {menuOpen && (
-        <div className="md:hidden bg-[#080808] border-t border-white/10 px-6 py-4 space-y-4">
+        <div className="md:hidden bg-white border-t border-border px-6 py-4 space-y-4">
           {[
             { label: 'Funcionalidades', id: 'features' },
             { label: 'Benefícios', id: 'benefits' },
@@ -105,7 +105,7 @@ function Navbar() {
             <button
               key={id}
               onClick={() => scrollTo(id)}
-              className="block text-white/70 hover:text-white text-sm font-medium"
+              className="block text-muted-foreground hover:text-foreground text-sm font-medium"
             >
               {label}
             </button>
@@ -127,7 +127,7 @@ function Hero() {
   const navigate = useNavigate()
 
   return (
-    <section className="relative min-h-screen bg-[#080808] flex items-center overflow-hidden">
+    <section className="relative min-h-screen bg-background flex items-center overflow-hidden">
       {/* Background glow */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#F05922]/10 rounded-full blur-[120px]" />
@@ -139,7 +139,7 @@ function Hero() {
         className="absolute inset-0 opacity-[0.03]"
         style={{
           backgroundImage:
-            'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)',
+            'linear-gradient(#111 1px, transparent 1px), linear-gradient(90deg, #111 1px, transparent 1px)',
           backgroundSize: '60px 60px',
         }}
       />
@@ -151,11 +151,11 @@ function Hero() {
             by Punch Care
           </span>
 
-          <h1 className="font-display text-5xl lg:text-[64px] font-semibold text-white mt-6 leading-[1.1] tracking-tight">
+          <h1 className="font-display text-5xl lg:text-[64px] font-semibold text-foreground mt-6 leading-[1.1] tracking-tight">
             Gestão completa dos ferramentais farmacêuticos
           </h1>
 
-          <p className="text-white/50 mt-6 text-lg leading-relaxed max-w-lg">
+          <p className="text-muted-foreground mt-6 text-lg leading-relaxed max-w-lg">
             Punch Control integra dimensionamento, ocorrências e ciclo de vida de punções e matrizes
             em uma única plataforma web. Rastreabilidade total para a sua equipe.
           </p>
@@ -172,22 +172,22 @@ function Hero() {
               size="lg"
               variant="outline"
               onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
-              className="border-white/20 text-white/70 bg-transparent hover:bg-white/5 hover:text-white h-12 px-8 text-base"
+              className="border-border text-muted-foreground bg-white hover:bg-muted hover:text-foreground h-12 px-8 text-base"
             >
               Ver funcionalidades <ChevronDown className="h-4 w-4" />
             </Button>
           </div>
 
           {/* Stats */}
-          <div className="flex gap-10 mt-14 pt-10 border-t border-white/10">
+          <div className="flex gap-10 mt-14 pt-10 border-t border-border">
             {[
               { value: '7', label: 'Módulos integrados' },
               { value: '100%', label: 'Baseado na web' },
               { value: 'SaaS', label: 'Multi-empresa' },
             ].map(({ value, label }) => (
               <div key={label}>
-                <p className="text-2xl font-bold text-white">{value}</p>
-                <p className="text-xs text-white/40 mt-0.5">{label}</p>
+                <p className="text-2xl font-bold text-foreground">{value}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
               </div>
             ))}
           </div>
@@ -201,7 +201,7 @@ function Hero() {
 
       {/* Scroll hint */}
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 animate-bounce">
-        <ChevronDown className="h-4 w-4 text-white/20" />
+        <ChevronDown className="h-4 w-4 text-muted-foreground" />
       </div>
     </section>
   )
@@ -377,7 +377,7 @@ const benefits = [
 
 function Benefits() {
   return (
-    <section id="benefits" className="bg-[#FFF4EF] py-24 px-6">
+    <section id="benefits" className="bg-background py-24 px-6 border-y border-border/60">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16">
           <span className="text-[#F05922] text-xs font-semibold tracking-[0.15em] uppercase">
@@ -475,16 +475,16 @@ function CTASection() {
   const navigate = useNavigate()
 
   return (
-    <section className="bg-[#080808] py-24 px-6 relative overflow-hidden">
+    <section className="bg-background py-24 px-6 relative overflow-hidden border-t border-border">
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-[#F05922]/15 rounded-full blur-[80px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-[#F05922]/10 rounded-full blur-[80px]" />
       </div>
 
       <div className="relative max-w-3xl mx-auto text-center">
-        <h2 className="font-display text-4xl lg:text-5xl font-semibold text-white leading-tight">
+        <h2 className="font-display text-4xl lg:text-5xl font-semibold text-foreground leading-tight">
           Pronto para digitalizar o controle dos seus ferramentais?
         </h2>
-        <p className="text-white/50 mt-5 text-lg">
+        <p className="text-muted-foreground mt-5 text-lg">
           Entre em contato com a Punch Care e solicite acesso ao sistema.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center mt-10">
@@ -499,7 +499,7 @@ function CTASection() {
             <Button
               size="lg"
               variant="outline"
-              className="border-white/20 text-white/70 bg-transparent hover:bg-white/5 hover:text-white h-12 px-10 text-base"
+              className="border-border text-muted-foreground bg-white hover:bg-muted hover:text-foreground h-12 px-10 text-base"
             >
               Falar com a equipe
             </Button>
@@ -514,27 +514,27 @@ function CTASection() {
 
 function Footer() {
   return (
-    <footer className="bg-[#080808] border-t border-white/10 px-6 py-10">
+    <footer className="bg-background border-t border-border px-6 py-10">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="flex items-center gap-2.5">
           <div className="w-6 h-6 rounded-md bg-[#F05922] flex items-center justify-center">
             <span className="text-white font-bold text-[9px]">PC</span>
           </div>
           <div>
-            <span className="text-white font-semibold text-sm">Punch Control</span>
-            <span className="text-white/30 text-sm"> · by Punch Care</span>
+            <span className="text-foreground font-semibold text-sm">Punch Control</span>
+            <span className="text-muted-foreground text-sm"> · by Punch Care</span>
           </div>
         </div>
 
-        <p className="text-white/30 text-xs text-center">
+        <p className="text-muted-foreground text-xs text-center">
           © {new Date().getFullYear()} Punch Care Ltda. · CNPJ 27.735.726/0001-29 · Taboão da Serra, SP
         </p>
 
-        <div className="flex items-center gap-6 text-xs text-white/30">
-          <a href="https://www.punchcare.com.br" target="_blank" rel="noreferrer" className="hover:text-white/60 transition-colors">
+        <div className="flex items-center gap-6 text-xs text-muted-foreground">
+          <a href="https://www.punchcare.com.br" target="_blank" rel="noreferrer" className="hover:text-foreground transition-colors">
             punchcare.com.br
           </a>
-          <Link to="/login" className="hover:text-white/60 transition-colors">
+          <Link to="/login" className="hover:text-foreground transition-colors">
             Entrar
           </Link>
         </div>

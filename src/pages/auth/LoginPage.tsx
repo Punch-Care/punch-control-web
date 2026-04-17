@@ -50,15 +50,15 @@ export function LoginPage() {
 
   return (
     <AuthLayout>
-      <div className="bg-white/5 border border-white/10 rounded-2xl p-8 backdrop-blur-sm">
+      <div className="bg-card border border-border rounded-2xl p-8 shadow-sm">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <div className="space-y-1.5">
-            <Label className="text-white/70 text-sm">E-mail</Label>
+            <Label className="text-foreground/80 text-sm">E-mail</Label>
             <Input
               type="email"
               placeholder="seu@email.com"
               autoComplete="email"
-              className="bg-white/5 border-white/10 text-white placeholder:text-white/20 focus-visible:ring-[#F05922]"
+              className="bg-white border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-[#F05922]"
               {...register('email')}
             />
             {errors.email && (
@@ -67,12 +67,12 @@ export function LoginPage() {
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-white/70 text-sm">Senha</Label>
+            <Label className="text-foreground/80 text-sm">Senha</Label>
             <Input
               type="password"
               placeholder="••••••••"
               autoComplete="current-password"
-              className="bg-white/5 border-white/10 text-white placeholder:text-white/20 focus-visible:ring-[#F05922]"
+              className="bg-white border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-[#F05922]"
               {...register('password')}
             />
             {errors.password && (
