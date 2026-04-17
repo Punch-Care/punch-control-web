@@ -7,6 +7,7 @@ import {
   RefreshCw,
   FileText,
   Users,
+  Building2,
   LogOut,
   ChevronRight,
 } from 'lucide-react'
@@ -23,7 +24,10 @@ const navItems = [
   { to: '/relatorios', label: 'Relatórios', icon: FileText },
 ]
 
-const adminItems = [{ to: '/usuarios', label: 'Usuários', icon: Users }]
+const adminItems = [
+  { to: '/empresas', label: 'Empresas', icon: Building2 },
+  { to: '/usuarios', label: 'Usuários', icon: Users },
+]
 
 export function AppLayout() {
   const { user, logout } = useAuth()
