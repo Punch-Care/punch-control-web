@@ -6,17 +6,37 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { api } from '@/lib/api'
 import { useAuth } from '@/hooks/useAuth'
-import type { DashboardStats, Occurrence } from '@/types'
+import { useLocale } from '@/hooks/useLocale'
+import type { DashboardStats, Occurrence, OccurrenceType } from '@/types'
 
-const TYPE_LABELS = {
+const TYPE_LABELS_PT: Record<OccurrenceType, string> = {
   COMPRESSION: 'Compressão',
   DIMENSIONAL: 'Dimensional',
   MAINTENANCE: 'Manutenção',
   OTHER: 'Outro',
-} as const
+}
+
+const TYPE_LABELS_EN: Record<OccurrenceType, string> = {
+  COMPRESSION: 'Compression',
+  DIMENSIONAL: 'Dimensional',
+  MAINTENANCE: 'Maintenance',
+  OTHER: 'Other',
+}
+
+const TYPE_LABELS_ES: Record<OccurrenceType, string> = {
+  COMPRESSION: 'Compresión',
+  DIMENSIONAL: 'Dimensional',
+  MAINTENANCE: 'Mantenimiento',
+  OTHER: 'Otro',
+}
 
 export function DashboardPage() {
   const { user } = useAuth()
+  const { t, locale } = useLocale()
+  const d = t.dashboard
+
+  const TYPE_LABELS =
+    locale === 'en' ? TYPE_LABELS_EN : locale === 'es' ? TYPE_LABELS_ES : TYPE_LABELS_PT
 
   const { data: stats } = useQuery<DashboardStats>({
     queryKey: ['stats-dashboard'],
@@ -29,18 +49,18 @@ export function DashboardPage() {
   })
 
   const cards = [
-    { label: 'Conjuntos Ativos', value: stats?.active ?? '—', icon: Package, color: 'text-green-500' },
-    { label: 'Em Reparo', value: stats?.inRepair ?? '—', icon: RefreshCw, color: 'text-yellow-500' },
-    { label: 'Ocorrências Abertas', value: stats?.openOccurrences ?? '—', icon: AlertTriangle, color: 'text-red-500' },
-    { label: 'Vida Útil Crítica', value: stats?.lowUsefulValue ?? '—', icon: TrendingDown, color: 'text-orange-500' },
+    { label: d.activeSets,       value: stats?.active ?? '—',           icon: Package,     color: 'text-green-500' },
+    { label: d.inRepair,         value: stats?.inRepair ?? '—',         icon: RefreshCw,   color: 'text-yellow-500' },
+    { label: d.openOccurrences,  value: stats?.openOccurrences ?? '—',  icon: AlertTriangle, color: 'text-red-500' },
+    { label: d.criticalLife,     value: stats?.lowUsefulValue ?? '—',   icon: TrendingDown, color: 'text-orange-500' },
   ]
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
       <div>
-        <h2 className="text-xl sm:text-2xl font-bold tracking-tight">Dashboard</h2>
+        <h2 className="text-xl sm:text-2xl font-bold tracking-tight">{d.title}</h2>
         <p className="text-muted-foreground text-sm mt-0.5">
-          Bem-vindo, {user?.name}
+          {d.welcome}, {user?.name}
           {user?.company && <span className="ml-1 text-muted-foreground/70">— {user.company.name}</span>}
         </p>
       </div>
@@ -60,36 +80,42 @@ export function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {/* Status pie chart */}
+        {/* Status pie chart — labels removed, Legend + Tooltip only */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium">Distribuição por Status</CardTitle>
+            <CardTitle className="text-sm font-medium">{d.statusDist}</CardTitle>
           </CardHeader>
           <CardContent>
-            {stats && stats.statusDistribution.some((d) => d.value > 0) ? (
-              <ResponsiveContainer width="100%" height={220}>
+            {stats && stats.statusDistribution.some((s) => s.value > 0) ? (
+              <ResponsiveContainer width="100%" height={240}>
                 <PieChart>
                   <Pie
                     data={stats.statusDistribution}
                     cx="50%"
-                    cy="50%"
+                    cy="45%"
                     innerRadius={55}
                     outerRadius={85}
                     dataKey="value"
-                    label={({ name, value }) => value > 0 ? `${name}: ${value}` : ''}
-                    labelLine={false}
+                    paddingAngle={2}
                   >
                     {stats.statusDistribution.map((entry) => (
                       <Cell key={entry.name} fill={entry.fill} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(v, n) => [v, n]} />
-                  <Legend iconSize={10} />
+                  <Tooltip
+                    formatter={(value, name) => [String(value), String(name)]}
+                    contentStyle={{ borderRadius: '8px', fontSize: '12px' }}
+                  />
+                  <Legend
+                    iconType="circle"
+                    iconSize={8}
+                    wrapperStyle={{ fontSize: '12px', paddingTop: '8px' }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-[220px] flex items-center justify-center text-muted-foreground text-sm">
-                Nenhum conjunto cadastrado
+              <div className="h-[240px] flex items-center justify-center text-muted-foreground text-sm">
+                {d.noSets}
               </div>
             )}
           </CardContent>
@@ -99,7 +125,7 @@ export function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-sm font-medium flex items-center justify-between">
-              Ocorrências Abertas
+              {d.openOccTitle}
               {recentOccurrences.length > 0 && (
                 <Badge variant="destructive">{recentOccurrences.length}</Badge>
               )}
@@ -107,7 +133,7 @@ export function DashboardPage() {
           </CardHeader>
           <CardContent>
             {recentOccurrences.length === 0 ? (
-              <p className="text-muted-foreground text-sm text-center py-8">Nenhuma ocorrência aberta</p>
+              <p className="text-muted-foreground text-sm text-center py-8">{d.noOccurrences}</p>
             ) : (
               <div className="space-y-2 max-h-[200px] overflow-y-auto pr-1">
                 {recentOccurrences.slice(0, 8).map((o) => (
@@ -131,7 +157,7 @@ export function DashboardPage() {
           <CardContent className="p-4 flex items-center gap-3">
             <TrendingDown className="h-5 w-5 text-orange-500 flex-shrink-0" />
             <p className="text-sm">
-              <strong>{stats.lowUsefulValue}</strong> conjunto{stats.lowUsefulValue > 1 ? 's' : ''} com vida útil abaixo do limite L30% — verifique na seção de Conjuntos.
+              <strong>{stats.lowUsefulValue}</strong> {d.l30Alert}
             </p>
           </CardContent>
         </Card>

@@ -16,21 +16,25 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
+import { useLocale } from '@/hooks/useLocale'
 import { Button } from '@/components/ui/button'
 import { DeveloperCredit } from '@/components/layout/DeveloperCredit'
+import { AccessibilityButton } from '@/components/layout/AccessibilityPanel'
 
-const navItems = [
-  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/sets', label: 'Sets', icon: Package },
-  { to: '/dimensioning', label: 'Dimensioning', icon: Ruler },
-  { to: '/occurrences', label: 'Occurrences', icon: AlertTriangle },
-  { to: '/lifecycle', label: 'Lifecycle', icon: RefreshCw },
-  { to: '/reports', label: 'Reports', icon: FileText },
+interface NavItem { to: string; labelKey: keyof ReturnType<typeof useLocale>['t']['nav']; icon: React.ElementType }
+
+const navItems: NavItem[] = [
+  { to: '/dashboard', labelKey: 'dashboard', icon: LayoutDashboard },
+  { to: '/sets',      labelKey: 'sets',       icon: Package },
+  { to: '/dimensioning', labelKey: 'dimensioning', icon: Ruler },
+  { to: '/occurrences',  labelKey: 'occurrences',  icon: AlertTriangle },
+  { to: '/lifecycle',    labelKey: 'lifecycle',    icon: RefreshCw },
+  { to: '/reports',      labelKey: 'reports',      icon: FileText },
 ]
 
-const adminItems = [
-  { to: '/companies', label: 'Companies', icon: Building2 },
-  { to: '/users', label: 'Users', icon: Users },
+const adminItems: NavItem[] = [
+  { to: '/companies', labelKey: 'companies', icon: Building2 },
+  { to: '/users',     labelKey: 'users',     icon: Users },
 ]
 
 interface SidebarContentProps {
@@ -39,9 +43,11 @@ interface SidebarContentProps {
 }
 
 function SidebarContent({ isAdmin, onNavigate }: SidebarContentProps) {
+  const { t } = useLocale()
+
   return (
     <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-0.5">
-      {navItems.map(({ to, label, icon: Icon }) => (
+      {navItems.map(({ to, labelKey, icon: Icon }) => (
         <NavLink
           key={to}
           to={to}
@@ -56,7 +62,7 @@ function SidebarContent({ isAdmin, onNavigate }: SidebarContentProps) {
           }
         >
           <Icon className="h-4 w-4 flex-shrink-0" />
-          {label}
+          {t.nav[labelKey]}
           <ChevronRight className="h-3 w-3 ml-auto opacity-40" />
         </NavLink>
       ))}
@@ -65,10 +71,10 @@ function SidebarContent({ isAdmin, onNavigate }: SidebarContentProps) {
         <>
           <div className="pt-4 pb-1 px-3">
             <p className="text-xs font-semibold text-sidebar-foreground/40 uppercase tracking-wider">
-              Administração
+              {t.nav.admin}
             </p>
           </div>
-          {adminItems.map(({ to, label, icon: Icon }) => (
+          {adminItems.map(({ to, labelKey, icon: Icon }) => (
             <NavLink
               key={to}
               to={to}
@@ -83,7 +89,7 @@ function SidebarContent({ isAdmin, onNavigate }: SidebarContentProps) {
               }
             >
               <Icon className="h-4 w-4 flex-shrink-0" />
-              {label}
+              {t.nav[labelKey]}
             </NavLink>
           ))}
         </>
@@ -94,6 +100,7 @@ function SidebarContent({ isAdmin, onNavigate }: SidebarContentProps) {
 
 export function AppLayout() {
   const { user, logout } = useAuth()
+  const { t } = useLocale()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'MANAGER'
@@ -121,6 +128,7 @@ export function AppLayout() {
               <p className="text-xs text-sidebar-foreground/50 truncate">{user?.email}</p>
             </div>
           </div>
+          <AccessibilityButton />
           <Button
             variant="ghost"
             size="sm"
@@ -128,12 +136,12 @@ export function AppLayout() {
             className="w-full justify-start text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
           >
             <LogOut className="h-4 w-4 mr-2" />
-            Sair
+            {t.nav.logout}
           </Button>
         </div>
       </aside>
 
-      {/* Mobile sidebar */}
+      {/* Mobile sidebar overlay */}
       <div
         className={cn(
           'fixed inset-0 z-40 bg-black/40 md:hidden transition-opacity',
@@ -160,6 +168,19 @@ export function AppLayout() {
         </div>
 
         <SidebarContent isAdmin={isAdmin} onNavigate={() => setMobileMenuOpen(false)} />
+
+        <div className="p-3 border-t border-sidebar-border space-y-1">
+          <AccessibilityButton />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={logout}
+            className="w-full justify-start text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            {t.nav.logout}
+          </Button>
+        </div>
       </aside>
 
       {/* Main content */}
