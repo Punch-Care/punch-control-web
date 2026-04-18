@@ -21,16 +21,16 @@ import { DeveloperCredit } from '@/components/layout/DeveloperCredit'
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/conjuntos', label: 'Conjuntos', icon: Package },
-  { to: '/dimensionamento', label: 'Dimensionamento', icon: Ruler },
-  { to: '/ocorrencias', label: 'Ocorrências', icon: AlertTriangle },
-  { to: '/ciclo-de-vida', label: 'Ciclo de Vida', icon: RefreshCw },
-  { to: '/relatorios', label: 'Relatórios', icon: FileText },
+  { to: '/sets', label: 'Sets', icon: Package },
+  { to: '/dimensioning', label: 'Dimensioning', icon: Ruler },
+  { to: '/occurrences', label: 'Occurrences', icon: AlertTriangle },
+  { to: '/lifecycle', label: 'Lifecycle', icon: RefreshCw },
+  { to: '/reports', label: 'Reports', icon: FileText },
 ]
 
 const adminItems = [
-  { to: '/empresas', label: 'Empresas', icon: Building2 },
-  { to: '/usuarios', label: 'Usuários', icon: Users },
+  { to: '/companies', label: 'Companies', icon: Building2 },
+  { to: '/users', label: 'Users', icon: Users },
 ]
 
 interface SidebarContentProps {

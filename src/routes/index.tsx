@@ -5,20 +5,20 @@ import { AppLayout } from '@/components/layout/AppLayout'
 import { LandingPage } from '@/pages/landing/LandingPage'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { DashboardPage } from '@/pages/dashboard/DashboardPage'
-import { EmpresasPage } from '@/pages/empresas/EmpresasPage'
-import { UsuariosPage } from '@/pages/usuarios/UsuariosPage'
+import { CompaniesPage } from '@/pages/companies/CompaniesPage'
+import { UsersPage } from '@/pages/users/UsersPage'
+import { SetsPage } from '@/pages/sets/SetsPage'
+import { DimensioningPage } from '@/pages/dimensioning/DimensioningPage'
+import { OccurrencesPage } from '@/pages/occurrences/OccurrencesPage'
+import { LifecyclePage } from '@/pages/lifecycle/LifecyclePage'
+import { ReportsPage } from '@/pages/reports/ReportsPage'
 
 export const router = createBrowserRouter([
-  // Rota pública — landing page
   { path: '/', element: <LandingPage /> },
-
-  // Rotas públicas que redirecionam para /dashboard se já autenticado
   {
     element: <PublicOnlyRoute />,
     children: [{ path: '/login', element: <LoginPage /> }],
   },
-
-  // Rotas privadas
   {
     element: <PrivateRoute />,
     children: [
@@ -26,14 +26,13 @@ export const router = createBrowserRouter([
         element: <AppLayout />,
         children: [
           { path: '/dashboard', element: <DashboardPage /> },
-          { path: '/empresas', element: <EmpresasPage /> },
-          { path: '/usuarios', element: <UsuariosPage /> },
-          // Próximos módulos:
-          // { path: '/conjuntos', element: <ConjuntosPage /> },
-          // { path: '/dimensionamento', element: <DimensionamentoPage /> },
-          // { path: '/ocorrencias', element: <OcorrenciasPage /> },
-          // { path: '/ciclo-de-vida', element: <CicloDeVidaPage /> },
-          // { path: '/relatorios', element: <RelatoriosPage /> },
+          { path: '/sets', element: <SetsPage /> },
+          { path: '/dimensioning', element: <DimensioningPage /> },
+          { path: '/occurrences', element: <OccurrencesPage /> },
+          { path: '/lifecycle', element: <LifecyclePage /> },
+          { path: '/reports', element: <ReportsPage /> },
+          { path: '/companies', element: <CompaniesPage /> },
+          { path: '/users', element: <UsersPage /> },
           { path: '*', element: <Navigate to="/dashboard" replace /> },
         ],
       },
