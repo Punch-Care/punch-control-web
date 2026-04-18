@@ -24,7 +24,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#F05922]/10 rounded-full blur-[120px]" />
       </div>
 
-      {/* Content */}
+      {/* Content — flex-1 empurra o footer para baixo */}
       <div className="flex-1 flex items-center justify-center px-4 py-12 relative z-10">
         <div className="w-full max-w-sm">
           <div className="mb-8 text-center">
@@ -39,10 +39,47 @@ export function AuthLayout({ children }: AuthLayoutProps) {
               ← Voltar ao site
             </Link>
           </p>
-          <div className="mt-4 flex justify-center">
-            <DeveloperCredit />
+        </div>
+      </div>
+
+      {/* Footer — preso ao fundo da página */}
+      <footer className="border-t border-border bg-background px-6 py-6 relative z-10">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2.5">
+            <div className="w-6 h-6 rounded-md bg-[#F05922] flex items-center justify-center">
+              <span className="text-white font-bold text-[9px]">PC</span>
+            </div>
+            <div>
+              <span className="text-foreground font-semibold text-sm">Punch Control</span>
+              <span className="text-muted-foreground text-sm"> · by Punch Care</span>
+            </div>
+          </div>
+
+          <p className="text-muted-foreground text-xs text-center">
+            © {new Date().getFullYear()} Punch Care Ltda. · CNPJ 27.735.726/0001-29 · Taboão da Serra, SP
+          </p>
+
+          <div className="flex items-center gap-6 text-xs text-muted-foreground">
+            <a
+              href="https://www.punchcare.com.br"
+              target="_blank"
+              rel="noreferrer"
+              className="hover:text-foreground transition-colors"
+            >
+              punchcare.com.br
+            </a>
+            <a
+              href="mailto:punchcare@punchcare.com.br"
+              className="hover:text-foreground transition-colors"
+            >
+              Suporte: Domingo
+            </a>
           </div>
         </div>
+      </footer>
+
+      <div className="w-full bg-black py-2.5 px-4 relative z-10">
+        <DeveloperCredit tone="inverted" className="text-center" />
       </div>
     </div>
   )
