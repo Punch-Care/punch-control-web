@@ -96,3 +96,8 @@
 /* ── Accessibility: font size ──────────────────────────────────────────────── */
 .font-size-large  { font-size: 112.5%; }
 .font-size-xlarge { font-size: 125%; }
+
+/* ── VLibras widget isolation ─────────────────────────────────────────────── */
+[vw] * { border: none !important; box-sizing: content-box; }
+[vw-plugin-wrapper] { all: initial; }
+[vw-access-button]  { all: initial; cursor: pointer; }
