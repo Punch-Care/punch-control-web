@@ -6,32 +6,10 @@ import { Label } from '@/components/ui/label'
 import { useSettingsStore } from '@/store/settings.store'
 import { useLocale } from '@/hooks/useLocale'
 
-declare global {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  interface Window { VLibras?: any }
-}
-
-function loadVLibrasScript() {
-  if (document.getElementById('vlibras-script')) return
-  const script = document.createElement('script')
-  script.id = 'vlibras-script'
-  script.src = 'https://vlibras.gov.br/app/vlibras-plugin.js'
-  script.onload = () => {
-    if (window.VLibras) new window.VLibras.Widget('https://vlibras.gov.br/app')
-  }
-  document.head.appendChild(script)
-}
-
 function VLibrasSync({ enabled }: { enabled: boolean }) {
   useEffect(() => {
     const wrapper = document.getElementById('vlibras-wrapper')
-    if (!wrapper) return
-    if (enabled) {
-      wrapper.style.display = ''
-      loadVLibrasScript()
-    } else {
-      wrapper.style.display = 'none'
-    }
+    if (wrapper) wrapper.style.display = enabled ? '' : 'none'
   }, [enabled])
   return null
 }

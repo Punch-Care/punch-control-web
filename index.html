@@ -13,12 +13,14 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
 
-    <!-- VLibras widget — elements must exist in DOM before script init -->
+    <!-- VLibras — visibility controlled by React via #vlibras-wrapper style -->
     <div id="vlibras-wrapper" vw class="enabled" style="display:none">
       <div vw-access-button class="active"></div>
       <div vw-plugin-wrapper>
         <div class="vw-plugin-top-wrapper"></div>
       </div>
     </div>
+    <script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
+    <script>new window.VLibras.Widget('https://vlibras.gov.br/app');</script>
   </body>
 </html>
