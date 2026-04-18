@@ -78,11 +78,11 @@ function Navbar() {
               Entrar
             </Button>
           </Link>
-          <Link to="/login">
+          <a href="https://wa.me/5511940207989" target="_blank" rel="noreferrer">
             <Button size="sm" className="bg-[#F05922] hover:bg-[#F3931F] text-white border-0">
               Solicitar Demo
             </Button>
-          </Link>
+          </a>
         </div>
 
         {/* Mobile menu toggle */}
