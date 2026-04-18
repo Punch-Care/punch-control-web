@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -12,18 +12,24 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/hooks/useAuth'
-
-const loginSchema = z.object({
-  email: z.string().email('E-mail inválido'),
-  password: z.string().min(1, 'Senha obrigatória'),
-})
-
-type LoginForm = z.infer<typeof loginSchema>
+import { useLocale } from '@/hooks/useLocale'
 
 export function LoginPage() {
   const navigate = useNavigate()
   const { login } = useAuth()
+  const { t } = useLocale()
   const [loading, setLoading] = useState(false)
+
+  const loginSchema = useMemo(
+    () =>
+      z.object({
+        email: z.string().email(t.auth.invalidEmail),
+        password: z.string().min(1, t.auth.passwordRequired),
+      }),
+    [t],
+  )
+
+  type LoginForm = z.infer<typeof loginSchema>
 
   const {
     register,
@@ -38,10 +44,10 @@ export function LoginPage() {
       navigate('/dashboard')
     } catch (err) {
       const message = axios.isAxiosError(err)
-        ? (err.response?.data?.message ?? 'Erro ao conectar com o servidor')
+        ? (err.response?.data?.message ?? t.auth.errorConnecting)
         : err instanceof Error
           ? err.message
-          : 'Erro inesperado'
+          : t.auth.unexpectedError
       toast.error(message)
     } finally {
       setLoading(false)
@@ -53,10 +59,10 @@ export function LoginPage() {
       <div className="bg-card border border-border rounded-2xl p-8 shadow-sm">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <div className="space-y-1.5">
-            <Label className="text-foreground/80 text-sm">E-mail</Label>
+            <Label className="text-foreground/80 text-sm">{t.auth.email}</Label>
             <Input
               type="email"
-              placeholder="seu@email.com"
+              placeholder={t.auth.emailPlaceholder}
               autoComplete="email"
               className="bg-white border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-[#F05922]"
               {...register('email')}
@@ -67,7 +73,7 @@ export function LoginPage() {
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-foreground/80 text-sm">Senha</Label>
+            <Label className="text-foreground/80 text-sm">{t.auth.password}</Label>
             <Input
               type="password"
               placeholder="••••••••"
@@ -86,7 +92,7 @@ export function LoginPage() {
             disabled={loading}
           >
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-            {loading ? 'Entrando...' : 'Entrar'}
+            {loading ? t.auth.signingIn : t.auth.signIn}
           </Button>
         </form>
       </div>

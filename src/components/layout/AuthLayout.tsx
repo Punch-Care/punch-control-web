@@ -1,12 +1,15 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { DeveloperCredit } from '@/components/layout/DeveloperCredit'
+import { useLocale } from '@/hooks/useLocale'
 
 interface AuthLayoutProps {
   children: ReactNode
 }
 
 export function AuthLayout({ children }: AuthLayoutProps) {
+  const { t } = useLocale()
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
@@ -24,25 +27,25 @@ export function AuthLayout({ children }: AuthLayoutProps) {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#F05922]/10 rounded-full blur-[120px]" />
       </div>
 
-      {/* Content — flex-1 empurra o footer para baixo */}
+      {/* Content */}
       <div className="flex-1 flex items-center justify-center px-4 py-12 relative z-10">
         <div className="w-full max-w-sm">
           <div className="mb-8 text-center">
-            <h1 className="font-display text-3xl font-semibold text-foreground">Bem-vindo</h1>
+            <h1 className="font-display text-3xl font-semibold text-foreground">{t.auth.welcome}</h1>
             <p className="text-muted-foreground mt-1.5 text-sm">
-              Sistema de Gestão de Punções · Punch Care
+              {t.auth.subtitle}
             </p>
           </div>
           {children}
           <p className="text-center text-muted-foreground text-xs mt-8">
             <Link to="/" className="hover:text-foreground transition-colors">
-              ← Voltar ao site
+              {t.auth.backToSite}
             </Link>
           </p>
         </div>
       </div>
 
-      {/* Footer — preso ao fundo da página */}
+      {/* Footer */}
       <footer className="border-t border-border bg-background px-6 py-6 relative z-10">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">

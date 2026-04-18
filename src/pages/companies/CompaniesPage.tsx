@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { useLocale } from '@/hooks/useLocale'
 
 interface Company {
   id: string
@@ -23,22 +24,28 @@ interface Company {
   _count: { users: number }
 }
 
-const formSchema = z.object({
-  name: z.string().min(2, 'Nome deve ter no mínimo 2 caracteres'),
-  cnpj: z.string().optional(),
-})
-
-type FormData = z.infer<typeof formSchema>
+type FormData = { name: string; cnpj?: string }
 
 function CompanyForm({
   defaultValues,
   onSubmit,
   loading,
+  t,
 }: {
   defaultValues?: Partial<FormData>
   onSubmit: (data: FormData) => void
   loading: boolean
+  t: ReturnType<typeof useLocale>['t']
 }) {
+  const formSchema = useMemo(
+    () =>
+      z.object({
+        name: z.string().min(2, t.companies.nameMinLength),
+        cnpj: z.string().optional(),
+      }),
+    [t],
+  )
+
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues,
@@ -47,17 +54,17 @@ function CompanyForm({
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="space-y-1.5">
-        <Label>Nome *</Label>
-        <Input placeholder="Razão social" {...register('name')} />
+        <Label>{t.common.name} *</Label>
+        <Input placeholder={t.companies.namePlaceholder} {...register('name')} />
         {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
       </div>
       <div className="space-y-1.5">
-        <Label>CNPJ</Label>
-        <Input placeholder="00.000.000/0000-00" {...register('cnpj')} />
+        <Label>{t.companies.cnpj}</Label>
+        <Input placeholder={t.companies.cnpjPlaceholder} {...register('cnpj')} />
       </div>
       <Button type="submit" className="w-full" disabled={loading}>
         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-        Salvar
+        {t.common.save}
       </Button>
     </form>
   )
@@ -65,6 +72,7 @@ function CompanyForm({
 
 export function CompaniesPage() {
   const qc = useQueryClient()
+  const { t } = useLocale()
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<Company | null>(null)
 
@@ -75,38 +83,39 @@ export function CompaniesPage() {
 
   const createMutation = useMutation({
     mutationFn: (data: FormData) => api.post('/companies', data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['companies'] }); setOpen(false); toast.success('Empresa criada') },
-    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? 'Erro ao criar empresa'),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['companies'] }); setOpen(false); toast.success(t.companies.created) },
+    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? t.companies.createError),
   })
 
   const updateMutation = useMutation({
     mutationFn: (data: FormData) => api.put(`/companies/${editing!.id}`, data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['companies'] }); setEditing(null); toast.success('Empresa atualizada') },
-    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? 'Erro ao atualizar'),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['companies'] }); setEditing(null); toast.success(t.companies.updated) },
+    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? t.companies.updateError),
   })
 
   const toggleMutation = useMutation({
     mutationFn: (id: string) => api.patch(`/companies/${id}/toggle`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['companies'] }),
-    onError: () => toast.error('Erro ao alterar status'),
+    onError: () => toast.error(t.companies.toggleError),
   })
 
   return (
     <div className="p-6 space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Empresas</h2>
-          <p className="text-muted-foreground text-sm mt-0.5">Gestão de empresas clientes</p>
+          <h2 className="text-2xl font-bold tracking-tight">{t.companies.title}</h2>
+          <p className="text-muted-foreground text-sm mt-0.5">{t.companies.subtitle}</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button size="sm"><Plus className="h-4 w-4" /> Nova Empresa</Button>
+            <Button size="sm"><Plus className="h-4 w-4" /> {t.companies.newCompany}</Button>
           </DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle>Nova Empresa</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{t.companies.newCompany}</DialogTitle></DialogHeader>
             <CompanyForm
               onSubmit={createMutation.mutate}
               loading={createMutation.isPending}
+              t={t}
             />
           </DialogContent>
         </Dialog>
@@ -116,18 +125,18 @@ export function CompaniesPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Nome</TableHead>
-              <TableHead>CNPJ</TableHead>
-              <TableHead>Usuários</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="w-24">Ações</TableHead>
+              <TableHead>{t.common.name}</TableHead>
+              <TableHead>{t.companies.cnpj}</TableHead>
+              <TableHead>{t.companies.users}</TableHead>
+              <TableHead>{t.common.status}</TableHead>
+              <TableHead className="w-24">{t.common.actions}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Carregando...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>
             ) : companies.length === 0 ? (
-              <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Nenhuma empresa cadastrada</TableCell></TableRow>
+              <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">{t.companies.noCompanies}</TableCell></TableRow>
             ) : companies.map((c) => (
               <TableRow key={c.id}>
                 <TableCell className="font-medium">{c.name}</TableCell>
@@ -135,7 +144,7 @@ export function CompaniesPage() {
                 <TableCell>{c._count.users}</TableCell>
                 <TableCell>
                   <Badge variant={c.active ? 'success' : 'secondary'}>
-                    {c.active ? 'Ativa' : 'Inativa'}
+                    {c.active ? t.companies.active : t.companies.inactive}
                   </Badge>
                 </TableCell>
                 <TableCell>
@@ -162,12 +171,13 @@ export function CompaniesPage() {
       {/* Edit dialog */}
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Editar Empresa</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t.companies.editCompany}</DialogTitle></DialogHeader>
           {editing && (
             <CompanyForm
               defaultValues={{ name: editing.name, cnpj: editing.cnpj ?? '' }}
               onSubmit={updateMutation.mutate}
               loading={updateMutation.isPending}
+              t={t}
             />
           )}
         </DialogContent>

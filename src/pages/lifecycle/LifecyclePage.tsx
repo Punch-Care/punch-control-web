@@ -8,14 +8,8 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { useLocale } from '@/hooks/useLocale'
 import type { PunchSet, LifecycleEvent, SetStatus } from '@/types'
-
-const STATUS_LABELS: Record<SetStatus, string> = {
-  ACTIVE: 'Ativo',
-  IN_REPAIR: 'Em Reparo',
-  INACTIVE: 'Inativo',
-  DISCARDED: 'Descartado',
-}
 
 const STATUS_VARIANTS: Record<SetStatus, 'success' | 'warning' | 'secondary' | 'destructive'> = {
   ACTIVE: 'success',
@@ -31,7 +25,7 @@ const STATUS_COLORS: Record<SetStatus, string> = {
   DISCARDED: 'bg-red-500',
 }
 
-function StatusFlow({ sets }: { sets: PunchSet[] }) {
+function StatusFlow({ sets, statusLabels }: { sets: PunchSet[]; statusLabels: Record<SetStatus, string> }) {
   const stages: SetStatus[] = ['ACTIVE', 'IN_REPAIR', 'INACTIVE', 'DISCARDED']
   return (
     <div className="flex items-center gap-2 flex-wrap">
@@ -43,7 +37,7 @@ function StatusFlow({ sets }: { sets: PunchSet[] }) {
               <div className={`w-12 h-12 rounded-full ${STATUS_COLORS[s]} flex items-center justify-center text-white font-bold text-lg mx-auto`}>
                 {count}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">{STATUS_LABELS[s]}</p>
+              <p className="text-xs text-muted-foreground mt-1">{statusLabels[s]}</p>
             </div>
             {i < stages.length - 1 && (
               <ArrowRight className="h-4 w-4 text-muted-foreground" />
@@ -57,6 +51,7 @@ function StatusFlow({ sets }: { sets: PunchSet[] }) {
 
 export function LifecyclePage() {
   const [selectedSetId, setSelectedSetId] = useState<string>('')
+  const { t } = useLocale()
 
   const { data: sets = [] } = useQuery<PunchSet[]>({
     queryKey: ['punch-sets'],
@@ -74,21 +69,21 @@ export function LifecyclePage() {
   return (
     <div className="p-4 sm:p-6 space-y-5">
       <div>
-        <h2 className="text-xl sm:text-2xl font-bold tracking-tight">Ciclo de Vida</h2>
-        <p className="text-muted-foreground text-sm mt-0.5">Rastreabilidade completa do ciclo de vida dos conjuntos</p>
+        <h2 className="text-xl sm:text-2xl font-bold tracking-tight">{t.lifecycle.title}</h2>
+        <p className="text-muted-foreground text-sm mt-0.5">{t.lifecycle.subtitle}</p>
       </div>
 
       <Card>
-        <CardHeader><CardTitle className="text-sm font-medium">Distribuição por Status</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-sm font-medium">{t.lifecycle.statusDistribution}</CardTitle></CardHeader>
         <CardContent>
-          <StatusFlow sets={sets} />
+          <StatusFlow sets={sets} statusLabels={t.status} />
         </CardContent>
       </Card>
 
       <div className="space-y-1.5 max-w-sm">
-        <Label>Selecione o Conjunto</Label>
+        <Label>{t.lifecycle.selectSet}</Label>
         <Select value={selectedSetId} onValueChange={setSelectedSetId}>
-          <SelectTrigger><SelectValue placeholder="Escolha um conjunto..." /></SelectTrigger>
+          <SelectTrigger><SelectValue placeholder={t.lifecycle.selectSetPlaceholder} /></SelectTrigger>
           <SelectContent>
             {sets.map((s) => (
               <SelectItem key={s.id} value={s.id}>
@@ -108,8 +103,8 @@ export function LifecyclePage() {
                 <p className="text-sm text-muted-foreground">{selectedSet.name}</p>
               </div>
               <div className="flex items-center gap-3">
-                <Badge variant={STATUS_VARIANTS[selectedSet.status]}>{STATUS_LABELS[selectedSet.status]}</Badge>
-                <span className="text-sm text-muted-foreground">Vida útil: <strong>{selectedSet.usefulValue.toFixed(0)}%</strong></span>
+                <Badge variant={STATUS_VARIANTS[selectedSet.status]}>{t.status[selectedSet.status]}</Badge>
+                <span className="text-sm text-muted-foreground">{t.lifecycle.usefulLife}<strong>{selectedSet.usefulValue.toFixed(0)}%</strong></span>
               </div>
             </div>
           </CardContent>
@@ -120,25 +115,25 @@ export function LifecyclePage() {
         <div>
           <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
             <Activity className="h-4 w-4" />
-            Histórico de Eventos
+            {t.lifecycle.eventHistory}
           </h3>
           <div className="space-y-2">
             {isLoading ? (
-              <p className="text-muted-foreground text-sm">Carregando...</p>
+              <p className="text-muted-foreground text-sm">{t.common.loading}</p>
             ) : events.length === 0 ? (
-              <p className="text-muted-foreground text-sm">Nenhum evento registrado</p>
+              <p className="text-muted-foreground text-sm">{t.lifecycle.noEvents}</p>
             ) : events.map((ev) => (
               <div key={ev.id} className="flex items-start gap-3 p-3 rounded-lg border bg-card">
                 <div className="flex items-center gap-2 flex-shrink-0 mt-0.5">
                   {ev.fromStatus ? (
                     <>
-                      <Badge variant={STATUS_VARIANTS[ev.fromStatus]} className="text-xs">{STATUS_LABELS[ev.fromStatus]}</Badge>
+                      <Badge variant={STATUS_VARIANTS[ev.fromStatus]} className="text-xs">{t.status[ev.fromStatus]}</Badge>
                       <ArrowRight className="h-3 w-3 text-muted-foreground" />
                     </>
                   ) : (
-                    <span className="text-xs text-muted-foreground">Inicial</span>
+                    <span className="text-xs text-muted-foreground">{t.lifecycle.initial}</span>
                   )}
-                  <Badge variant={STATUS_VARIANTS[ev.toStatus]} className="text-xs">{STATUS_LABELS[ev.toStatus]}</Badge>
+                  <Badge variant={STATUS_VARIANTS[ev.toStatus]} className="text-xs">{t.status[ev.toStatus]}</Badge>
                 </div>
                 <div className="flex-1 min-w-0">
                   {ev.reason && <p className="text-sm">{ev.reason}</p>}
@@ -153,7 +148,7 @@ export function LifecyclePage() {
       ) : (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
-            Selecione um conjunto para ver o histórico de ciclo de vida
+            {t.lifecycle.selectSetToView}
           </CardContent>
         </Card>
       )}

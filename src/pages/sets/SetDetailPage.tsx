@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -16,14 +16,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { useLocale } from '@/hooks/useLocale'
 import type { PunchSet, Punch, SetStatus } from '@/types'
-
-const STATUS_LABELS: Record<SetStatus, string> = {
-  ACTIVE: 'Ativo',
-  IN_REPAIR: 'Em Reparo',
-  INACTIVE: 'Inativo',
-  DISCARDED: 'Descartado',
-}
 
 const STATUS_VARIANTS: Record<SetStatus, 'success' | 'warning' | 'secondary' | 'destructive'> = {
   ACTIVE: 'success',
@@ -32,25 +26,24 @@ const STATUS_VARIANTS: Record<SetStatus, 'success' | 'warning' | 'secondary' | '
   DISCARDED: 'destructive',
 }
 
-const TYPE_LABELS: Record<string, string> = {
-  upper: 'Superior',
-  lower: 'Inferior',
-  matrix: 'Matriz',
-}
-
-const addPunchSchema = z.object({
-  code: z.string().min(1, 'Código obrigatório'),
-  type: z.enum(['upper', 'lower', 'matrix']),
-  position: z.coerce.number().int().min(1, 'Posição obrigatória'),
-})
-
-type AddPunchData = z.infer<typeof addPunchSchema>
-
 export function SetDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const qc = useQueryClient()
+  const { t } = useLocale()
   const [addOpen, setAddOpen] = useState(false)
+
+  const addPunchSchema = useMemo(
+    () =>
+      z.object({
+        code: z.string().min(1, t.setDetail.codeRequired),
+        type: z.enum(['upper', 'lower', 'matrix']),
+        position: z.coerce.number().int().min(1, t.setDetail.positionRequired),
+      }),
+    [t],
+  )
+
+  type AddPunchData = z.infer<typeof addPunchSchema>
 
   const { data: set, isLoading: setLoading } = useQuery<PunchSet & { punches: Punch[] }>({
     queryKey: ['punch-set', id],
@@ -69,19 +62,19 @@ export function SetDetailPage() {
       qc.invalidateQueries({ queryKey: ['punch-set', id] })
       setAddOpen(false)
       addForm.reset({ type: 'upper' })
-      toast.success('Punção adicionada')
+      toast.success(t.setDetail.punchAdded)
     },
     onError: (e: { response?: { data?: { message?: string } } }) =>
-      toast.error(e.response?.data?.message ?? 'Erro ao adicionar punção'),
+      toast.error(e.response?.data?.message ?? t.setDetail.punchAddError),
   })
 
   const removeMutation = useMutation({
     mutationFn: (punchId: string) => api.delete(`/punch-sets/${id}/punches/${punchId}`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['punch-set', id] })
-      toast.success('Punção removida')
+      toast.success(t.setDetail.punchRemoved)
     },
-    onError: () => toast.error('Erro ao remover punção'),
+    onError: () => toast.error(t.setDetail.punchRemoveError),
   })
 
   if (setLoading) {
@@ -95,9 +88,9 @@ export function SetDetailPage() {
   if (!set) {
     return (
       <div className="p-6">
-        <p className="text-muted-foreground">Conjunto não encontrado.</p>
+        <p className="text-muted-foreground">{t.setDetail.notFound}</p>
         <Button variant="ghost" size="sm" onClick={() => navigate('/sets')} className="mt-2">
-          <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
+          <ArrowLeft className="h-4 w-4 mr-1" /> {t.common.back}
         </Button>
       </div>
     )
@@ -116,37 +109,37 @@ export function SetDetailPage() {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <h2 className="text-xl sm:text-2xl font-bold tracking-tight font-mono">{set.code}</h2>
-            <Badge variant={STATUS_VARIANTS[set.status]}>{STATUS_LABELS[set.status]}</Badge>
+            <Badge variant={STATUS_VARIANTS[set.status]}>{t.status[set.status]}</Badge>
           </div>
           <p className="text-muted-foreground text-sm mt-0.5">{set.name}</p>
         </div>
         <Button size="sm" onClick={() => setAddOpen(true)}>
-          <Plus className="h-4 w-4" /> Adicionar Punção
+          <Plus className="h-4 w-4" /> {t.setDetail.addPunch}
         </Button>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <Card>
           <CardContent className="p-3">
-            <p className="text-xs text-muted-foreground">Total de Punções</p>
+            <p className="text-xs text-muted-foreground">{t.setDetail.totalPunches}</p>
             <p className="text-2xl font-bold mt-0.5">{set.punches?.length ?? 0}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-3">
-            <p className="text-xs text-muted-foreground">Superiores</p>
+            <p className="text-xs text-muted-foreground">{t.setDetail.upperPunches}</p>
             <p className="text-2xl font-bold mt-0.5">{upperCount}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-3">
-            <p className="text-xs text-muted-foreground">Inferiores</p>
+            <p className="text-xs text-muted-foreground">{t.setDetail.lowerPunches}</p>
             <p className="text-2xl font-bold mt-0.5">{lowerCount}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-3">
-            <p className="text-xs text-muted-foreground">Matrizes</p>
+            <p className="text-xs text-muted-foreground">{t.setDetail.matrices}</p>
             <p className="text-2xl font-bold mt-0.5">{matrixCount}</p>
           </CardContent>
         </Card>
@@ -154,7 +147,7 @@ export function SetDetailPage() {
 
       {set.notes && (
         <div className="p-3 bg-muted rounded-lg text-sm text-muted-foreground">
-          <span className="font-medium text-foreground">Observações: </span>{set.notes}
+          <span className="font-medium text-foreground">{t.setDetail.notes}</span>{set.notes}
         </div>
       )}
 
@@ -162,31 +155,31 @@ export function SetDetailPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Código</TableHead>
-              <TableHead>Tipo</TableHead>
-              <TableHead>Posição</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="w-16">Ação</TableHead>
+              <TableHead>{t.common.code}</TableHead>
+              <TableHead>{t.common.type}</TableHead>
+              <TableHead>{t.setDetail.position}</TableHead>
+              <TableHead>{t.common.status}</TableHead>
+              <TableHead className="w-16">{t.setDetail.action}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {!set.punches || set.punches.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                  Nenhuma punção cadastrada — clique em "Adicionar Punção" para começar.
+                  {t.setDetail.noPunches}
                 </TableCell>
               </TableRow>
             ) : set.punches.map((punch) => (
               <TableRow key={punch.id}>
                 <TableCell className="font-mono font-medium">{punch.code}</TableCell>
                 <TableCell>
-                  <Badge variant="secondary">{TYPE_LABELS[punch.type] ?? punch.type}</Badge>
+                  <Badge variant="secondary">{t.punchType[punch.type as keyof typeof t.punchType] ?? punch.type}</Badge>
                 </TableCell>
                 <TableCell className="text-muted-foreground">{punch.position ?? '—'}</TableCell>
                 <TableCell>
                   {punch.active
-                    ? <Badge variant="success">Ativa</Badge>
-                    : <Badge variant="secondary">Inativa</Badge>}
+                    ? <Badge variant="success">{t.setDetail.punchActive}</Badge>
+                    : <Badge variant="secondary">{t.setDetail.punchInactive}</Badge>}
                 </TableCell>
                 <TableCell>
                   <Button
@@ -195,7 +188,7 @@ export function SetDetailPage() {
                     className="text-destructive hover:text-destructive"
                     disabled={removeMutation.isPending}
                     onClick={() => {
-                      if (confirm(`Remover punção ${punch.code}?`)) removeMutation.mutate(punch.id)
+                      if (confirm(t.setDetail.removePunchConfirm.replace('{code}', punch.code))) removeMutation.mutate(punch.id)
                     }}
                   >
                     <Trash2 className="h-4 w-4" />
@@ -210,34 +203,34 @@ export function SetDetailPage() {
       {/* Add punch dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle>Adicionar Punção</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t.setDetail.addPunch}</DialogTitle></DialogHeader>
           <form onSubmit={addForm.handleSubmit((d) => addMutation.mutate(d))} className="space-y-4">
             <div className="space-y-1.5">
-              <Label>Código *</Label>
+              <Label>{t.common.code} *</Label>
               <Input placeholder="ex: P01" {...addForm.register('code')} />
               {addForm.formState.errors.code && <p className="text-xs text-destructive">{addForm.formState.errors.code.message}</p>}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label>Tipo *</Label>
+                <Label>{t.common.type} *</Label>
                 <Select defaultValue="upper" onValueChange={(v) => addForm.setValue('type', v as 'upper' | 'lower' | 'matrix')}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="upper">Superior</SelectItem>
-                    <SelectItem value="lower">Inferior</SelectItem>
-                    <SelectItem value="matrix">Matriz</SelectItem>
+                    <SelectItem value="upper">{t.punchType.upper}</SelectItem>
+                    <SelectItem value="lower">{t.punchType.lower}</SelectItem>
+                    <SelectItem value="matrix">{t.punchType.matrix}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label>Posição *</Label>
-                <Input type="number" min="1" placeholder="ex: 1" {...addForm.register('position')} />
+                <Label>{t.setDetail.position} *</Label>
+                <Input type="number" min="1" placeholder={t.setDetail.positionPlaceholder} {...addForm.register('position')} />
                 {addForm.formState.errors.position && <p className="text-xs text-destructive">{addForm.formState.errors.position.message}</p>}
               </div>
             </div>
             <Button type="submit" className="w-full" disabled={addMutation.isPending}>
               {addMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-              Adicionar Punção
+              {t.setDetail.addPunch}
             </Button>
           </form>
         </DialogContent>
