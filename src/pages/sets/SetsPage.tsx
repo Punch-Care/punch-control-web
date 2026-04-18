@@ -203,7 +203,7 @@ export function SetsPage() {
                 {isAdmin && <TableCell className="text-muted-foreground text-xs">{s.company.name}</TableCell>}
                 <TableCell>
                   <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => navigate(`/conjuntos/${s.id}`)}>
+                    <Button variant="ghost" size="icon" onClick={() => navigate(`/sets/${s.id}`)}>
                       <Eye className="h-4 w-4" />
                     </Button>
                     <Button variant="ghost" size="icon" onClick={() => { setEditSet(s); updateForm.reset({ code: s.code, name: s.name, status: s.status, usefulValue: s.usefulValue, l30Limit: s.l30Limit, l60Limit: s.l60Limit, notes: s.notes ?? '' }) }}>

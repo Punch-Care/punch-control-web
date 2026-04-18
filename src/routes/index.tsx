@@ -8,6 +8,7 @@ import { DashboardPage } from '@/pages/dashboard/DashboardPage'
 import { CompaniesPage } from '@/pages/companies/CompaniesPage'
 import { UsersPage } from '@/pages/users/UsersPage'
 import { SetsPage } from '@/pages/sets/SetsPage'
+import { SetDetailPage } from '@/pages/sets/SetDetailPage'
 import { DimensioningPage } from '@/pages/dimensioning/DimensioningPage'
 import { OccurrencesPage } from '@/pages/occurrences/OccurrencesPage'
 import { LifecyclePage } from '@/pages/lifecycle/LifecyclePage'
@@ -27,6 +28,7 @@ export const router = createBrowserRouter([
         children: [
           { path: '/dashboard', element: <DashboardPage /> },
           { path: '/sets', element: <SetsPage /> },
+          { path: '/sets/:id', element: <SetDetailPage /> },
           { path: '/dimensioning', element: <DimensioningPage /> },
           { path: '/occurrences', element: <OccurrencesPage /> },
           { path: '/lifecycle', element: <LifecyclePage /> },

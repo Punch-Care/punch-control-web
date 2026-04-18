@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Download, FileText, BarChart3 } from 'lucide-react'
 import { format } from 'date-fns'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 import { api } from '@/lib/api'
 import { Button } from '@/components/ui/button'
@@ -32,6 +34,8 @@ const STATUS_LABELS_SET: Record<SetStatus, string> = {
   DISCARDED: 'Descartado',
 }
 
+// ── CSV ───────────────────────────────────────────────────────────────────────
+
 function exportCSV(filename: string, headers: string[], rows: string[][]) {
   const bom = '\uFEFF'
   const csv = bom + [headers, ...rows].map((r) => r.map((v) => `"${v}"`).join(';')).join('\n')
@@ -43,6 +47,45 @@ function exportCSV(filename: string, headers: string[], rows: string[][]) {
   a.click()
   URL.revokeObjectURL(url)
 }
+
+// ── PDF helpers ───────────────────────────────────────────────────────────────
+
+const BRAND_COLOR: [number, number, number] = [240, 89, 34] // #F05922
+
+function pdfHeader(doc: jsPDF, title: string, subtitle: string) {
+  doc.setFillColor(...BRAND_COLOR)
+  doc.rect(0, 0, 210, 18, 'F')
+  doc.setTextColor(255, 255, 255)
+  doc.setFontSize(13)
+  doc.setFont('helvetica', 'bold')
+  doc.text('Punch Control', 14, 8)
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'normal')
+  doc.text('Punch Care — Sistema de Gestão de Punções', 14, 13.5)
+
+  doc.setTextColor(40, 40, 40)
+  doc.setFontSize(14)
+  doc.setFont('helvetica', 'bold')
+  doc.text(title, 14, 27)
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(100, 100, 100)
+  doc.text(subtitle, 14, 33)
+  doc.text(`Gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm")}`, 14, 38)
+}
+
+function pdfFooter(doc: jsPDF) {
+  const pages = doc.getNumberOfPages()
+  for (let i = 1; i <= pages; i++) {
+    doc.setPage(i)
+    doc.setFontSize(8)
+    doc.setTextColor(150, 150, 150)
+    doc.text(`Punch Control · Página ${i} de ${pages}`, 14, 290)
+    doc.text('Documento gerado automaticamente — não requer assinatura', 105, 290, { align: 'center' })
+  }
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
 
 export function ReportsPage() {
   const [activeTab, setActiveTab] = useState<'dimensional' | 'ocorrencias' | 'conjuntos'>('conjuntos')
@@ -60,68 +103,140 @@ export function ReportsPage() {
   })
 
   const { data: occurrences = [] } = useQuery<Occurrence[]>({
-    queryKey: ['occurrences'],
+    queryKey: ['occurrences-all'],
     queryFn: () => api.get('/occurrences').then((r) => r.data),
     enabled: activeTab === 'ocorrencias',
   })
 
-  function exportConjuntos() {
+  // ── CSV exports ─────────────────────────────────────────────────────────────
+
+  function exportConjuntosCSV() {
     exportCSV(
       `conjuntos_${format(new Date(), 'yyyyMMdd')}.csv`,
       ['Código', 'Nome', 'Status', 'Vida Útil %', 'Punções', 'Ocorrências', 'Empresa', 'Criado em'],
-      sets.map((s) => [
-        s.code,
-        s.name,
-        STATUS_LABELS_SET[s.status],
-        s.usefulValue.toFixed(1),
-        String(s._count.punches),
-        String(s._count.occurrences),
-        s.company.name,
-        format(new Date(s.createdAt), 'dd/MM/yyyy'),
-      ])
+      sets.map((s) => [s.code, s.name, STATUS_LABELS_SET[s.status], s.usefulValue.toFixed(1), String(s._count.punches), String(s._count.occurrences), s.company.name, format(new Date(s.createdAt), 'dd/MM/yyyy')])
     )
   }
 
-  function exportDimensional() {
+  function exportDimensionalCSV() {
     const rows: string[][] = []
-    for (const r of records) {
-      for (const v of r.values) {
-        rows.push([
-          format(new Date(r.measuredAt), 'dd/MM/yyyy HH:mm'),
-          v.parameter,
-          String(v.value),
-          v.unit,
-          v.lowerLimit != null ? String(v.lowerLimit) : '',
-          v.upperLimit != null ? String(v.upperLimit) : '',
-          v.isOk ? 'OK' : 'NOK',
-          r.notes ?? '',
-        ])
-      }
-    }
-    exportCSV(
-      `dimensional_${format(new Date(), 'yyyyMMdd')}.csv`,
-      ['Data', 'Parâmetro', 'Valor', 'Unidade', 'Lim. Inf.', 'Lim. Sup.', 'Status', 'Observações'],
-      rows
-    )
+    for (const r of records)
+      for (const v of r.values)
+        rows.push([format(new Date(r.measuredAt), 'dd/MM/yyyy HH:mm'), v.parameter, String(v.value), v.unit, v.lowerLimit != null ? String(v.lowerLimit) : '', v.upperLimit != null ? String(v.upperLimit) : '', v.isOk ? 'OK' : 'NOK', r.notes ?? ''])
+    exportCSV(`dimensional_${format(new Date(), 'yyyyMMdd')}.csv`, ['Data', 'Parâmetro', 'Valor', 'Unidade', 'Lim. Inf.', 'Lim. Sup.', 'Status', 'Observações'], rows)
   }
 
-  function exportOcorrencias() {
+  function exportOcorrenciasCSV() {
     exportCSV(
       `ocorrencias_${format(new Date(), 'yyyyMMdd')}.csv`,
       ['Conjunto', 'Tipo', 'Status', 'Máquina', 'Produto', 'Descrição', 'Resolução', 'Aberta em', 'Encerrada em'],
-      occurrences.map((o) => [
-        `${o.set.code} - ${o.set.name}`,
-        TYPE_LABELS[o.type],
-        STATUS_LABELS_OCC[o.status],
-        o.machine?.name ?? '',
-        o.product?.name ?? '',
-        o.description,
-        o.resolution ?? '',
-        format(new Date(o.openedAt), 'dd/MM/yyyy'),
-        o.closedAt ? format(new Date(o.closedAt), 'dd/MM/yyyy') : '',
-      ])
+      occurrences.map((o) => [`${o.set.code} - ${o.set.name}`, TYPE_LABELS[o.type], STATUS_LABELS_OCC[o.status], o.machine?.name ?? '', o.product?.name ?? '', o.description, o.resolution ?? '', format(new Date(o.openedAt), 'dd/MM/yyyy'), o.closedAt ? format(new Date(o.closedAt), 'dd/MM/yyyy') : ''])
     )
   }
+
+  // ── PDF exports ─────────────────────────────────────────────────────────────
+
+  function exportDimensionalPDF() {
+    const selectedSet = sets.find((s) => s.id === selectedSetId)
+    const doc = new jsPDF({ orientation: 'landscape' })
+
+    pdfHeader(doc, 'Relatório Dimensional', `Conjunto: ${selectedSet?.code} — ${selectedSet?.name}`)
+
+    const rows: (string | { content: string; styles: { textColor: [number, number, number] } })[][] = []
+    for (const r of records) {
+      for (const v of r.values) {
+        const statusCell = v.isOk
+          ? { content: 'OK', styles: { textColor: [34, 197, 94] as [number, number, number] } }
+          : { content: 'NOK', styles: { textColor: [239, 68, 68] as [number, number, number] } }
+        rows.push([
+          format(new Date(r.measuredAt), 'dd/MM/yyyy HH:mm'),
+          v.parameter,
+          `${v.value} ${v.unit}`,
+          v.lowerLimit != null ? String(v.lowerLimit) : '—',
+          v.upperLimit != null ? String(v.upperLimit) : '—',
+          statusCell,
+          r.notes ?? '—',
+        ])
+      }
+    }
+
+    autoTable(doc, {
+      startY: 44,
+      head: [['Data / Hora', 'Parâmetro', 'Valor Medido', 'Lim. Inferior', 'Lim. Superior', 'Status', 'Observações']],
+      body: rows,
+      headStyles: { fillColor: BRAND_COLOR, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 9 },
+      bodyStyles: { fontSize: 8 },
+      alternateRowStyles: { fillColor: [250, 250, 250] },
+      columnStyles: { 5: { halign: 'center', fontStyle: 'bold' } },
+      margin: { left: 14, right: 14 },
+    })
+
+    pdfFooter(doc)
+    doc.save(`relatorio_dimensional_${selectedSet?.code}_${format(new Date(), 'yyyyMMdd')}.pdf`)
+  }
+
+  function exportOcorrenciasPDF() {
+    const doc = new jsPDF({ orientation: 'landscape' })
+
+    pdfHeader(doc, 'Relatório de Ocorrências', `Total: ${occurrences.length} ocorrência(s)`)
+
+    autoTable(doc, {
+      startY: 44,
+      head: [['Conjunto', 'Tipo', 'Status', 'Máquina', 'Produto', 'Descrição', 'Resolução', 'Aberta em', 'Encerrada em']],
+      body: occurrences.map((o) => [
+        `${o.set.code}\n${o.set.name}`,
+        TYPE_LABELS[o.type],
+        STATUS_LABELS_OCC[o.status],
+        o.machine?.name ?? '—',
+        o.product?.name ?? '—',
+        o.description,
+        o.resolution ?? '—',
+        format(new Date(o.openedAt), 'dd/MM/yyyy'),
+        o.closedAt ? format(new Date(o.closedAt), 'dd/MM/yyyy') : '—',
+      ]),
+      headStyles: { fillColor: BRAND_COLOR, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8 },
+      bodyStyles: { fontSize: 7.5 },
+      alternateRowStyles: { fillColor: [250, 250, 250] },
+      columnStyles: {
+        0: { cellWidth: 28 },
+        5: { cellWidth: 55 },
+        6: { cellWidth: 45 },
+      },
+      margin: { left: 14, right: 14 },
+      didDrawCell: (data) => {
+        if (data.column.index === 2 && data.section === 'body') {
+          const status = occurrences[data.row.index]?.status
+          if (status === 'OPEN') data.cell.styles.textColor = [239, 68, 68]
+          else if (status === 'MONITORING') data.cell.styles.textColor = [234, 179, 8]
+          else if (status === 'CLOSED') data.cell.styles.textColor = [34, 197, 94]
+        }
+      },
+    })
+
+    pdfFooter(doc)
+    doc.save(`relatorio_ocorrencias_${format(new Date(), 'yyyyMMdd')}.pdf`)
+  }
+
+  function exportConjuntosPDF() {
+    const doc = new jsPDF()
+    pdfHeader(doc, 'Relatório de Conjuntos', `Total: ${sets.length} conjunto(s) cadastrado(s)`)
+
+    autoTable(doc, {
+      startY: 44,
+      head: [['Código', 'Nome', 'Status', 'Vida Útil %', 'Punções', 'Ocorrências', 'Empresa']],
+      body: sets.map((s) => [s.code, s.name, STATUS_LABELS_SET[s.status], `${s.usefulValue.toFixed(1)}%`, String(s._count.punches), String(s._count.occurrences), s.company.name]),
+      headStyles: { fillColor: BRAND_COLOR, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 9 },
+      bodyStyles: { fontSize: 8.5 },
+      alternateRowStyles: { fillColor: [250, 250, 250] },
+      columnStyles: { 3: { halign: 'center' }, 4: { halign: 'center' }, 5: { halign: 'center' } },
+      margin: { left: 14, right: 14 },
+    })
+
+    pdfFooter(doc)
+    doc.save(`relatorio_conjuntos_${format(new Date(), 'yyyyMMdd')}.pdf`)
+  }
+
+  // ── Render ──────────────────────────────────────────────────────────────────
 
   const tabs = [
     { id: 'conjuntos' as const, label: 'Conjuntos', icon: BarChart3 },
@@ -133,7 +248,7 @@ export function ReportsPage() {
     <div className="p-4 sm:p-6 space-y-5">
       <div>
         <h2 className="text-xl sm:text-2xl font-bold tracking-tight">Relatórios e Exportação</h2>
-        <p className="text-muted-foreground text-sm mt-0.5">Geração e exportação de dados para uso externo</p>
+        <p className="text-muted-foreground text-sm mt-0.5">Geração e exportação de dados em CSV e PDF</p>
       </div>
 
       <div className="flex gap-2 border-b">
@@ -151,13 +266,19 @@ export function ReportsPage() {
         ))}
       </div>
 
+      {/* ── Conjuntos tab ── */}
       {activeTab === 'conjuntos' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <p className="text-sm text-muted-foreground">{sets.length} conjuntos cadastrados</p>
-            <Button size="sm" variant="outline" onClick={exportConjuntos} disabled={sets.length === 0}>
-              <Download className="h-4 w-4" /> Exportar CSV
-            </Button>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={exportConjuntosCSV} disabled={sets.length === 0}>
+                <Download className="h-4 w-4" /> CSV
+              </Button>
+              <Button size="sm" onClick={exportConjuntosPDF} disabled={sets.length === 0}>
+                <FileText className="h-4 w-4" /> PDF
+              </Button>
+            </div>
           </div>
           <div className="rounded-xl border overflow-x-auto">
             <Table>
@@ -190,6 +311,7 @@ export function ReportsPage() {
         </div>
       )}
 
+      {/* ── Dimensional tab ── */}
       {activeTab === 'dimensional' && (
         <div className="space-y-4">
           <div className="flex items-center gap-3 flex-wrap">
@@ -203,9 +325,12 @@ export function ReportsPage() {
               </Select>
             </div>
             {selectedSetId && (
-              <div className="pt-6">
-                <Button size="sm" variant="outline" onClick={exportDimensional} disabled={records.length === 0}>
-                  <Download className="h-4 w-4" /> Exportar CSV
+              <div className="flex gap-2 pt-6">
+                <Button size="sm" variant="outline" onClick={exportDimensionalCSV} disabled={records.length === 0}>
+                  <Download className="h-4 w-4" /> CSV
+                </Button>
+                <Button size="sm" onClick={exportDimensionalPDF} disabled={records.length === 0}>
+                  <FileText className="h-4 w-4" /> PDF
                 </Button>
               </div>
             )}
@@ -221,22 +346,22 @@ export function ReportsPage() {
                     <TableHead>Lim. Inf.</TableHead>
                     <TableHead>Lim. Sup.</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Observações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {records.length === 0 ? (
-                    <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Nenhum registro</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Nenhum registro</TableCell></TableRow>
                   ) : records.flatMap((r) =>
                     r.values.map((v) => (
                       <TableRow key={v.id}>
-                        <TableCell className="text-xs text-muted-foreground">{format(new Date(r.measuredAt), 'dd/MM/yyyy HH:mm')}</TableCell>
-                        <TableCell className="text-sm">{v.parameter}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{format(new Date(r.measuredAt), 'dd/MM/yyyy HH:mm')}</TableCell>
+                        <TableCell className="text-sm font-mono">{v.parameter}</TableCell>
                         <TableCell className="tabular-nums">{v.value} {v.unit}</TableCell>
                         <TableCell className="text-muted-foreground tabular-nums">{v.lowerLimit ?? '—'}</TableCell>
                         <TableCell className="text-muted-foreground tabular-nums">{v.upperLimit ?? '—'}</TableCell>
-                        <TableCell>
-                          <Badge variant={v.isOk ? 'success' : 'destructive'}>{v.isOk ? 'OK' : 'NOK'}</Badge>
-                        </TableCell>
+                        <TableCell><Badge variant={v.isOk ? 'success' : 'destructive'}>{v.isOk ? 'OK' : 'NOK'}</Badge></TableCell>
+                        <TableCell className="text-xs text-muted-foreground max-w-[160px] truncate">{r.notes ?? '—'}</TableCell>
                       </TableRow>
                     ))
                   )}
@@ -244,18 +369,24 @@ export function ReportsPage() {
               </Table>
             </div>
           ) : (
-            <Card><CardContent className="py-12 text-center text-muted-foreground">Selecione um conjunto para ver os registros dimensionais</CardContent></Card>
+            <Card><CardContent className="py-12 text-center text-muted-foreground">Selecione um conjunto para visualizar os registros dimensionais</CardContent></Card>
           )}
         </div>
       )}
 
+      {/* ── Ocorrências tab ── */}
       {activeTab === 'ocorrencias' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <p className="text-sm text-muted-foreground">{occurrences.length} ocorrências</p>
-            <Button size="sm" variant="outline" onClick={exportOcorrencias} disabled={occurrences.length === 0}>
-              <Download className="h-4 w-4" /> Exportar CSV
-            </Button>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={exportOcorrenciasCSV} disabled={occurrences.length === 0}>
+                <Download className="h-4 w-4" /> CSV
+              </Button>
+              <Button size="sm" onClick={exportOcorrenciasPDF} disabled={occurrences.length === 0}>
+                <FileText className="h-4 w-4" /> PDF
+              </Button>
+            </div>
           </div>
           <div className="rounded-xl border overflow-x-auto">
             <Table>
@@ -264,6 +395,8 @@ export function ReportsPage() {
                   <TableHead>Conjunto</TableHead>
                   <TableHead>Tipo</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Máquina</TableHead>
+                  <TableHead>Produto</TableHead>
                   <TableHead>Descrição</TableHead>
                   <TableHead>Aberta em</TableHead>
                   <TableHead>Encerrada em</TableHead>
@@ -271,15 +404,20 @@ export function ReportsPage() {
               </TableHeader>
               <TableBody>
                 {occurrences.length === 0 ? (
-                  <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Nenhuma ocorrência</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Nenhuma ocorrência</TableCell></TableRow>
                 ) : occurrences.map((o) => (
                   <TableRow key={o.id}>
-                    <TableCell className="font-mono text-xs">{o.set.code}</TableCell>
+                    <TableCell>
+                      <p className="font-mono text-xs font-medium">{o.set.code}</p>
+                      <p className="text-xs text-muted-foreground">{o.set.name}</p>
+                    </TableCell>
                     <TableCell><Badge variant="secondary">{TYPE_LABELS[o.type]}</Badge></TableCell>
                     <TableCell><Badge variant={o.status === 'OPEN' ? 'destructive' : o.status === 'MONITORING' ? 'warning' : 'success'}>{STATUS_LABELS_OCC[o.status]}</Badge></TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{o.machine?.name ?? '—'}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{o.product?.name ?? '—'}</TableCell>
                     <TableCell className="max-w-[200px] truncate text-sm">{o.description}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{format(new Date(o.openedAt), 'dd/MM/yyyy')}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{o.closedAt ? format(new Date(o.closedAt), 'dd/MM/yyyy') : '—'}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{format(new Date(o.openedAt), 'dd/MM/yyyy')}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{o.closedAt ? format(new Date(o.closedAt), 'dd/MM/yyyy') : '—'}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

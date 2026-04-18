@@ -16,6 +16,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { useAuth } from '@/hooks/useAuth'
 import type { Occurrence, OccurrenceStatus, OccurrenceType, PunchSet, Machine, Product } from '@/types'
 
 const TYPE_LABELS: Record<OccurrenceType, string> = {
@@ -52,14 +53,32 @@ const updateSchema = z.object({
   resolution: z.string().optional(),
 })
 
+const machineSchema = z.object({
+  name: z.string().min(2, 'Nome obrigatório'),
+  code: z.string().min(1, 'Código obrigatório'),
+  companyId: z.string().uuid('Selecione uma empresa'),
+})
+
+const productSchema = z.object({
+  name: z.string().min(2, 'Nome obrigatório'),
+  code: z.string().min(1, 'Código obrigatório'),
+  companyId: z.string().uuid('Selecione uma empresa'),
+})
+
 type CreateData = z.infer<typeof createSchema>
 type UpdateData = z.infer<typeof updateSchema>
+type MachineData = z.infer<typeof machineSchema>
+type ProductData = z.infer<typeof productSchema>
 
 export function OccurrencesPage() {
   const qc = useQueryClient()
+  const { user } = useAuth()
+  const isAdmin = user?.role === 'ADMIN' || user?.role === 'MANAGER'
   const [createOpen, setCreateOpen] = useState(false)
   const [editOcc, setEditOcc] = useState<Occurrence | null>(null)
   const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [machineCreateOpen, setMachineCreateOpen] = useState(false)
+  const [productCreateOpen, setProductCreateOpen] = useState(false)
 
   const { data: occurrences = [], isLoading } = useQuery<Occurrence[]>({
     queryKey: ['occurrences', statusFilter],
@@ -69,6 +88,12 @@ export function OccurrencesPage() {
   const { data: sets = [] } = useQuery<PunchSet[]>({
     queryKey: ['punch-sets'],
     queryFn: () => api.get('/punch-sets').then((r) => r.data),
+  })
+
+  const { data: companies = [] } = useQuery<{ id: string; name: string }[]>({
+    queryKey: ['companies'],
+    queryFn: () => api.get('/companies').then((r) => r.data),
+    enabled: isAdmin,
   })
 
   const { data: machines = [] } = useQuery<Machine[]>({
@@ -83,6 +108,14 @@ export function OccurrencesPage() {
 
   const createForm = useForm<CreateData>({ resolver: zodResolver(createSchema) })
   const updateForm = useForm<UpdateData>({ resolver: zodResolver(updateSchema) })
+  const machineForm = useForm<MachineData>({
+    resolver: zodResolver(machineSchema),
+    defaultValues: { companyId: user?.company?.id ?? '' },
+  })
+  const productForm = useForm<ProductData>({
+    resolver: zodResolver(productSchema),
+    defaultValues: { companyId: user?.company?.id ?? '' },
+  })
 
   const createMutation = useMutation({
     mutationFn: (data: CreateData) => api.post('/occurrences', data),
@@ -105,6 +138,30 @@ export function OccurrencesPage() {
     },
     onError: (e: { response?: { data?: { message?: string } } }) =>
       toast.error(e.response?.data?.message ?? 'Erro ao atualizar'),
+  })
+
+  const createMachineMutation = useMutation({
+    mutationFn: (data: MachineData) => api.post('/occurrences/machines', data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['machines'] })
+      setMachineCreateOpen(false)
+      machineForm.reset()
+      toast.success('Máquina cadastrada')
+    },
+    onError: (e: { response?: { data?: { message?: string } } }) =>
+      toast.error(e.response?.data?.message ?? 'Erro ao cadastrar máquina'),
+  })
+
+  const createProductMutation = useMutation({
+    mutationFn: (data: ProductData) => api.post('/occurrences/products', data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['products'] })
+      setProductCreateOpen(false)
+      productForm.reset()
+      toast.success('Produto cadastrado')
+    },
+    onError: (e: { response?: { data?: { message?: string } } }) =>
+      toast.error(e.response?.data?.message ?? 'Erro ao cadastrar produto'),
   })
 
   return (
@@ -182,7 +239,7 @@ export function OccurrencesPage() {
         </Table>
       </div>
 
-      {/* Create dialog */}
+      {/* Create occurrence dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle>Nova Ocorrência</DialogTitle></DialogHeader>
@@ -213,7 +270,16 @@ export function OccurrencesPage() {
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label>Máquina</Label>
+                <div className="flex items-center justify-between">
+                  <Label>Máquina</Label>
+                  <button
+                    type="button"
+                    onClick={() => setMachineCreateOpen(true)}
+                    className="text-xs text-primary hover:underline flex items-center gap-0.5"
+                  >
+                    <Plus className="h-3 w-3" /> Nova
+                  </button>
+                </div>
                 <Select onValueChange={(v) => createForm.setValue('machineId', v)}>
                   <SelectTrigger><SelectValue placeholder="Opcional" /></SelectTrigger>
                   <SelectContent>
@@ -222,7 +288,16 @@ export function OccurrencesPage() {
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label>Produto</Label>
+                <div className="flex items-center justify-between">
+                  <Label>Produto</Label>
+                  <button
+                    type="button"
+                    onClick={() => setProductCreateOpen(true)}
+                    className="text-xs text-primary hover:underline flex items-center gap-0.5"
+                  >
+                    <Plus className="h-3 w-3" /> Novo
+                  </button>
+                </div>
                 <Select onValueChange={(v) => createForm.setValue('productId', v)}>
                   <SelectTrigger><SelectValue placeholder="Opcional" /></SelectTrigger>
                   <SelectContent>
@@ -293,6 +368,76 @@ export function OccurrencesPage() {
               </form>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* New machine dialog */}
+      <Dialog open={machineCreateOpen} onOpenChange={setMachineCreateOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Nova Máquina</DialogTitle></DialogHeader>
+          <form onSubmit={machineForm.handleSubmit((d) => createMachineMutation.mutate(d))} className="space-y-4">
+            {isAdmin && (
+              <div className="space-y-1.5">
+                <Label>Empresa *</Label>
+                <Select onValueChange={(v) => machineForm.setValue('companyId', v)}>
+                  <SelectTrigger><SelectValue placeholder="Selecione a empresa" /></SelectTrigger>
+                  <SelectContent>
+                    {companies.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                {machineForm.formState.errors.companyId && <p className="text-xs text-destructive">{machineForm.formState.errors.companyId.message}</p>}
+              </div>
+            )}
+            <div className="space-y-1.5">
+              <Label>Nome *</Label>
+              <Input placeholder="ex: Fette 1200" {...machineForm.register('name')} />
+              {machineForm.formState.errors.name && <p className="text-xs text-destructive">{machineForm.formState.errors.name.message}</p>}
+            </div>
+            <div className="space-y-1.5">
+              <Label>Código *</Label>
+              <Input placeholder="ex: FETTE-01" {...machineForm.register('code')} />
+              {machineForm.formState.errors.code && <p className="text-xs text-destructive">{machineForm.formState.errors.code.message}</p>}
+            </div>
+            <Button type="submit" className="w-full" disabled={createMachineMutation.isPending}>
+              {createMachineMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              Cadastrar Máquina
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* New product dialog */}
+      <Dialog open={productCreateOpen} onOpenChange={setProductCreateOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Novo Produto</DialogTitle></DialogHeader>
+          <form onSubmit={productForm.handleSubmit((d) => createProductMutation.mutate(d))} className="space-y-4">
+            {isAdmin && (
+              <div className="space-y-1.5">
+                <Label>Empresa *</Label>
+                <Select onValueChange={(v) => productForm.setValue('companyId', v)}>
+                  <SelectTrigger><SelectValue placeholder="Selecione a empresa" /></SelectTrigger>
+                  <SelectContent>
+                    {companies.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                {productForm.formState.errors.companyId && <p className="text-xs text-destructive">{productForm.formState.errors.companyId.message}</p>}
+              </div>
+            )}
+            <div className="space-y-1.5">
+              <Label>Nome *</Label>
+              <Input placeholder="ex: Paracetamol 500mg" {...productForm.register('name')} />
+              {productForm.formState.errors.name && <p className="text-xs text-destructive">{productForm.formState.errors.name.message}</p>}
+            </div>
+            <div className="space-y-1.5">
+              <Label>Código *</Label>
+              <Input placeholder="ex: PARA-500" {...productForm.register('code')} />
+              {productForm.formState.errors.code && <p className="text-xs text-destructive">{productForm.formState.errors.code.message}</p>}
+            </div>
+            <Button type="submit" className="w-full" disabled={createProductMutation.isPending}>
+              {createProductMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              Cadastrar Produto
+            </Button>
+          </form>
         </DialogContent>
       </Dialog>
     </div>
