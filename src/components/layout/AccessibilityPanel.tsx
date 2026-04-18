@@ -7,40 +7,12 @@ import { useSettingsStore } from '@/store/settings.store'
 import { useLocale } from '@/hooks/useLocale'
 
 declare global {
-  interface Window {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    VLibras?: any
-  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  interface Window { VLibras?: any }
 }
 
-function injectVLibras() {
-  if (document.getElementById('vlibras-wrapper')) return
-
-  const wrapper = document.createElement('div')
-  wrapper.id = 'vlibras-wrapper'
-  wrapper.setAttribute('vw', '')
-  wrapper.classList.add('enabled')
-
-  const accessBtn = document.createElement('div')
-  accessBtn.setAttribute('vw-access-button', '')
-  accessBtn.classList.add('active')
-
-  const pluginWrapper = document.createElement('div')
-  pluginWrapper.setAttribute('vw-plugin-wrapper', '')
-
-  const topWrapper = document.createElement('div')
-  topWrapper.classList.add('vw-plugin-top-wrapper')
-
-  pluginWrapper.appendChild(topWrapper)
-  wrapper.appendChild(accessBtn)
-  wrapper.appendChild(pluginWrapper)
-  document.body.appendChild(wrapper)
-
-  if (document.getElementById('vlibras-script')) {
-    if (window.VLibras) new window.VLibras.Widget('https://vlibras.gov.br/app')
-    return
-  }
-
+function loadVLibrasScript() {
+  if (document.getElementById('vlibras-script')) return
   const script = document.createElement('script')
   script.id = 'vlibras-script'
   script.src = 'https://vlibras.gov.br/app/vlibras-plugin.js'
@@ -50,17 +22,15 @@ function injectVLibras() {
   document.head.appendChild(script)
 }
 
-function removeVLibras() {
-  document.getElementById('vlibras-wrapper')?.remove()
-  document.getElementById('vlibras-script')?.remove()
-}
-
 function VLibrasSync({ enabled }: { enabled: boolean }) {
   useEffect(() => {
+    const wrapper = document.getElementById('vlibras-wrapper')
+    if (!wrapper) return
     if (enabled) {
-      injectVLibras()
+      wrapper.style.display = ''
+      loadVLibrasScript()
     } else {
-      removeVLibras()
+      wrapper.style.display = 'none'
     }
   }, [enabled])
   return null

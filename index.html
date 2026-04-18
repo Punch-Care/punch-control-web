@@ -12,5 +12,13 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+
+    <!-- VLibras widget — elements must exist in DOM before script init -->
+    <div id="vlibras-wrapper" vw class="enabled" style="display:none">
+      <div vw-access-button class="active"></div>
+      <div vw-plugin-wrapper>
+        <div class="vw-plugin-top-wrapper"></div>
+      </div>
+    </div>
   </body>
 </html>
