@@ -132,6 +132,8 @@ const translations = {
       codeRequired: 'Código obrigatório',
       nameMinLength: 'Nome deve ter no mínimo 2 caracteres',
       selectCompanyRequired: 'Selecione uma empresa',
+      productsLabel: 'Produtos fabricados por este conjunto',
+      noProductsForCompany: 'Nenhum produto cadastrado para esta empresa — cadastre em Produtos primeiro.',
     },
     setDetail: {
       addPunch: 'Adicionar Punção',
@@ -492,6 +494,8 @@ const translations = {
       codeRequired: 'Code required',
       nameMinLength: 'Name must be at least 2 characters',
       selectCompanyRequired: 'Select a company',
+      productsLabel: 'Products manufactured by this set',
+      noProductsForCompany: 'No products registered for this company — register in Products first.',
     },
     setDetail: {
       addPunch: 'Add Punch',
@@ -852,6 +856,8 @@ const translations = {
       codeRequired: 'Código requerido',
       nameMinLength: 'El nombre debe tener al menos 2 caracteres',
       selectCompanyRequired: 'Seleccione una empresa',
+      productsLabel: 'Productos fabricados por este conjunto',
+      noProductsForCompany: 'Sin productos registrados para esta empresa — registre en Productos primero.',
     },
     setDetail: {
       addPunch: 'Agregar Punzón',

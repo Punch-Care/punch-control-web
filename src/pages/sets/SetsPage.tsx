@@ -18,7 +18,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useAuth } from '@/hooks/useAuth'
 import { useLocale } from '@/hooks/useLocale'
-import type { PunchSet, SetStatus } from '@/types'
+import type { PunchSet, Product, SetStatus } from '@/types'
 
 const STATUS_VARIANTS: Record<SetStatus, 'success' | 'warning' | 'secondary' | 'destructive'> = {
   ACTIVE: 'success',
@@ -49,13 +49,17 @@ export function SetsPage() {
   const [createOpen, setCreateOpen] = useState(false)
   const [editSet, setEditSet] = useState<PunchSet | null>(null)
   const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [createCompanyId, setCreateCompanyId] = useState<string>('')
+  const [selectedProductIds, setSelectedProductIds] = useState<string[]>([])
 
   const createSchema = useMemo(
     () =>
       z.object({
         code: z.string().min(1, t.sets.codeRequired),
         name: z.string().min(2, t.sets.nameMinLength),
-        companyId: z.string().uuid(t.sets.selectCompanyRequired),
+        companyId: isAdmin
+          ? z.string().uuid(t.sets.selectCompanyRequired)
+          : z.string().optional(),
         l30Limit: z.coerce.number().min(0).max(100).default(30),
         l60Limit: z.coerce.number().min(0).max(100).default(60),
         notes: z.string().optional(),
@@ -92,6 +96,18 @@ export function SetsPage() {
     enabled: isAdmin,
   })
 
+  const activeCompanyId = isAdmin ? createCompanyId : (user?.company?.id ?? '')
+  const { data: companyProducts = [] } = useQuery<Product[]>({
+    queryKey: ['products', activeCompanyId],
+    queryFn: () => api.get('/products', { params: { companyId: activeCompanyId || undefined } }).then((r) => r.data),
+    enabled: !!activeCompanyId && createOpen,
+  })
+
+  const toggleProduct = (productId: string) =>
+    setSelectedProductIds((prev) =>
+      prev.includes(productId) ? prev.filter((id) => id !== productId) : [...prev, productId],
+    )
+
   const createForm = useForm<CreateData>({
     resolver: zodResolver(createSchema),
     defaultValues: { l30Limit: 30, l60Limit: 60 },
@@ -100,11 +116,24 @@ export function SetsPage() {
   const updateForm = useForm<UpdateData>({ resolver: zodResolver(updateSchema) })
 
   const createMutation = useMutation({
-    mutationFn: (data: CreateData) => api.post('/punch-sets', data),
+    mutationFn: async (data: CreateData) => {
+      const companyId = isAdmin ? data.companyId : (user?.company?.id ?? '')
+      const set = await api.post('/punch-sets', { ...data, companyId })
+      if (selectedProductIds.length > 0) {
+        await Promise.all(
+          selectedProductIds.map((productId) =>
+            api.post(`/punch-sets/${set.data.id}/products`, { productId }),
+          ),
+        )
+      }
+      return set
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['punch-sets'] })
       setCreateOpen(false)
       createForm.reset()
+      setSelectedProductIds([])
+      setCreateCompanyId('')
       toast.success(t.sets.created)
     },
     onError: (e: { response?: { data?: { message?: string } } }) =>
@@ -226,14 +255,14 @@ export function SetsPage() {
       </div>
 
       {/* Create dialog */}
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="max-w-md">
+      <Dialog open={createOpen} onOpenChange={(o) => { setCreateOpen(o); if (!o) { setSelectedProductIds([]); setCreateCompanyId('') } }}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{t.sets.newSet}</DialogTitle></DialogHeader>
           <form onSubmit={createForm.handleSubmit((d) => createMutation.mutate(d))} className="space-y-4">
             {isAdmin && (
               <div className="space-y-1.5">
                 <Label>{t.common.company} *</Label>
-                <Select onValueChange={(v) => createForm.setValue('companyId', v)}>
+                <Select onValueChange={(v) => { createForm.setValue('companyId', v); setCreateCompanyId(v); setSelectedProductIds([]) }}>
                   <SelectTrigger><SelectValue placeholder={t.common.selectCompany} /></SelectTrigger>
                   <SelectContent>
                     {companies.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
@@ -268,6 +297,37 @@ export function SetsPage() {
               <Label>{t.common.notes}</Label>
               <Input placeholder={t.common.optional} {...createForm.register('notes')} />
             </div>
+
+            {/* Seleção de produtos */}
+            {activeCompanyId && (
+              <div className="space-y-2">
+                <Label>{t.sets.productsLabel}</Label>
+                {companyProducts.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">{t.sets.noProductsForCompany}</p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {companyProducts.map((p) => {
+                      const selected = selectedProductIds.includes(p.id)
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => toggleProduct(p.id)}
+                          className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                            selected
+                              ? 'bg-primary text-primary-foreground border-primary'
+                              : 'border-border text-muted-foreground hover:border-foreground'
+                          }`}
+                        >
+                          {p.name}{p.code ? ` · ${p.code}` : ''}
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
             <Button type="submit" className="w-full" disabled={createMutation.isPending}>
               {createMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
               {t.sets.createSet}
