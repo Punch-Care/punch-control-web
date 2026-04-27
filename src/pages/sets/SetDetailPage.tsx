@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { ArrowLeft, Plus, Trash2, Loader2 } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Loader2, Link2, Unlink } from 'lucide-react'
 import { toast } from 'sonner'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
@@ -16,8 +16,9 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { useAuth } from '@/hooks/useAuth'
 import { useLocale } from '@/hooks/useLocale'
-import type { PunchSet, Punch, SetStatus } from '@/types'
+import type { PunchSet, Punch, Product, SetStatus } from '@/types'
 
 const STATUS_VARIANTS: Record<SetStatus, 'success' | 'warning' | 'secondary' | 'destructive'> = {
   ACTIVE: 'success',
@@ -31,7 +32,11 @@ export function SetDetailPage() {
   const navigate = useNavigate()
   const qc = useQueryClient()
   const { t } = useLocale()
+  const { user } = useAuth()
+  const canEdit = user?.role !== 'CLIENT'
   const [addOpen, setAddOpen] = useState(false)
+  const [linkOpen, setLinkOpen] = useState(false)
+  const [selectedProductId, setSelectedProductId] = useState('')
 
   const addPunchSchema = useMemo(
     () =>
@@ -49,6 +54,39 @@ export function SetDetailPage() {
     queryKey: ['punch-set', id],
     queryFn: () => api.get(`/punch-sets/${id}`).then((r) => r.data),
     enabled: !!id,
+  })
+
+  const { data: linkedProducts = [] } = useQuery<Product[]>({
+    queryKey: ['punch-set-products', id],
+    queryFn: () => api.get(`/punch-sets/${id}/products`).then((r) => r.data),
+    enabled: !!id,
+  })
+
+  const { data: allProducts = [] } = useQuery<Product[]>({
+    queryKey: ['products'],
+    queryFn: () => api.get('/products').then((r) => r.data),
+    enabled: linkOpen,
+  })
+
+  const linkMutation = useMutation({
+    mutationFn: (productId: string) => api.post(`/punch-sets/${id}/products`, { productId }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['punch-set-products', id] })
+      setLinkOpen(false)
+      setSelectedProductId('')
+      toast.success(t.products.linked)
+    },
+    onError: (e: { response?: { data?: { message?: string } } }) =>
+      toast.error(e.response?.data?.message ?? t.products.linkError),
+  })
+
+  const unlinkMutation = useMutation({
+    mutationFn: (productId: string) => api.delete(`/punch-sets/${id}/products/${productId}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['punch-set-products', id] })
+      toast.success(t.products.unlinked)
+    },
+    onError: () => toast.error(t.products.unlinkError),
   })
 
   const addForm = useForm<AddPunchData>({
@@ -199,6 +237,94 @@ export function SetDetailPage() {
           </TableBody>
         </Table>
       </div>
+
+      {/* Produtos vinculados */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold text-base">{t.products.linkedSets}</h3>
+          {canEdit && (
+            <Button size="sm" variant="outline" onClick={() => setLinkOpen(true)}>
+              <Link2 className="h-4 w-4" /> {t.products.linkProduct}
+            </Button>
+          )}
+        </div>
+        <div className="rounded-xl border overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t.common.name}</TableHead>
+                <TableHead>{t.common.code}</TableHead>
+                <TableHead>{t.common.status}</TableHead>
+                {canEdit && <TableHead className="w-16">{t.common.actions}</TableHead>}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {linkedProducts.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-6 text-muted-foreground text-sm">
+                    {t.products.noLinkedProducts}
+                  </TableCell>
+                </TableRow>
+              ) : linkedProducts.map((p) => (
+                <TableRow key={p.id}>
+                  <TableCell className="font-medium">{p.name}</TableCell>
+                  <TableCell className="font-mono text-muted-foreground text-sm">{p.code ?? '—'}</TableCell>
+                  <TableCell>
+                    {p.active
+                      ? <Badge variant="success">{t.common.activeF}</Badge>
+                      : <Badge variant="secondary">{t.common.inactiveF}</Badge>}
+                  </TableCell>
+                  {canEdit && (
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-destructive hover:text-destructive"
+                        disabled={unlinkMutation.isPending}
+                        onClick={() => unlinkMutation.mutate(p.id)}
+                      >
+                        <Unlink className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+
+      {/* Link product dialog */}
+      <Dialog open={linkOpen} onOpenChange={(o) => { setLinkOpen(o); if (!o) setSelectedProductId('') }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>{t.products.linkProduct}</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label>{t.products.selectProduct}</Label>
+              <Select value={selectedProductId} onValueChange={setSelectedProductId}>
+                <SelectTrigger><SelectValue placeholder={t.products.selectProduct} /></SelectTrigger>
+                <SelectContent>
+                  {allProducts
+                    .filter((p) => !linkedProducts.some((lp) => lp.id === p.id))
+                    .map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.name}{p.code ? ` · ${p.code}` : ''}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              className="w-full"
+              disabled={!selectedProductId || linkMutation.isPending}
+              onClick={() => linkMutation.mutate(selectedProductId)}
+            >
+              {linkMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              {t.products.linkProduct}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Add punch dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>

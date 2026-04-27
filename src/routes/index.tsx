@@ -13,6 +13,7 @@ import { DimensioningPage } from '@/pages/dimensioning/DimensioningPage'
 import { OccurrencesPage } from '@/pages/occurrences/OccurrencesPage'
 import { LifecyclePage } from '@/pages/lifecycle/LifecyclePage'
 import { ReportsPage } from '@/pages/reports/ReportsPage'
+import { ProductsPage } from '@/pages/products/ProductsPage'
 
 export const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
@@ -29,6 +30,7 @@ export const router = createBrowserRouter([
           { path: '/dashboard', element: <DashboardPage /> },
           { path: '/sets', element: <SetsPage /> },
           { path: '/sets/:id', element: <SetDetailPage /> },
+          { path: '/products', element: <ProductsPage /> },
           { path: '/dimensioning', element: <DimensioningPage /> },
           { path: '/occurrences', element: <OccurrencesPage /> },
           { path: '/lifecycle', element: <LifecyclePage /> },

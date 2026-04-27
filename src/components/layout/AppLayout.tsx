@@ -3,6 +3,7 @@ import { NavLink, Outlet } from 'react-router-dom'
 import {
   LayoutDashboard,
   Package,
+  Box,
   Ruler,
   AlertTriangle,
   RefreshCw,
@@ -24,8 +25,9 @@ import { AccessibilityButton } from '@/components/layout/AccessibilityPanel'
 interface NavItem { to: string; labelKey: keyof ReturnType<typeof useLocale>['t']['nav']; icon: React.ElementType }
 
 const navItems: NavItem[] = [
-  { to: '/dashboard', labelKey: 'dashboard', icon: LayoutDashboard },
-  { to: '/sets',      labelKey: 'sets',       icon: Package },
+  { to: '/dashboard',    labelKey: 'dashboard',    icon: LayoutDashboard },
+  { to: '/sets',         labelKey: 'sets',         icon: Package },
+  { to: '/products',     labelKey: 'products',     icon: Box },
   { to: '/dimensioning', labelKey: 'dimensioning', icon: Ruler },
   { to: '/occurrences',  labelKey: 'occurrences',  icon: AlertTriangle },
   { to: '/lifecycle',    labelKey: 'lifecycle',    icon: RefreshCw },

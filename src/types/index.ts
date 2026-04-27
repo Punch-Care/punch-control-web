@@ -93,6 +93,8 @@ export interface Product {
   code: string | null
   companyId: string
   active: boolean
+  company?: { id: string; name: string }
+  _count?: { punchSetProducts: number; occurrences: number }
 }
 
 export interface Occurrence {
