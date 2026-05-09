@@ -18,6 +18,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useAuth } from '@/hooks/useAuth'
 import { useLocale } from '@/hooks/useLocale'
+import { useAdminCompany } from '@/hooks/useAdminCompany'
 import type { PunchSet, Product, SetStatus } from '@/types'
 
 const STATUS_VARIANTS: Record<SetStatus, 'success' | 'warning' | 'secondary' | 'destructive'> = {
@@ -45,6 +46,7 @@ export function SetsPage() {
   const { user } = useAuth()
   const { t } = useLocale()
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'MANAGER'
+  const { companyId: adminCompanyId, selectedCompany } = useAdminCompany()
 
   const [createOpen, setCreateOpen] = useState(false)
   const [editSet, setEditSet] = useState<PunchSet | null>(null)
@@ -57,7 +59,7 @@ export function SetsPage() {
       z.object({
         code: z.string().min(1, t.sets.codeRequired),
         name: z.string().min(2, t.sets.nameMinLength),
-        companyId: isAdmin
+        companyId: isAdmin && !selectedCompany
           ? z.string().uuid(t.sets.selectCompanyRequired)
           : z.string().optional(),
         l30Limit: z.coerce.number().min(0).max(100).default(30),
@@ -86,17 +88,20 @@ export function SetsPage() {
   type UpdateData = z.infer<typeof updateSchema>
 
   const { data: sets = [], isLoading } = useQuery<PunchSet[]>({
-    queryKey: ['punch-sets'],
-    queryFn: () => api.get('/punch-sets').then((r) => r.data),
+    queryKey: ['punch-sets', adminCompanyId],
+    queryFn: () => api.get('/punch-sets', { params: { companyId: adminCompanyId } }).then((r) => r.data),
   })
 
   const { data: companies = [] } = useQuery<{ id: string; name: string }[]>({
     queryKey: ['companies'],
     queryFn: () => api.get('/companies').then((r) => r.data),
-    enabled: isAdmin,
+    enabled: isAdmin && !selectedCompany,
   })
 
-  const activeCompanyId = isAdmin ? createCompanyId : (user?.company?.id ?? '')
+  // In admin context with selected company, pre-fill companyId in the create form
+  const activeCompanyId = isAdmin
+    ? (selectedCompany?.id || createCompanyId)
+    : (user?.company?.id ?? '')
   const { data: companyProducts = [] } = useQuery<Product[]>({
     queryKey: ['products', activeCompanyId],
     queryFn: () => api.get('/products', { params: { companyId: activeCompanyId || undefined } }).then((r) => r.data),
@@ -117,7 +122,7 @@ export function SetsPage() {
 
   const createMutation = useMutation({
     mutationFn: async (data: CreateData) => {
-      const companyId = isAdmin ? data.companyId : (user?.company?.id ?? '')
+      const companyId = isAdmin ? (selectedCompany?.id || data.companyId) : (user?.company?.id ?? '')
       const set = await api.post('/punch-sets', { ...data, companyId })
       if (selectedProductIds.length > 0) {
         await Promise.all(
@@ -211,7 +216,7 @@ export function SetsPage() {
               <TableHead>{t.sets.usefulLife}</TableHead>
               <TableHead>{t.sets.punches}</TableHead>
               <TableHead>{t.sets.occurrences}</TableHead>
-              {isAdmin && <TableHead>{t.common.company}</TableHead>}
+              {isAdmin && !selectedCompany && <TableHead>{t.common.company}</TableHead>}
               <TableHead className="w-28">{t.common.actions}</TableHead>
             </TableRow>
           </TableHeader>
@@ -232,7 +237,7 @@ export function SetsPage() {
                 </TableCell>
                 <TableCell className="text-muted-foreground">{s._count.punches}</TableCell>
                 <TableCell className="text-muted-foreground">{s._count.occurrences}</TableCell>
-                {isAdmin && <TableCell className="text-muted-foreground text-xs">{s.company.name}</TableCell>}
+                {isAdmin && !selectedCompany && <TableCell className="text-muted-foreground text-xs">{s.company.name}</TableCell>}
                 <TableCell>
                   <div className="flex gap-1">
                     <Button variant="ghost" size="icon" onClick={() => navigate(`/sets/${s.id}`)}>
@@ -259,7 +264,7 @@ export function SetsPage() {
         <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{t.sets.newSet}</DialogTitle></DialogHeader>
           <form onSubmit={createForm.handleSubmit((d) => createMutation.mutate(d))} className="space-y-4">
-            {isAdmin && (
+            {isAdmin && !selectedCompany && (
               <div className="space-y-1.5">
                 <Label>{t.common.company} *</Label>
                 <Select onValueChange={(v) => { createForm.setValue('companyId', v); setCreateCompanyId(v); setSelectedProductIds([]) }}>

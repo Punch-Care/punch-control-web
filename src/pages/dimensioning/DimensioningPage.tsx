@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useLocale } from '@/hooks/useLocale'
+import { useAdminCompany } from '@/hooks/useAdminCompany'
 import type { PunchSet, DimensionRecord } from '@/types'
 
 function RecordRow({ record, t }: { record: DimensionRecord; t: ReturnType<typeof useLocale>['t'] }) {
@@ -83,6 +84,7 @@ function RecordRow({ record, t }: { record: DimensionRecord; t: ReturnType<typeo
 export function DimensioningPage() {
   const qc = useQueryClient()
   const { t } = useLocale()
+  const { companyId: adminCompanyId } = useAdminCompany()
   const [selectedSetId, setSelectedSetId] = useState<string>('')
   const [createOpen, setCreateOpen] = useState(false)
 
@@ -110,8 +112,8 @@ export function DimensioningPage() {
   type FormData = z.infer<typeof createSchema>
 
   const { data: sets = [] } = useQuery<PunchSet[]>({
-    queryKey: ['punch-sets'],
-    queryFn: () => api.get('/punch-sets').then((r) => r.data),
+    queryKey: ['punch-sets', adminCompanyId],
+    queryFn: () => api.get('/punch-sets', { params: { companyId: adminCompanyId } }).then((r) => r.data),
   })
 
   const { data: records = [], isLoading } = useQuery<DimensionRecord[]>({

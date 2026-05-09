@@ -6,6 +6,7 @@ import { LandingPage } from '@/pages/landing/LandingPage'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { DashboardPage } from '@/pages/dashboard/DashboardPage'
 import { CompaniesPage } from '@/pages/companies/CompaniesPage'
+import { MachinesPage } from '@/pages/machines/MachinesPage'
 import { UsersPage } from '@/pages/users/UsersPage'
 import { SetsPage } from '@/pages/sets/SetsPage'
 import { SetDetailPage } from '@/pages/sets/SetDetailPage'
@@ -36,6 +37,7 @@ export const router = createBrowserRouter([
           { path: '/lifecycle', element: <LifecyclePage /> },
           { path: '/reports', element: <ReportsPage /> },
           { path: '/companies', element: <CompaniesPage /> },
+          { path: '/machines', element: <MachinesPage /> },
           { path: '/users', element: <UsersPage /> },
           { path: '*', element: <Navigate to="/dashboard" replace /> },
         ],

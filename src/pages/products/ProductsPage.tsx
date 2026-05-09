@@ -16,6 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useAuth } from '@/hooks/useAuth'
 import { useLocale } from '@/hooks/useLocale'
+import { useAdminCompany } from '@/hooks/useAdminCompany'
 import type { Product } from '@/types'
 
 export function ProductsPage() {
@@ -24,6 +25,7 @@ export function ProductsPage() {
   const { t } = useLocale()
   const isManager = user?.role === 'ADMIN' || user?.role === 'MANAGER'
   const canEdit = user?.role !== 'CLIENT'
+  const { companyId: adminCompanyId, selectedCompany } = useAdminCompany()
 
   const [createOpen, setCreateOpen] = useState(false)
   const [editProduct, setEditProduct] = useState<Product | null>(null)
@@ -33,7 +35,9 @@ export function ProductsPage() {
       z.object({
         name: z.string().min(2, t.products.nameMinLength),
         code: z.string().optional(),
-        companyId: z.string().uuid(t.products.selectCompanyRequired),
+        companyId: (isManager && !selectedCompany)
+          ? z.string().uuid(t.products.selectCompanyRequired)
+          : z.string().optional(),
       }),
     [t],
   )
@@ -51,21 +55,24 @@ export function ProductsPage() {
   type UpdateData = z.infer<typeof updateSchema>
 
   const { data: products = [], isLoading } = useQuery<Product[]>({
-    queryKey: ['products'],
-    queryFn: () => api.get('/products').then((r) => r.data),
+    queryKey: ['products', adminCompanyId],
+    queryFn: () => api.get('/products', { params: { companyId: adminCompanyId } }).then((r) => r.data),
   })
 
   const { data: companies = [] } = useQuery<{ id: string; name: string }[]>({
     queryKey: ['companies'],
     queryFn: () => api.get('/companies').then((r) => r.data),
-    enabled: isManager,
+    enabled: isManager && !selectedCompany,
   })
 
   const createForm = useForm<CreateData>({ resolver: zodResolver(createSchema) })
   const updateForm = useForm<UpdateData>({ resolver: zodResolver(updateSchema) })
 
   const createMutation = useMutation({
-    mutationFn: (data: CreateData) => api.post('/products', data),
+    mutationFn: (data: CreateData) => {
+      const payload = selectedCompany ? { ...data, companyId: selectedCompany.id } : data
+      return api.post('/products', payload)
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['products'] })
       setCreateOpen(false)
@@ -125,7 +132,7 @@ export function ProductsPage() {
               <TableHead>{t.common.name}</TableHead>
               <TableHead>{t.common.code}</TableHead>
               <TableHead>{t.products.sets}</TableHead>
-              {isManager && <TableHead>{t.common.company}</TableHead>}
+              {isManager && !selectedCompany && <TableHead>{t.common.company}</TableHead>}
               <TableHead>{t.common.status}</TableHead>
               {canEdit && <TableHead className="w-24">{t.common.actions}</TableHead>}
             </TableRow>
@@ -148,7 +155,7 @@ export function ProductsPage() {
                 <TableCell className="font-medium">{p.name}</TableCell>
                 <TableCell className="font-mono text-muted-foreground text-sm">{p.code ?? '—'}</TableCell>
                 <TableCell className="text-muted-foreground">{p._count?.punchSetProducts ?? 0}</TableCell>
-                {isManager && (
+                {isManager && !selectedCompany && (
                   <TableCell className="text-muted-foreground text-xs">{p.company?.name}</TableCell>
                 )}
                 <TableCell>
@@ -193,7 +200,7 @@ export function ProductsPage() {
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle>{t.products.newProduct}</DialogTitle></DialogHeader>
           <form onSubmit={createForm.handleSubmit(handleCreate)} className="space-y-4">
-            {isManager && (
+            {isManager && !selectedCompany && (
               <div className="space-y-1.5">
                 <Label>{t.common.company} *</Label>
                 <Select onValueChange={(v) => createForm.setValue('companyId', v)}>

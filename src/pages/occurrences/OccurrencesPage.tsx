@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useAuth } from '@/hooks/useAuth'
 import { useLocale } from '@/hooks/useLocale'
+import { useAdminCompany } from '@/hooks/useAdminCompany'
 import type { Occurrence, OccurrenceStatus, OccurrenceType, PunchSet, Machine, Product } from '@/types'
 
 const STATUS_VARIANTS: Record<OccurrenceStatus, 'destructive' | 'warning' | 'success'> = {
@@ -31,6 +32,7 @@ export function OccurrencesPage() {
   const { user } = useAuth()
   const { t } = useLocale()
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'MANAGER'
+  const { companyId: adminCompanyId, selectedCompany } = useAdminCompany()
   const [createOpen, setCreateOpen] = useState(false)
   const [editOcc, setEditOcc] = useState<Occurrence | null>(null)
   const [statusFilter, setStatusFilter] = useState<string>('all')
@@ -65,9 +67,11 @@ export function OccurrencesPage() {
       z.object({
         name: z.string().min(2, t.occurrences.nameRequired),
         code: z.string().min(1, t.occurrences.codeRequired),
-        companyId: z.string().uuid(t.occurrences.selectCompanyRequired),
+        companyId: (isAdmin && !selectedCompany)
+          ? z.string().uuid(t.occurrences.selectCompanyRequired)
+          : z.string().optional(),
       }),
-    [t],
+    [t, isAdmin, selectedCompany],
   )
 
   const productSchema = useMemo(
@@ -75,9 +79,11 @@ export function OccurrencesPage() {
       z.object({
         name: z.string().min(2, t.occurrences.nameRequired),
         code: z.string().min(1, t.occurrences.codeRequired),
-        companyId: z.string().uuid(t.occurrences.selectCompanyRequired),
+        companyId: (isAdmin && !selectedCompany)
+          ? z.string().uuid(t.occurrences.selectCompanyRequired)
+          : z.string().optional(),
       }),
-    [t],
+    [t, isAdmin, selectedCompany],
   )
 
   type CreateData = z.infer<typeof createSchema>
@@ -86,40 +92,42 @@ export function OccurrencesPage() {
   type ProductData = z.infer<typeof productSchema>
 
   const { data: occurrences = [], isLoading } = useQuery<Occurrence[]>({
-    queryKey: ['occurrences', statusFilter],
-    queryFn: () => api.get('/occurrences', { params: statusFilter !== 'all' ? { status: statusFilter } : {} }).then((r) => r.data),
+    queryKey: ['occurrences', statusFilter, adminCompanyId],
+    queryFn: () => api.get('/occurrences', {
+      params: { ...(statusFilter !== 'all' ? { status: statusFilter } : {}), companyId: adminCompanyId },
+    }).then((r) => r.data),
   })
 
   const { data: sets = [] } = useQuery<PunchSet[]>({
-    queryKey: ['punch-sets'],
-    queryFn: () => api.get('/punch-sets').then((r) => r.data),
+    queryKey: ['punch-sets', adminCompanyId],
+    queryFn: () => api.get('/punch-sets', { params: { companyId: adminCompanyId } }).then((r) => r.data),
   })
 
   const { data: companies = [] } = useQuery<{ id: string; name: string }[]>({
     queryKey: ['companies'],
     queryFn: () => api.get('/companies').then((r) => r.data),
-    enabled: isAdmin,
+    enabled: isAdmin && !selectedCompany,
   })
 
   const { data: machines = [] } = useQuery<Machine[]>({
-    queryKey: ['machines'],
-    queryFn: () => api.get('/occurrences/machines').then((r) => r.data),
+    queryKey: ['machines', adminCompanyId],
+    queryFn: () => api.get('/occurrences/machines', { params: { companyId: adminCompanyId } }).then((r) => r.data),
   })
 
   const { data: products = [] } = useQuery<Product[]>({
-    queryKey: ['products'],
-    queryFn: () => api.get('/occurrences/products').then((r) => r.data),
+    queryKey: ['products', adminCompanyId],
+    queryFn: () => api.get('/occurrences/products', { params: { companyId: adminCompanyId } }).then((r) => r.data),
   })
 
   const createForm = useForm<CreateData>({ resolver: zodResolver(createSchema) })
   const updateForm = useForm<UpdateData>({ resolver: zodResolver(updateSchema) })
   const machineForm = useForm<MachineData>({
     resolver: zodResolver(machineSchema),
-    defaultValues: { companyId: user?.company?.id ?? '' },
+    defaultValues: { companyId: selectedCompany?.id ?? user?.company?.id ?? '' },
   })
   const productForm = useForm<ProductData>({
     resolver: zodResolver(productSchema),
-    defaultValues: { companyId: user?.company?.id ?? '' },
+    defaultValues: { companyId: selectedCompany?.id ?? user?.company?.id ?? '' },
   })
 
   const createMutation = useMutation({
@@ -379,7 +387,7 @@ export function OccurrencesPage() {
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle>{t.occurrences.newMachineTitle}</DialogTitle></DialogHeader>
           <form onSubmit={machineForm.handleSubmit((d) => createMachineMutation.mutate(d))} className="space-y-4">
-            {isAdmin && (
+            {isAdmin && !selectedCompany && (
               <div className="space-y-1.5">
                 <Label>{t.common.company} *</Label>
                 <Select onValueChange={(v) => machineForm.setValue('companyId', v)}>
@@ -414,7 +422,7 @@ export function OccurrencesPage() {
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle>{t.occurrences.newProductTitle}</DialogTitle></DialogHeader>
           <form onSubmit={productForm.handleSubmit((d) => createProductMutation.mutate(d))} className="space-y-4">
-            {isAdmin && (
+            {isAdmin && !selectedCompany && (
               <div className="space-y-1.5">
                 <Label>{t.common.company} *</Label>
                 <Select onValueChange={(v) => productForm.setValue('companyId', v)}>

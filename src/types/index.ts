@@ -83,8 +83,27 @@ export interface Machine {
   id: string
   name: string
   code: string | null
+  fabricante: string | null
+  modelo: string | null
+  numeroSerie: string | null
+  anoFabricacao: number | null
+  qtdEstacao: number | null
+  norma: string | null
+  anguloChaveta: string | null
   companyId: string
   active: boolean
+}
+
+export type ToolingComponentType = 'UPPER_PUNCH' | 'LOWER_PUNCH' | 'MATRIX' | 'SEGMENT'
+
+export interface ToolingComponent {
+  id: string
+  setId: string
+  type: ToolingComponentType
+  qtdSolicitada: number | null
+  numDesenho: string | null
+  norma: string | null
+  dimensoes: string | null
 }
 
 export interface Product {
@@ -111,6 +130,33 @@ export interface Occurrence {
   set: { id: string; code: string; name: string }
   machine: { id: string; name: string; code: string | null } | null
   product: { id: string; name: string; code: string | null } | null
+}
+
+export interface Company {
+  id: string
+  name: string
+  cnpj: string | null
+  razaoSocial: string | null
+  inscricaoEstadual: string | null
+  logradouro: string | null
+  complemento: string | null
+  cidade: string | null
+  estado: string | null
+  telefone: string | null
+  active: boolean
+  createdAt: string
+  _count: { users: number }
+}
+
+export interface CompanyOverview {
+  id: string
+  name: string
+  cnpj: string | null
+  cidade: string | null
+  estado: string | null
+  activeSets: number
+  openOccurrences: number
+  _count: { punchSets: number; machines: number; users: number }
 }
 
 export interface DashboardStats {

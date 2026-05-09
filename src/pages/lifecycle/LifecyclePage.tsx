@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useLocale } from '@/hooks/useLocale'
+import { useAdminCompany } from '@/hooks/useAdminCompany'
 import type { PunchSet, LifecycleEvent, SetStatus } from '@/types'
 
 const STATUS_VARIANTS: Record<SetStatus, 'success' | 'warning' | 'secondary' | 'destructive'> = {
@@ -52,10 +53,11 @@ function StatusFlow({ sets, statusLabels }: { sets: PunchSet[]; statusLabels: Re
 export function LifecyclePage() {
   const [selectedSetId, setSelectedSetId] = useState<string>('')
   const { t } = useLocale()
+  const { companyId: adminCompanyId } = useAdminCompany()
 
   const { data: sets = [] } = useQuery<PunchSet[]>({
-    queryKey: ['punch-sets'],
-    queryFn: () => api.get('/punch-sets').then((r) => r.data),
+    queryKey: ['punch-sets', adminCompanyId],
+    queryFn: () => api.get('/punch-sets', { params: { companyId: adminCompanyId } }).then((r) => r.data),
   })
 
   const { data: events = [], isLoading } = useQuery<LifecycleEvent[]>({
