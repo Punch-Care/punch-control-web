@@ -159,6 +159,97 @@ export interface CompanyOverview {
   _count: { punchSets: number; machines: number; users: number }
 }
 
+// ── Produção (CEP) ──────────────────────────────────────────────────────────
+
+export type BatchOccurrenceType = 'CAPPING' | 'STICKING' | 'TRAVAMENTO' | 'QUEBRA' | 'OXIDACAO' | 'OUTROS'
+export type BatchStatus = 'DRAFT' | 'COMPLETED'
+
+export interface ProductionConfigParam {
+  id: string
+  configId: string
+  ordem: number
+  nome: string
+  unidade: string | null
+  minimo: number | null
+  maximo: number | null
+  sugerido: number | null
+}
+
+export interface ProductionConfig {
+  id: string
+  companyId: string
+  productId: string
+  machineId: string
+  product: { id: string; name: string; code: string | null }
+  machine: { id: string; name: string; code: string | null }
+  params: ProductionConfigParam[]
+  _count?: { batches: number }
+}
+
+export interface BatchFixedParam {
+  id: string
+  batchId: string
+  ordem: number
+  nome: string
+  unidade: string | null
+  minimo: number | null
+  maximo: number | null
+  sugerido: number | null
+  valorReal: number | null
+  isOk: boolean | null
+}
+
+export interface BatchHourlyMeasurement {
+  id: string
+  batchId: string
+  ordem: number
+  horario: string
+  roloCmpDir: number | null
+  roloCmpEsq: number | null
+  rampaDosEsq: number | null
+  rampaDosDir: number | null
+  pressaoCFCL1: number | null
+  pressaoCFCL2: number | null
+  coefVarL1: number | null
+  coefVarL2: number | null
+  responsavel: string | null
+  observacoes: string | null
+}
+
+export interface BatchOccurrence {
+  id: string
+  batchId: string
+  type: BatchOccurrenceType
+  notas: string | null
+}
+
+export interface ProductionBatch {
+  id: string
+  companyId: string
+  configId: string | null
+  productId: string
+  machineId: string
+  punchSetId: string
+  loteNumero: string
+  dataProducao: string
+  horaInicio: string
+  duracaoEstimadaHoras: number | null
+  kgProduzidos: number | null
+  observacoesOperador: string | null
+  observacoesTecnico: string | null
+  separadoPor: string | null
+  status: BatchStatus
+  createdAt: string
+  product: { id: string; name: string; code: string | null }
+  machine: { id: string; name: string; code: string | null; fabricante?: string | null; modelo?: string | null }
+  punchSet: { id: string; code: string; name: string }
+  config?: ProductionConfig | null
+  fixedParams?: BatchFixedParam[]
+  hourlyMeasurements?: BatchHourlyMeasurement[]
+  batchOccurrences?: BatchOccurrence[]
+  _count?: { hourlyMeasurements: number; batchOccurrences: number }
+}
+
 export interface DashboardStats {
   active: number
   inRepair: number

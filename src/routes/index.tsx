@@ -7,6 +7,8 @@ import { LoginPage } from '@/pages/auth/LoginPage'
 import { DashboardPage } from '@/pages/dashboard/DashboardPage'
 import { CompaniesPage } from '@/pages/companies/CompaniesPage'
 import { MachinesPage } from '@/pages/machines/MachinesPage'
+import { ProductionPage } from '@/pages/production/ProductionPage'
+import { BatchFormPage } from '@/pages/production/BatchFormPage'
 import { UsersPage } from '@/pages/users/UsersPage'
 import { SetsPage } from '@/pages/sets/SetsPage'
 import { SetDetailPage } from '@/pages/sets/SetDetailPage'
@@ -38,6 +40,9 @@ export const router = createBrowserRouter([
           { path: '/reports', element: <ReportsPage /> },
           { path: '/companies', element: <CompaniesPage /> },
           { path: '/machines', element: <MachinesPage /> },
+          { path: '/production', element: <ProductionPage /> },
+          { path: '/production/new', element: <BatchFormPage /> },
+          { path: '/production/:id', element: <BatchFormPage /> },
           { path: '/users', element: <UsersPage /> },
           { path: '*', element: <Navigate to="/dashboard" replace /> },
         ],
