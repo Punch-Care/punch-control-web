@@ -80,30 +80,30 @@ export function CepTab() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="space-y-1.5">
           <Label className="text-xs">Produto</Label>
-          <Select value={productId} onValueChange={setProductId}>
+          <Select value={productId || '__all__'} onValueChange={v => setProductId(v === '__all__' ? '' : v)}>
             <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Todos" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todos</SelectItem>
+              <SelectItem value="__all__">Todos</SelectItem>
               {products.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs">Máquina</Label>
-          <Select value={machineId} onValueChange={setMachineId}>
+          <Select value={machineId || '__all__'} onValueChange={v => setMachineId(v === '__all__' ? '' : v)}>
             <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Todas" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todas</SelectItem>
+              <SelectItem value="__all__">Todas</SelectItem>
               {machines.map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs">Conjunto de Punções</Label>
-          <Select value={punchSetId} onValueChange={setPunchSetId}>
+          <Select value={punchSetId || '__all__'} onValueChange={v => setPunchSetId(v === '__all__' ? '' : v)}>
             <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Todos" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todos</SelectItem>
+              <SelectItem value="__all__">Todos</SelectItem>
               {sets.map(s => <SelectItem key={s.id} value={s.id}>{s.code} — {s.name}</SelectItem>)}
             </SelectContent>
           </Select>

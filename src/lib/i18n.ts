@@ -16,6 +16,10 @@ const translations = {
       users: 'Usuários',
       admin: 'Administração',
       logout: 'Sair',
+      groupCadastro: 'Cadastro',
+      groupProducao: 'Produção',
+      groupQualidade: 'Qualidade',
+      groupInteligencia: 'Inteligência',
     },
     dashboard: {
       title: 'Dashboard',
@@ -532,6 +536,10 @@ const translations = {
       users: 'Users',
       admin: 'Administration',
       logout: 'Logout',
+      groupCadastro: 'Registration',
+      groupProducao: 'Production',
+      groupQualidade: 'Quality',
+      groupInteligencia: 'Intelligence',
     },
     dashboard: {
       title: 'Dashboard',
@@ -1048,6 +1056,10 @@ const translations = {
       users: 'Usuarios',
       admin: 'Administración',
       logout: 'Salir',
+      groupCadastro: 'Registro',
+      groupProducao: 'Producción',
+      groupQualidade: 'Calidad',
+      groupInteligencia: 'Inteligencia',
     },
     dashboard: {
       title: 'Panel',

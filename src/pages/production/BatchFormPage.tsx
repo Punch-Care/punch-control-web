@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Plus, Trash2, Loader2, Printer, Download, CheckCircle2 } from 'lucide-react'
+import {
+  ArrowLeft, Plus, Trash2, Loader2, Printer, Download,
+  CheckCircle2, ClipboardList, Settings2, Clock, AlertTriangle,
+  MessageSquare, ChevronRight, Factory,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import jsPDF from 'jspdf'
@@ -11,7 +15,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useLocale } from '@/hooks/useLocale'
 import { useAdminCompany } from '@/hooks/useAdminCompany'
@@ -24,126 +28,135 @@ import type {
 import { format } from 'date-fns'
 
 const BRAND: [number, number, number] = [240, 89, 34]
-
 const OCCURRENCE_TYPES: BatchOccurrenceType[] = ['CAPPING', 'STICKING', 'TRAVAMENTO', 'QUEBRA', 'OXIDACAO', 'OUTROS']
 
-// ── PDF geração ───────────────────────────────────────────────────────────────
+// ── PDF ───────────────────────────────────────────────────────────────────────
 
-function generateBlankPdf(batch: Partial<BatchData>, config: ProductionConfig | null, numHoras: number) {
+function generateBlankPdf(form: BatchData, config: ProductionConfig | null, numHoras: number) {
   const doc = new jsPDF({ orientation: 'landscape' })
+  const W = doc.internal.pageSize.width
+
   doc.setFillColor(...BRAND)
-  doc.rect(0, 0, doc.internal.pageSize.width, 18, 'F')
+  doc.rect(0, 0, W, 20, 'F')
   doc.setTextColor(255, 255, 255)
-  doc.setFontSize(12)
+  doc.setFontSize(13)
   doc.setFont('helvetica', 'bold')
-  doc.text('CONTROLE DE PARÂMETROS E PROCESSO', 14, 10)
+  doc.text('CONTROLE DE PARÂMETROS E PROCESSO', 14, 11)
   doc.setFontSize(8)
   doc.setFont('helvetica', 'normal')
-  doc.text('Punch Control · Punch Care', 14, 15)
+  doc.text('Punch Control · Punch Care · Formulário para preenchimento manual', 14, 17)
 
   doc.setTextColor(40, 40, 40)
   doc.setFontSize(9)
   doc.setFont('helvetica', 'normal')
-  const info = [
-    `Lote: ${batch.loteNumero || '___________'}`,
-    `Data: ${batch.dataProducao || '___/___/______'}`,
-    `Hora: ${batch.horaInicio || '__:__'}`,
-  ]
-  doc.text(info.join('     '), 14, 25)
+  const row1 = `Lote: ${form.loteNumero || '_______________'}     Data: ${form.dataProducao || '___/___/______'}     Hora início: ${form.horaInicio || '__:__'}`
+  doc.text(row1, 14, 28)
 
-  // Parâmetros fixos
   const params = config?.params ?? []
   if (params.length > 0) {
     autoTable(doc, {
-      startY: 30,
-      head: [['Parâmetro', 'Un.', 'Mín.', 'Máx.', 'Sugerido', 'Real']],
-      body: params.map(p => [p.nome, p.unidade ?? '', p.minimo ?? '', p.maximo ?? '', p.sugerido ?? '', '']),
-      headStyles: { fillColor: BRAND, fontSize: 8, fontStyle: 'bold' },
-      bodyStyles: { fontSize: 8 },
-      columnStyles: { 5: { minCellWidth: 25 } },
+      startY: 33,
+      head: [['#', 'Parâmetro', 'Unidade', 'Mínimo', 'Máximo', 'Sugerido', 'Valor Real (preencher)']],
+      body: params.map((p, i) => [i + 1, p.nome, p.unidade ?? '—', p.minimo ?? '—', p.maximo ?? '—', p.sugerido ?? '—', '']),
+      headStyles: { fillColor: BRAND, fontSize: 7.5, fontStyle: 'bold' },
+      bodyStyles: { fontSize: 7.5 },
+      columnStyles: { 6: { minCellWidth: 40 } },
       margin: { left: 14, right: 14 },
     })
   }
 
-  const afterFixed = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY ?? 30
+  const afterFixed = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY ?? 33
 
-  // Medições horárias
   const hourRows = Array.from({ length: numHoras }, (_, i) => [
-    `${String(i + 1).padStart(2, '0')}:00`, '', '', '', '', '', '', '', '', '', '',
+    `${String(i + 1).padStart(2, '0')}h`, '', '', '', '', '', '', '', '', '', '',
   ])
 
   autoTable(doc, {
-    startY: afterFixed + 6,
-    head: [['Hora', 'Rolo Cmp. Dir.', 'Rolo Cmp. Esq.', 'Rampa Dos. Esq.', 'Rampa Dos. Dir.', 'CFC L1', 'CFC L2', 'CV L1 (%)', 'CV L2 (%)', 'Responsável', 'Observações']],
+    startY: afterFixed + 8,
+    head: [['Hora', 'Rolo Cmp. Dir. (mm)', 'Rolo Cmp. Esq. (mm)', 'Rampa Dos. Esq. (mm)', 'Rampa Dos. Dir. (mm)', 'CFC L1', 'CFC L2', 'CV L1 (%)', 'CV L2 (%)', 'Responsável', 'Obs.']],
     body: hourRows,
-    headStyles: { fillColor: [70, 130, 180], fontSize: 7, fontStyle: 'bold', textColor: [255, 255, 255] },
-    bodyStyles: { fontSize: 7, minCellHeight: 7 },
+    headStyles: { fillColor: [55, 105, 170], fontSize: 7, fontStyle: 'bold', textColor: 255 },
+    bodyStyles: { fontSize: 7, minCellHeight: 8 },
     margin: { left: 14, right: 14 },
   })
 
-  const afterHourly = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY ?? afterFixed + 6
+  const afterHourly = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY ?? afterFixed + 8
 
-  // Ocorrências e observações
+  doc.setDrawColor(180, 180, 180)
   doc.setFontSize(8)
   doc.setFont('helvetica', 'bold')
-  doc.text('Ocorrências:', 14, afterHourly + 8)
+  doc.text('Ocorrências:', 14, afterHourly + 9)
   doc.setFont('helvetica', 'normal')
-  doc.text('□ Capping   □ Sticking   □ Travamento   □ Quebra   □ Oxidação   □ Outros: ____________', 40, afterHourly + 8)
-  doc.text(`KG Produzidos: _________    Separado por: _________________________`, 14, afterHourly + 15)
-  doc.text('Obs. Operador: ___________________________________________________________________________', 14, afterHourly + 22)
-  doc.text('Obs. Técnico:  ___________________________________________________________________________', 14, afterHourly + 29)
+  doc.text('□ Capping   □ Sticking   □ Travamento   □ Quebra   □ Oxidação   □ Outros: ______________', 45, afterHourly + 9)
+  doc.line(14, afterHourly + 13, W - 14, afterHourly + 13)
+  doc.text(`KG Produzidos: ___________     Separado por: _________________________________`, 14, afterHourly + 19)
+  doc.line(14, afterHourly + 23, W - 14, afterHourly + 23)
+  doc.text('Obs. Operador:', 14, afterHourly + 29)
+  doc.line(50, afterHourly + 29, W - 14, afterHourly + 29)
+  doc.text('Obs. Técnico:', 14, afterHourly + 36)
+  doc.line(47, afterHourly + 36, W - 14, afterHourly + 36)
 
-  doc.save(`formulario_lote_${batch.loteNumero || 'em_branco'}.pdf`)
+  doc.setFontSize(7)
+  doc.setTextColor(160, 160, 160)
+  doc.text(`Gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm")} · Punch Control`, 14, doc.internal.pageSize.height - 6)
+
+  doc.save(`formulario_${form.loteNumero || 'em_branco'}_${format(new Date(), 'yyyyMMdd')}.pdf`)
 }
 
 function generateCompletedPdf(batch: ProductionBatch) {
   const doc = new jsPDF({ orientation: 'landscape' })
+  const W = doc.internal.pageSize.width
+
   doc.setFillColor(...BRAND)
-  doc.rect(0, 0, doc.internal.pageSize.width, 18, 'F')
+  doc.rect(0, 0, W, 20, 'F')
   doc.setTextColor(255, 255, 255)
-  doc.setFontSize(12)
+  doc.setFontSize(13)
   doc.setFont('helvetica', 'bold')
-  doc.text('REGISTRO DE LOTE — CONTROLE DE PARÂMETROS E PROCESSO', 14, 10)
+  doc.text(`REGISTRO DE LOTE — ${batch.loteNumero}`, 14, 11)
   doc.setFontSize(8)
   doc.setFont('helvetica', 'normal')
-  doc.text('Punch Control · Punch Care', 14, 15)
+  doc.text('Punch Control · Punch Care · Documento gerado automaticamente', 14, 17)
 
   doc.setTextColor(40, 40, 40)
-  doc.setFontSize(9)
-  doc.text([
-    `Lote: ${batch.loteNumero}`,
-    `Data: ${format(new Date(batch.dataProducao), 'dd/MM/yyyy')}  ${batch.horaInicio}`,
+  doc.setFontSize(8.5)
+  doc.setFont('helvetica', 'normal')
+  const info = [
     `Produto: ${batch.product.name}`,
     `Máquina: ${batch.machine.name}`,
     `Conjunto: ${batch.punchSet.code} — ${batch.punchSet.name}`,
-  ].join('     '), 14, 25)
+    `Data: ${format(new Date(batch.dataProducao), 'dd/MM/yyyy')}  ${batch.horaInicio}`,
+    batch.kgProduzidos ? `KG: ${batch.kgProduzidos}` : '',
+  ].filter(Boolean).join('     ')
+  doc.text(info, 14, 28)
 
   const fp = batch.fixedParams ?? []
   if (fp.length > 0) {
     autoTable(doc, {
-      startY: 30,
+      startY: 33,
       head: [['Parâmetro', 'Un.', 'Mín.', 'Máx.', 'Sugerido', 'Real', 'Status']],
       body: fp.map(p => [
-        p.nome,
-        p.unidade ?? '—',
-        p.minimo ?? '—',
-        p.maximo ?? '—',
-        p.sugerido ?? '—',
-        p.valorReal ?? '—',
-        p.isOk === null ? '—' : p.isOk ? '✅' : '⚠️',
+        p.nome, p.unidade ?? '—', p.minimo ?? '—', p.maximo ?? '—',
+        p.sugerido ?? '—', p.valorReal ?? '—',
+        p.isOk === null ? '—' : p.isOk ? 'OK' : 'DESVIO',
       ]),
-      headStyles: { fillColor: BRAND, fontSize: 7, fontStyle: 'bold' },
-      bodyStyles: { fontSize: 7 },
+      headStyles: { fillColor: BRAND, fontSize: 7.5, fontStyle: 'bold' },
+      bodyStyles: { fontSize: 7.5 },
+      didParseCell(data) {
+        if (data.section === 'body' && data.column.index === 6 && data.cell.raw === 'DESVIO') {
+          data.cell.styles.textColor = [200, 0, 0]
+          data.cell.styles.fontStyle = 'bold'
+        }
+      },
       margin: { left: 14, right: 14 },
     })
   }
 
-  const afterFixed = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY ?? 30
-
+  const afterFixed = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY ?? 33
   const hourly = batch.hourlyMeasurements ?? []
+
   if (hourly.length > 0) {
     autoTable(doc, {
-      startY: afterFixed + 6,
+      startY: afterFixed + 8,
       head: [['Hora', 'Rolo Dir.', 'Rolo Esq.', 'Rampa Esq.', 'Rampa Dir.', 'CFC L1', 'CFC L2', 'CV L1', 'CV L2', 'Responsável', 'Obs.']],
       body: hourly.map(m => [
         m.horario,
@@ -153,25 +166,29 @@ function generateCompletedPdf(batch: ProductionBatch) {
         m.coefVarL1 ?? '—', m.coefVarL2 ?? '—',
         m.responsavel ?? '—', m.observacoes ?? '',
       ]),
-      headStyles: { fillColor: [70, 130, 180], fontSize: 7, fontStyle: 'bold', textColor: [255, 255, 255] },
+      headStyles: { fillColor: [55, 105, 170], fontSize: 7, fontStyle: 'bold', textColor: 255 },
       bodyStyles: { fontSize: 7 },
       margin: { left: 14, right: 14 },
     })
   }
 
-  const afterHourly = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY ?? afterFixed + 6
+  const afterHourly = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY ?? afterFixed + 8
+  const occs = (batch.batchOccurrences ?? []).map(o => o.type).join(', ')
 
   doc.setFontSize(8)
-  const occs = (batch.batchOccurrences ?? []).map(o => o.type).join(', ')
   doc.text(`Ocorrências: ${occs || 'Nenhuma'}`, 14, afterHourly + 8)
   doc.text(`KG Produzidos: ${batch.kgProduzidos ?? '—'}    Separado por: ${batch.separadoPor ?? '—'}`, 14, afterHourly + 15)
-  doc.text(`Obs. Operador: ${batch.observacoesOperador ?? '—'}`, 14, afterHourly + 22)
-  doc.text(`Obs. Técnico:  ${batch.observacoesTecnico ?? '—'}`, 14, afterHourly + 29)
+  if (batch.observacoesOperador) doc.text(`Obs. Operador: ${batch.observacoesOperador}`, 14, afterHourly + 22)
+  if (batch.observacoesTecnico) doc.text(`Obs. Técnico: ${batch.observacoesTecnico}`, 14, afterHourly + 29)
 
-  doc.save(`registro_lote_${batch.loteNumero}.pdf`)
+  doc.setFontSize(7)
+  doc.setTextColor(160, 160, 160)
+  doc.text(`Gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm")} · Punch Control`, 14, doc.internal.pageSize.height - 6)
+
+  doc.save(`registro_${batch.loteNumero}_${format(new Date(), 'yyyyMMdd')}.pdf`)
 }
 
-// ── Tipos locais do form ──────────────────────────────────────────────────────
+// ── Tipos locais ──────────────────────────────────────────────────────────────
 
 interface BatchData {
   configId: string
@@ -189,13 +206,48 @@ interface BatchData {
   status: 'DRAFT' | 'COMPLETED'
 }
 
-interface LocalFixedParam extends Omit<BatchFixedParam, 'id' | 'batchId'> {
-  valorReal: number | null
-}
+interface LocalFixed extends Omit<BatchFixedParam, 'id' | 'batchId'> {}
 interface LocalMeasurement extends Omit<BatchHourlyMeasurement, 'id' | 'batchId'> {}
 interface LocalOccurrence extends Omit<BatchOccurrence, 'id' | 'batchId'> {}
 
-// ── Componente principal ──────────────────────────────────────────────────────
+// ── Componente de seção ───────────────────────────────────────────────────────
+
+function Section({ step, icon: Icon, title, subtitle, children, alert }: {
+  step: number
+  icon: React.ElementType
+  title: string
+  subtitle?: string
+  children: React.ReactNode
+  alert?: string
+}) {
+  return (
+    <div className="flex gap-4">
+      {/* Step indicator */}
+      <div className="flex flex-col items-center flex-shrink-0">
+        <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center border-2 border-primary/30">
+          <Icon className="h-4 w-4 text-primary" />
+        </div>
+        <div className="w-0.5 flex-1 bg-border mt-2 min-h-4" />
+      </div>
+      {/* Content */}
+      <div className="flex-1 pb-8">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Etapa {step}</span>
+          {alert && (
+            <Badge variant="destructive" className="text-xs gap-1">
+              <AlertTriangle className="h-3 w-3" />{alert}
+            </Badge>
+          )}
+        </div>
+        <h3 className="text-base font-semibold tracking-tight">{title}</h3>
+        {subtitle && <p className="text-sm text-muted-foreground mt-0.5 mb-4">{subtitle}</p>}
+        <div className="mt-3">{children}</div>
+      </div>
+    </div>
+  )
+}
+
+// ── Página principal ──────────────────────────────────────────────────────────
 
 export function BatchFormPage() {
   const { id } = useParams<{ id?: string }>()
@@ -216,7 +268,7 @@ export function BatchFormPage() {
     observacoesOperador: '', observacoesTecnico: '',
     separadoPor: '', status: 'DRAFT',
   })
-  const [fixedParams, setFixedParams] = useState<LocalFixedParam[]>([])
+  const [fixedParams, setFixedParams] = useState<LocalFixed[]>([])
   const [measurements, setMeasurements] = useState<LocalMeasurement[]>([])
   const [occurrences, setOccurrences] = useState<LocalOccurrence[]>([])
 
@@ -235,13 +287,11 @@ export function BatchFormPage() {
   })
 
   const { data: config } = useQuery<ProductionConfig | null>({
-    queryKey: ['production-config-by-product-machine', form.productId, form.machineId],
+    queryKey: ['production-config-by-pm', form.productId, form.machineId],
     queryFn: async () => {
       if (!form.productId || !form.machineId) return null
-      const configs = await api.get('/production-configs', {
-        params: { companyId: adminCompanyId },
-      }).then(r => r.data as ProductionConfig[])
-      return configs.find(c => c.productId === form.productId && c.machineId === form.machineId) ?? null
+      const all = await api.get('/production-configs', { params: { companyId: adminCompanyId } }).then(r => r.data as ProductionConfig[])
+      return all.find(c => c.productId === form.productId && c.machineId === form.machineId) ?? null
     },
     enabled: !!form.productId && !!form.machineId,
   })
@@ -252,7 +302,7 @@ export function BatchFormPage() {
     enabled: isEdit,
   })
 
-  // Load existing batch data when editing
+  // Carregar lote existente
   useEffect(() => {
     if (!existingBatch) return
     setForm({
@@ -270,45 +320,42 @@ export function BatchFormPage() {
       separadoPor: existingBatch.separadoPor ?? '',
       status: existingBatch.status,
     })
-    setFixedParams((existingBatch.fixedParams ?? []).map(fp => ({ ...fp })))
-    setMeasurements((existingBatch.hourlyMeasurements ?? []).map(m => ({ ...m })))
+    setFixedParams(existingBatch.fixedParams ?? [])
+    setMeasurements(existingBatch.hourlyMeasurements ?? [])
     setOccurrences((existingBatch.batchOccurrences ?? []).map(o => ({ type: o.type, notas: o.notas })))
   }, [existingBatch])
 
-  // Auto-load fixed params from config when config is found and no params yet
+  // Auto-carregar parâmetros da configuração
   useEffect(() => {
     if (!config || fixedParams.length > 0) return
     setFixedParams(config.params.map(pr => ({
-      ordem: pr.ordem,
-      nome: pr.nome,
-      unidade: pr.unidade,
-      minimo: pr.minimo,
-      maximo: pr.maximo,
-      sugerido: pr.sugerido,
-      valorReal: null,
-      isOk: null,
+      ordem: pr.ordem, nome: pr.nome, unidade: pr.unidade,
+      minimo: pr.minimo, maximo: pr.maximo, sugerido: pr.sugerido,
+      valorReal: null, isOk: null,
     })))
     setForm(f => ({ ...f, configId: config.id }))
   }, [config])
 
-  const updateFixedParam = (idx: number, value: string) => {
-    setFixedParams(prev => prev.map((p, i) => {
-      if (i !== idx) return p
-      const valorReal = value === '' ? null : parseFloat(value.replace(',', '.'))
-      const isOk = valorReal === null || (p.minimo === null && p.maximo === null)
-        ? null
-        : (p.minimo === null || valorReal >= p.minimo) && (p.maximo === null || valorReal <= p.maximo)
-      return { ...p, valorReal: isNaN(valorReal as number) ? null : valorReal, isOk }
+  const setField = (field: keyof BatchData, value: string) => setForm(f => ({ ...f, [field]: value }))
+
+  const updateFixedParam = (idx: number, rawValue: string) => {
+    setFixedParams(prev => prev.map((fp, i) => {
+      if (i !== idx) return fp
+      const n = rawValue === '' ? null : parseFloat(rawValue.replace(',', '.'))
+      const valorReal = n === null || isNaN(n) ? null : n
+      const isOk = valorReal === null ? null
+        : (fp.minimo === null || valorReal >= fp.minimo) && (fp.maximo === null || valorReal <= fp.maximo)
+      return { ...fp, valorReal, isOk }
     }))
   }
 
   const addMeasurement = () => {
-    const lastHour = measurements.length > 0
-      ? parseInt(measurements[measurements.length - 1].horario.split(':')[0]) + 1
-      : parseInt(form.horaInicio.split(':')[0])
+    const lastH = measurements.length > 0
+      ? (parseInt(measurements[measurements.length - 1].horario.split(':')[0]) + 1) % 24
+      : parseInt(form.horaInicio.split(':')[0] || '0')
     setMeasurements(prev => [...prev, {
       ordem: prev.length + 1,
-      horario: `${String(lastHour % 24).padStart(2, '0')}:00`,
+      horario: `${String(lastH).padStart(2, '0')}:00`,
       roloCmpDir: null, roloCmpEsq: null,
       rampaDosEsq: null, rampaDosDir: null,
       pressaoCFCL1: null, pressaoCFCL2: null,
@@ -317,13 +364,11 @@ export function BatchFormPage() {
     }])
   }
 
-  const updateMeasurement = (idx: number, field: keyof LocalMeasurement, value: string) => {
+  const updateMeasurement = (idx: number, field: keyof LocalMeasurement, raw: string) => {
     setMeasurements(prev => prev.map((m, i) => {
       if (i !== idx) return m
-      if (field === 'horario' || field === 'responsavel' || field === 'observacoes') {
-        return { ...m, [field]: value || null }
-      }
-      const n = parseFloat(value.replace(',', '.'))
+      if (field === 'horario' || field === 'responsavel' || field === 'observacoes') return { ...m, [field]: raw || null }
+      const n = parseFloat(raw.replace(',', '.'))
       return { ...m, [field]: isNaN(n) ? null : n }
     }))
   }
@@ -333,11 +378,9 @@ export function BatchFormPage() {
   }
 
   const toggleOccurrence = (type: BatchOccurrenceType) => {
-    setOccurrences(prev => {
-      const exists = prev.find(o => o.type === type)
-      if (exists) return prev.filter(o => o.type !== type)
-      return [...prev, { type, notas: null }]
-    })
+    setOccurrences(prev =>
+      prev.some(o => o.type === type) ? prev.filter(o => o.type !== type) : [...prev, { type, notas: null }]
+    )
   }
 
   const buildPayload = (status: 'DRAFT' | 'COMPLETED') => ({
@@ -360,9 +403,8 @@ export function BatchFormPage() {
   })
 
   const saveMutation = useMutation({
-    mutationFn: (status: 'DRAFT' | 'COMPLETED') => isEdit
-      ? api.put(`/production-batches/${id}`, buildPayload(status))
-      : api.post('/production-batches', buildPayload(status)),
+    mutationFn: (status: 'DRAFT' | 'COMPLETED') =>
+      isEdit ? api.put(`/production-batches/${id}`, buildPayload(status)) : api.post('/production-batches', buildPayload(status)),
     onSuccess: (_, status) => {
       qc.invalidateQueries({ queryKey: ['production-batches'] })
       toast.success(isEdit ? p.updated : p.created)
@@ -372,150 +414,194 @@ export function BatchFormPage() {
   })
 
   const numHoras = parseInt(form.duracaoEstimadaHoras) || 8
-
   const hasAlerts = fixedParams.some(fp => fp.isOk === false)
+  const canSubmit = !!form.productId && !!form.machineId && !!form.punchSetId && !!form.loteNumero
+  const selectedProduct = products.find(pr => pr.id === form.productId)
+  const selectedMachine = machines.find(m => m.id === form.machineId)
+  const selectedSet = sets.find(s => s.id === form.punchSetId)
 
   return (
-    <div className="p-4 sm:p-6 space-y-6 max-w-5xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate('/production')}>
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div className="flex-1 min-w-0">
-          <h2 className="text-xl font-bold tracking-tight">
-            {isEdit ? p.editBatch : p.newBatch}
-            {form.loteNumero && <span className="ml-2 font-mono text-primary"> {form.loteNumero}</span>}
-          </h2>
-          {form.status && (
-            <Badge variant={form.status === 'COMPLETED' ? 'success' : 'secondary'} className="mt-0.5">
-              {form.status === 'COMPLETED' ? p.statusCompleted : p.statusDraft}
-            </Badge>
-          )}
-        </div>
-        <div className="flex gap-2 flex-shrink-0">
-          <Button
-            variant="outline" size="sm"
-            onClick={() => generateBlankPdf(form, config ?? null, numHoras)}
-          >
-            <Printer className="h-4 w-4" /> {p.generateBlankPdf}
-          </Button>
-          {isEdit && existingBatch && existingBatch.status === 'COMPLETED' && (
-            <Button variant="outline" size="sm" onClick={() => generateCompletedPdf(existingBatch)}>
-              <Download className="h-4 w-4" /> {p.downloadPdf}
+    <div className="min-h-screen bg-muted/30">
+      {/* Sticky header */}
+      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur border-b px-4 sm:px-6 py-3">
+        <div className="max-w-3xl mx-auto flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <Button variant="ghost" size="icon" className="flex-shrink-0" onClick={() => navigate('/production')}>
+              <ArrowLeft className="h-4 w-4" />
             </Button>
-          )}
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h1 className="font-semibold text-sm truncate">
+                  {isEdit ? 'Editar Lote' : 'Novo Lote de Produção'}
+                </h1>
+                {form.loteNumero && (
+                  <span className="font-mono text-primary font-bold text-sm">{form.loteNumero}</span>
+                )}
+                <Badge variant={form.status === 'COMPLETED' ? 'success' : 'secondary'} className="text-xs">
+                  {form.status === 'COMPLETED' ? p.statusCompleted : p.statusDraft}
+                </Badge>
+              </div>
+              {selectedProduct && selectedMachine && (
+                <p className="text-xs text-muted-foreground truncate">
+                  {selectedProduct.name} · {selectedMachine.name}
+                  {selectedSet && <> · <span className="font-mono">{selectedSet.code}</span></>}
+                </p>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <Button variant="outline" size="sm" onClick={() => generateBlankPdf(form, config ?? null, numHoras)}>
+              <Printer className="h-4 w-4" />
+              <span className="hidden sm:inline ml-1.5">Imprimir</span>
+            </Button>
+            {isEdit && existingBatch && (
+              <Button variant="outline" size="sm" onClick={() => generateCompletedPdf(existingBatch)}>
+                <Download className="h-4 w-4" />
+                <span className="hidden sm:inline ml-1.5">PDF</span>
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Seção 1: Identificação */}
-      <Card>
-        <CardHeader><CardTitle className="text-sm">Identificação do Lote</CardTitle></CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* Main content */}
+      <div className="w-full max-w-3xl mx-auto px-3 sm:px-6 py-6 sm:py-8">
+
+        {/* ── Etapa 1: Identificação ─────────────────────────────────────── */}
+        <Section
+          step={1}
+          icon={Factory}
+          title="Identificação do Lote"
+          subtitle="Selecione o produto, a máquina e o conjunto de punções que serão utilizados nesta produção."
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-background rounded-xl border p-4">
             <div className="space-y-1.5">
-              <Label>{p.loteNumero} *</Label>
-              <Input placeholder={p.loteNumeroPlaceholder} value={form.loteNumero} onChange={e => setForm(f => ({ ...f, loteNumero: e.target.value }))} disabled={!canEdit} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>{p.dataProducao} *</Label>
-              <Input type="date" value={form.dataProducao} onChange={e => setForm(f => ({ ...f, dataProducao: e.target.value }))} disabled={!canEdit} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>{p.horaInicio} *</Label>
-              <Input type="time" value={form.horaInicio} onChange={e => setForm(f => ({ ...f, horaInicio: e.target.value }))} disabled={!canEdit} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Produto *</Label>
-              <Select value={form.productId} onValueChange={v => setForm(f => ({ ...f, productId: v }))} disabled={!canEdit}>
-                <SelectTrigger><SelectValue placeholder={p.selectProductRequired} /></SelectTrigger>
-                <SelectContent>{products.map(pr => <SelectItem key={pr.id} value={pr.id}>{pr.name}</SelectItem>)}</SelectContent>
+              <Label className="text-xs font-medium">Produto *</Label>
+              <Select value={form.productId || '__none__'} onValueChange={v => setField('productId', v === '__none__' ? '' : v)} disabled={!canEdit}>
+                <SelectTrigger><SelectValue placeholder="Selecione o produto" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__" disabled>Selecione o produto</SelectItem>
+                  {products.map(pr => <SelectItem key={pr.id} value={pr.id}>{pr.name}{pr.code ? ` · ${pr.code}` : ''}</SelectItem>)}
+                </SelectContent>
               </Select>
             </div>
+
             <div className="space-y-1.5">
-              <Label>Máquina *</Label>
-              <Select value={form.machineId} onValueChange={v => setForm(f => ({ ...f, machineId: v }))} disabled={!canEdit}>
-                <SelectTrigger><SelectValue placeholder={p.selectMachineRequired} /></SelectTrigger>
-                <SelectContent>{machines.map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}</SelectContent>
+              <Label className="text-xs font-medium">Máquina *</Label>
+              <Select value={form.machineId || '__none__'} onValueChange={v => setField('machineId', v === '__none__' ? '' : v)} disabled={!canEdit}>
+                <SelectTrigger><SelectValue placeholder="Selecione a máquina" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__" disabled>Selecione a máquina</SelectItem>
+                  {machines.map(m => <SelectItem key={m.id} value={m.id}>{m.name}{m.modelo ? ` · ${m.modelo}` : ''}</SelectItem>)}
+                </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1.5">
-              <Label>Conjunto de Punções *</Label>
-              <Select value={form.punchSetId} onValueChange={v => setForm(f => ({ ...f, punchSetId: v }))} disabled={!canEdit}>
-                <SelectTrigger><SelectValue placeholder={p.selectSetRequired} /></SelectTrigger>
-                <SelectContent>{sets.map(s => <SelectItem key={s.id} value={s.id}>{s.code} — {s.name}</SelectItem>)}</SelectContent>
+
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label className="text-xs font-medium">Conjunto de Punções *</Label>
+              <Select value={form.punchSetId || '__none__'} onValueChange={v => setField('punchSetId', v === '__none__' ? '' : v)} disabled={!canEdit}>
+                <SelectTrigger><SelectValue placeholder="Selecione o conjunto de punções" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__" disabled>Selecione o conjunto</SelectItem>
+                  {sets.map(s => <SelectItem key={s.id} value={s.id}><span className="font-mono">{s.code}</span> — {s.name}</SelectItem>)}
+                </SelectContent>
               </Select>
             </div>
+
             <div className="space-y-1.5">
-              <Label>{p.duracaoEstimada}</Label>
-              <Input type="number" min="1" max="48" placeholder={p.duracaoPlaceholder} value={form.duracaoEstimadaHoras} onChange={e => setForm(f => ({ ...f, duracaoEstimadaHoras: e.target.value }))} disabled={!canEdit} />
+              <Label className="text-xs font-medium">Nº do Lote *</Label>
+              <Input placeholder="ex: Z0032" value={form.loteNumero} onChange={e => setField('loteNumero', e.target.value)} disabled={!canEdit} />
             </div>
+
             <div className="space-y-1.5">
-              <Label>{p.kgProduzidos}</Label>
-              <Input type="number" step="0.01" value={form.kgProduzidos} onChange={e => setForm(f => ({ ...f, kgProduzidos: e.target.value }))} disabled={!canEdit} />
+              <Label className="text-xs font-medium">Data de Produção *</Label>
+              <Input type="date" value={form.dataProducao} onChange={e => setField('dataProducao', e.target.value)} disabled={!canEdit} />
             </div>
+
             <div className="space-y-1.5">
-              <Label>{p.separadoPor}</Label>
-              <Input value={form.separadoPor} onChange={e => setForm(f => ({ ...f, separadoPor: e.target.value }))} disabled={!canEdit} />
+              <Label className="text-xs font-medium">Hora de Início</Label>
+              <Input type="time" value={form.horaInicio} onChange={e => setField('horaInicio', e.target.value)} disabled={!canEdit} />
             </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Duração estimada (horas)</Label>
+              <div className="relative">
+                <Input type="number" min="1" max="48" placeholder="ex: 8" value={form.duracaoEstimadaHoras} onChange={e => setField('duracaoEstimadaHoras', e.target.value)} disabled={!canEdit} />
+                <span className="absolute right-3 top-2.5 text-xs text-muted-foreground">h</span>
+              </div>
+              <p className="text-xs text-muted-foreground">Define quantas linhas o formulário impresso terá</p>
+            </div>
+
+            {/* Config badge */}
+            {form.productId && form.machineId && (
+              <div className="sm:col-span-2">
+                {config ? (
+                  <div className="flex items-center gap-2 text-xs text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                    <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0" />
+                    <span>Configuração de processo encontrada — <strong>{config.params.length} parâmetros</strong> carregados automaticamente</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                    <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
+                    <span>Nenhuma configuração cadastrada para este Produto + Máquina. Acesse a aba <strong>Configurações</strong> para criar.</span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
+        </Section>
 
-          {config && (
-            <p className="mt-3 text-xs text-green-700 bg-green-50 border border-green-200 rounded px-3 py-1.5">
-              ✓ Configuração de processo encontrada para {config.product.name} + {config.machine.name}
-            </p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Seção 2: Parâmetros Fixos */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm flex items-center gap-2">
-            {p.paramsFixos}
-            {hasAlerts && <Badge variant="destructive" className="text-xs">⚠ Desvios encontrados</Badge>}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+        {/* ── Etapa 2: Parâmetros Fixos ──────────────────────────────────── */}
+        <Section
+          step={2}
+          icon={Settings2}
+          title="Parâmetros Fixos do Setup"
+          subtitle="Registre os valores reais de cada parâmetro medidos no início da produção. Valores fora do range serão sinalizados automaticamente."
+          alert={hasAlerts ? `${fixedParams.filter(fp => fp.isOk === false).length} desvio(s)` : undefined}
+        >
           {fixedParams.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              {config
-                ? 'Carregando parâmetros...'
-                : 'Selecione Produto + Máquina para carregar os parâmetros configurados.'}
-            </p>
+            <div className="bg-background border rounded-xl p-6 text-center">
+              <Settings2 className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+              <p className="text-sm font-medium text-muted-foreground">Nenhum parâmetro carregado</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {form.productId && form.machineId
+                  ? 'Nenhuma configuração encontrada para este Produto + Máquina'
+                  : 'Selecione o Produto e a Máquina na Etapa 1'}
+              </p>
+            </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+            <div className="bg-background border rounded-xl overflow-x-auto">
+              <table className="w-full text-sm min-w-[480px]">
                 <thead>
-                  <tr className="border-b text-muted-foreground">
-                    <th className="text-left py-2 pr-4 font-medium min-w-[200px]">{p.paramName}</th>
-                    <th className="text-center py-2 px-2 font-medium w-16">{p.paramUnit}</th>
-                    <th className="text-center py-2 px-2 font-medium w-20">{p.paramMin}</th>
-                    <th className="text-center py-2 px-2 font-medium w-20">{p.paramMax}</th>
-                    <th className="text-center py-2 px-2 font-medium w-20">{p.paramSugerido}</th>
-                    <th className="text-center py-2 px-2 font-medium w-28">{p.paramReal}</th>
-                    <th className="text-center py-2 px-2 font-medium w-16">Status</th>
+                  <tr className="bg-muted/60 border-b">
+                    <th className="text-left px-4 py-2.5 font-medium text-xs">Parâmetro</th>
+                    <th className="text-center px-2 py-2.5 font-medium text-xs w-16">Un.</th>
+                    <th className="text-center px-2 py-2.5 font-medium text-xs w-20">Mín.</th>
+                    <th className="text-center px-2 py-2.5 font-medium text-xs w-20">Máx.</th>
+                    <th className="text-center px-2 py-2.5 font-medium text-xs w-20">Sugerido</th>
+                    <th className="text-center px-2 py-2.5 font-medium text-xs w-32">Valor Real</th>
+                    <th className="text-center px-2 py-2.5 font-medium text-xs w-16">Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {fixedParams.map((fp, idx) => (
-                    <tr key={idx} className={`border-b ${fp.isOk === false ? 'bg-red-50' : ''}`}>
-                      <td className="py-1.5 pr-4">{fp.nome}</td>
-                      <td className="py-1.5 px-2 text-center text-muted-foreground text-xs">{fp.unidade ?? '—'}</td>
-                      <td className="py-1.5 px-2 text-center text-xs">{fp.minimo ?? '—'}</td>
-                      <td className="py-1.5 px-2 text-center text-xs">{fp.maximo ?? '—'}</td>
-                      <td className="py-1.5 px-2 text-center text-xs">{fp.sugerido ?? '—'}</td>
-                      <td className="py-1.5 px-2">
+                    <tr key={idx} className={`border-b last:border-0 ${fp.isOk === false ? 'bg-red-50' : idx % 2 === 0 ? '' : 'bg-muted/20'}`}>
+                      <td className="px-4 py-2">{fp.nome}</td>
+                      <td className="px-2 py-2 text-center text-xs text-muted-foreground">{fp.unidade ?? '—'}</td>
+                      <td className="px-2 py-2 text-center text-xs tabular-nums">{fp.minimo ?? '—'}</td>
+                      <td className="px-2 py-2 text-center text-xs tabular-nums">{fp.maximo ?? '—'}</td>
+                      <td className="px-2 py-2 text-center text-xs tabular-nums text-muted-foreground">{fp.sugerido ?? '—'}</td>
+                      <td className="px-2 py-2">
                         <Input
-                          className="h-7 text-sm text-center"
+                          className="h-7 text-sm text-center tabular-nums"
                           value={fp.valorReal?.toString() ?? ''}
                           onChange={e => updateFixedParam(idx, e.target.value)}
                           disabled={!canEdit}
                           placeholder="—"
                         />
                       </td>
-                      <td className="py-1.5 px-2 text-center">
-                        {fp.isOk === null ? '—' : fp.isOk ? '✅' : '⚠️'}
+                      <td className="px-2 py-2 text-center text-base">
+                        {fp.isOk === null ? <span className="text-muted-foreground text-xs">—</span> : fp.isOk ? '✅' : '⚠️'}
                       </td>
                     </tr>
                   ))}
@@ -523,152 +609,259 @@ export function BatchFormPage() {
               </table>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </Section>
 
-      {/* Seção 3: Medições Horárias */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm flex items-center justify-between">
-            {p.medicoesHorarias}
-            {canEdit && (
-              <Button size="sm" variant="outline" onClick={addMeasurement}>
-                <Plus className="h-3 w-3" /> {p.addMedicao}
-              </Button>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+        {/* ── Etapa 3: Medições Horárias ─────────────────────────────────── */}
+        <Section
+          step={3}
+          icon={Clock}
+          title="Medições Horárias"
+          subtitle="Digite os valores coletados a cada hora de produção conforme preenchido no formulário impresso."
+        >
           {measurements.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nenhuma medição registrada. Clique em "{p.addMedicao}" para adicionar.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs min-w-[900px]">
-                <thead>
-                  <tr className="border-b text-muted-foreground">
-                    <th className="text-left py-2 px-2 font-medium w-16">{p.horario}</th>
-                    <th className="text-center py-2 px-1 font-medium">{p.roloCmpDir}</th>
-                    <th className="text-center py-2 px-1 font-medium">{p.roloCmpEsq}</th>
-                    <th className="text-center py-2 px-1 font-medium">{p.rampaDosEsq}</th>
-                    <th className="text-center py-2 px-1 font-medium">{p.rampaDosDir}</th>
-                    <th className="text-center py-2 px-1 font-medium">{p.pressaoCFCL1}</th>
-                    <th className="text-center py-2 px-1 font-medium">{p.pressaoCFCL2}</th>
-                    <th className="text-center py-2 px-1 font-medium">{p.coefVarL1}</th>
-                    <th className="text-center py-2 px-1 font-medium">{p.coefVarL2}</th>
-                    <th className="text-center py-2 px-1 font-medium">{p.responsavel}</th>
-                    <th className="text-center py-2 px-1 font-medium">Obs.</th>
-                    {canEdit && <th className="w-8"></th>}
-                  </tr>
-                </thead>
-                <tbody>
-                  {measurements.map((m, idx) => (
-                    <tr key={idx} className="border-b">
-                      <td className="py-1 px-1">
-                        <Input className="h-7 text-xs w-16" value={m.horario} onChange={e => updateMeasurement(idx, 'horario', e.target.value)} disabled={!canEdit} />
-                      </td>
-                      {(['roloCmpDir', 'roloCmpEsq', 'rampaDosEsq', 'rampaDosDir', 'pressaoCFCL1', 'pressaoCFCL2', 'coefVarL1', 'coefVarL2'] as const).map(field => (
-                        <td key={field} className="py-1 px-1">
-                          <Input className="h-7 text-xs w-20 text-center" value={m[field]?.toString() ?? ''} onChange={e => updateMeasurement(idx, field, e.target.value)} disabled={!canEdit} placeholder="—" />
-                        </td>
-                      ))}
-                      <td className="py-1 px-1">
-                        <Input className="h-7 text-xs w-24" value={m.responsavel ?? ''} onChange={e => updateMeasurement(idx, 'responsavel', e.target.value)} disabled={!canEdit} />
-                      </td>
-                      <td className="py-1 px-1">
-                        <Input className="h-7 text-xs w-32" value={m.observacoes ?? ''} onChange={e => updateMeasurement(idx, 'observacoes', e.target.value)} disabled={!canEdit} />
-                      </td>
-                      {canEdit && (
-                        <td className="py-1 px-1">
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeMeasurement(idx)}>
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </td>
-                      )}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Seção 4: Ocorrências */}
-      <Card>
-        <CardHeader><CardTitle className="text-sm">{p.ocorrencias}</CardTitle></CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-2">
-            {OCCURRENCE_TYPES.map(type => {
-              const active = occurrences.some(o => o.type === type)
-              return (
-                <button
-                  key={type}
-                  type="button"
-                  disabled={!canEdit}
-                  onClick={() => toggleOccurrence(type)}
-                  className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                    active
-                      ? 'bg-destructive text-white border-destructive'
-                      : 'border-border text-muted-foreground hover:border-destructive hover:text-destructive'
-                  }`}
-                >
-                  {p[type]}
-                </button>
-              )
-            })}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Seção 5: Observações */}
-      <Card>
-        <CardHeader><CardTitle className="text-sm">Observações e Finalização</CardTitle></CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-1.5">
-            <Label>{p.observacoesOperador}</Label>
-            <textarea
-              className="w-full min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
-              value={form.observacoesOperador}
-              onChange={e => setForm(f => ({ ...f, observacoesOperador: e.target.value }))}
-              disabled={!canEdit}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label>{p.observacoesTecnico}</Label>
-            <textarea
-              className="w-full min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
-              value={form.observacoesTecnico}
-              onChange={e => setForm(f => ({ ...f, observacoesTecnico: e.target.value }))}
-              disabled={!canEdit}
-            />
-          </div>
-
-          {canEdit && (
-            <div className="flex gap-3 pt-2">
-              <Button
-                variant="outline"
-                onClick={() => saveMutation.mutate('DRAFT')}
-                disabled={saveMutation.isPending || !form.productId || !form.machineId || !form.punchSetId || !form.loteNumero}
-              >
-                {saveMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                Salvar Rascunho
-              </Button>
-              <Button
-                onClick={() => saveMutation.mutate('COMPLETED')}
-                disabled={saveMutation.isPending || !form.productId || !form.machineId || !form.punchSetId || !form.loteNumero}
-              >
-                {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                Concluir Lote
-              </Button>
-              {isEdit && existingBatch && (
-                <Button variant="secondary" onClick={() => generateCompletedPdf(existingBatch)}>
-                  <Download className="h-4 w-4" /> {p.downloadPdf}
+            <div className="bg-background border rounded-xl p-6 text-center">
+              <Clock className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+              <p className="text-sm font-medium text-muted-foreground">Nenhuma medição registrada</p>
+              {canEdit && (
+                <Button size="sm" className="mt-3" onClick={addMeasurement}>
+                  <Plus className="h-3.5 w-3.5" /> Adicionar primeira medição
                 </Button>
               )}
             </div>
+          ) : (
+            <div className="bg-background border rounded-xl overflow-hidden space-y-0">
+              {/* Mobile: cards empilhados */}
+              <div className="md:hidden divide-y">
+                {measurements.map((m, idx) => (
+                  <div key={idx} className="p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Medição {idx + 1}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Input className="h-7 text-xs text-center w-20" value={m.horario} onChange={e => updateMeasurement(idx, 'horario', e.target.value)} disabled={!canEdit} placeholder="HH:mm" />
+                        {canEdit && (
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeMeasurement(idx)}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {([
+                        ['Rolo Cmp. Dir.', 'roloCmpDir'],
+                        ['Rolo Cmp. Esq.', 'roloCmpEsq'],
+                        ['Rampa Dos. Esq.', 'rampaDosEsq'],
+                        ['Rampa Dos. Dir.', 'rampaDosDir'],
+                        ['CFC L1', 'pressaoCFCL1'],
+                        ['CFC L2', 'pressaoCFCL2'],
+                        ['CV L1 (%)', 'coefVarL1'],
+                        ['CV L2 (%)', 'coefVarL2'],
+                      ] as [string, keyof LocalMeasurement][]).map(([label, field]) => (
+                        <div key={field} className="space-y-1">
+                          <p className="text-[10px] text-muted-foreground font-medium">{label}</p>
+                          <Input className="h-7 text-xs" value={m[field]?.toString() ?? ''} onChange={e => updateMeasurement(idx, field, e.target.value)} disabled={!canEdit} placeholder="—" />
+                        </div>
+                      ))}
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <p className="text-[10px] text-muted-foreground font-medium">Responsável</p>
+                        <Input className="h-7 text-xs" value={m.responsavel ?? ''} onChange={e => updateMeasurement(idx, 'responsavel', e.target.value)} disabled={!canEdit} />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[10px] text-muted-foreground font-medium">Observações</p>
+                        <Input className="h-7 text-xs" value={m.observacoes ?? ''} onChange={e => updateMeasurement(idx, 'observacoes', e.target.value)} disabled={!canEdit} />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop: tabela compacta */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-xs min-w-[820px]">
+                  <thead>
+                    <tr className="bg-muted/60 border-b">
+                      <th className="text-center px-2 py-2 font-medium w-14">Hora</th>
+                      <th className="text-center px-1 py-2 font-medium">R.Dir.</th>
+                      <th className="text-center px-1 py-2 font-medium">R.Esq.</th>
+                      <th className="text-center px-1 py-2 font-medium">Rp.Esq.</th>
+                      <th className="text-center px-1 py-2 font-medium">Rp.Dir.</th>
+                      <th className="text-center px-1 py-2 font-medium">CFC L1</th>
+                      <th className="text-center px-1 py-2 font-medium">CFC L2</th>
+                      <th className="text-center px-1 py-2 font-medium">CV1%</th>
+                      <th className="text-center px-1 py-2 font-medium">CV2%</th>
+                      <th className="text-center px-1 py-2 font-medium">Resp.</th>
+                      <th className="text-center px-1 py-2 font-medium">Obs.</th>
+                      {canEdit && <th className="w-8" />}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {measurements.map((m, idx) => (
+                      <tr key={idx} className={`border-b last:border-0 ${idx % 2 ? 'bg-muted/20' : ''}`}>
+                        <td className="px-1 py-1">
+                          <Input className="h-7 text-xs text-center w-14" value={m.horario} onChange={e => updateMeasurement(idx, 'horario', e.target.value)} disabled={!canEdit} />
+                        </td>
+                        {(['roloCmpDir', 'roloCmpEsq', 'rampaDosEsq', 'rampaDosDir', 'pressaoCFCL1', 'pressaoCFCL2', 'coefVarL1', 'coefVarL2'] as const).map(field => (
+                          <td key={field} className="px-1 py-1">
+                            <Input className="h-7 text-xs text-center w-16" value={m[field]?.toString() ?? ''} onChange={e => updateMeasurement(idx, field, e.target.value)} disabled={!canEdit} placeholder="—" />
+                          </td>
+                        ))}
+                        <td className="px-1 py-1"><Input className="h-7 text-xs w-20" value={m.responsavel ?? ''} onChange={e => updateMeasurement(idx, 'responsavel', e.target.value)} disabled={!canEdit} /></td>
+                        <td className="px-1 py-1"><Input className="h-7 text-xs w-24" value={m.observacoes ?? ''} onChange={e => updateMeasurement(idx, 'observacoes', e.target.value)} disabled={!canEdit} /></td>
+                        {canEdit && (
+                          <td className="px-1 py-1">
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeMeasurement(idx)}>
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {canEdit && (
+                <div className="p-3 border-t bg-muted/30">
+                  <Button size="sm" variant="outline" onClick={addMeasurement}>
+                    <Plus className="h-3.5 w-3.5" /> Adicionar medição
+                  </Button>
+                </div>
+              )}
+            </div>
           )}
-        </CardContent>
-      </Card>
+        </Section>
+
+        {/* ── Etapa 4: Ocorrências ───────────────────────────────────────── */}
+        <Section
+          step={4}
+          icon={AlertTriangle}
+          title="Ocorrências do Lote"
+          subtitle="Registre problemas observados durante a produção. Múltiplos tipos podem ser selecionados."
+        >
+          <div className="bg-background border rounded-xl p-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {OCCURRENCE_TYPES.map(type => {
+                const active = occurrences.some(o => o.type === type)
+                const labels: Record<BatchOccurrenceType, { label: string; desc: string }> = {
+                  CAPPING:    { label: 'Capping',     desc: 'Separação de camadas' },
+                  STICKING:   { label: 'Sticking',    desc: 'Aderência ao punção' },
+                  TRAVAMENTO: { label: 'Travamento',  desc: 'Punção travou na máquina' },
+                  QUEBRA:     { label: 'Quebra',      desc: 'Punção quebrado' },
+                  OXIDACAO:   { label: 'Oxidação',    desc: 'Corrosão detectada' },
+                  OUTROS:     { label: 'Outros',      desc: 'Outras ocorrências' },
+                }
+                return (
+                  <button
+                    key={type}
+                    type="button"
+                    disabled={!canEdit}
+                    onClick={() => toggleOccurrence(type)}
+                    className={`text-left p-3 rounded-lg border-2 transition-all ${
+                      active
+                        ? 'border-destructive bg-destructive/10 text-destructive'
+                        : 'border-border hover:border-destructive/50 text-foreground'
+                    } ${!canEdit ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                  >
+                    <p className="font-medium text-sm">{labels[type].label}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{labels[type].desc}</p>
+                    {active && <p className="text-xs text-destructive font-medium mt-1">✓ Registrado</p>}
+                  </button>
+                )
+              })}
+            </div>
+            {occurrences.length > 0 && (
+              <p className="text-xs text-destructive font-medium mt-3">
+                {occurrences.length} ocorrência(s) registrada(s): {occurrences.map(o => o.type).join(', ')}
+              </p>
+            )}
+          </div>
+        </Section>
+
+        {/* ── Etapa 5: Observações e Finalização ────────────────────────── */}
+        <Section
+          step={5}
+          icon={MessageSquare}
+          title="Observações e Finalização"
+          subtitle="Registre os KG produzidos, observações do operador e do técnico de punções, e conclua o lote."
+        >
+          <div className="bg-background border rounded-xl p-4 space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">KG Produzidos</Label>
+                <div className="relative">
+                  <Input type="number" step="0.1" value={form.kgProduzidos} onChange={e => setField('kgProduzidos', e.target.value)} disabled={!canEdit} placeholder="ex: 450.5" />
+                  <span className="absolute right-3 top-2.5 text-xs text-muted-foreground">kg</span>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Separado por</Label>
+                <Input value={form.separadoPor} onChange={e => setField('separadoPor', e.target.value)} disabled={!canEdit} placeholder="Nome do responsável" />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Observações do Operador</Label>
+              <textarea
+                className="w-full min-h-[72px] rounded-lg border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
+                value={form.observacoesOperador}
+                onChange={e => setField('observacoesOperador', e.target.value)}
+                disabled={!canEdit}
+                placeholder="Condições observadas durante a produção..."
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Observações do Técnico de Punções</Label>
+              <textarea
+                className="w-full min-h-[72px] rounded-lg border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
+                value={form.observacoesTecnico}
+                onChange={e => setField('observacoesTecnico', e.target.value)}
+                disabled={!canEdit}
+                placeholder="Avaliação técnica sobre o estado dos punções..."
+              />
+            </div>
+
+            {canEdit && (
+              <div className="pt-2 border-t flex flex-col sm:flex-row gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  disabled={saveMutation.isPending || !canSubmit}
+                  onClick={() => saveMutation.mutate('DRAFT')}
+                >
+                  {saveMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+                  <ClipboardList className="h-4 w-4" />
+                  Salvar como Rascunho
+                </Button>
+                <Button
+                  className="flex-1"
+                  disabled={saveMutation.isPending || !canSubmit}
+                  onClick={() => saveMutation.mutate('COMPLETED')}
+                >
+                  {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                  Concluir Lote
+                </Button>
+              </div>
+            )}
+
+            {!canSubmit && (
+              <p className="text-xs text-muted-foreground text-center">
+                Preencha Produto, Máquina, Conjunto e Nº do Lote para salvar
+              </p>
+            )}
+          </div>
+        </Section>
+
+        {/* Fim do fluxo */}
+        <div className="flex justify-center pb-4">
+          <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center">
+            <ChevronRight className="h-4 w-4 text-muted-foreground rotate-90" />
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

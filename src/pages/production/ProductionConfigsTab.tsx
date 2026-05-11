@@ -215,7 +215,7 @@ export function ProductionConfigsTab() {
         <Button size="sm" onClick={openCreate}><Plus className="h-4 w-4" /> {p.newConfig}</Button>
       </div>
 
-      <div className="rounded-xl border">
+      <div className="rounded-xl border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
