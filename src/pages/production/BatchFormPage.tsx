@@ -536,14 +536,21 @@ export function BatchFormPage() {
             {form.productId && form.machineId && (
               <div className="sm:col-span-2">
                 {config ? (
-                  <div className="flex items-center gap-2 text-xs text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
-                    <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0" />
-                    <span>Configuração de processo encontrada — <strong>{config.params.length} parâmetros</strong> carregados automaticamente</span>
-                  </div>
+                  config.params.length > 0 ? (
+                    <div className="flex items-center gap-2 text-xs text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                      <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0" />
+                      <span>Configuração encontrada — <strong>{config.params.length} parâmetros fixos</strong> carregados automaticamente</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+                      <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0" />
+                      <span>Esta máquina não possui parâmetros CEP — o lote será registrado sem validação de limites</span>
+                    </div>
+                  )
                 ) : (
                   <div className="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
                     <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
-                    <span>Nenhuma configuração cadastrada para este Produto + Máquina. Acesse a aba <strong>Configurações</strong> para criar.</span>
+                    <span>Nenhuma configuração para este Produto + Máquina. Você pode <strong>continuar sem parâmetros</strong> ou criar uma configuração na aba <strong>Configurações de Processo</strong>.</span>
                   </div>
                 )}
               </div>
@@ -560,14 +567,18 @@ export function BatchFormPage() {
           alert={hasAlerts ? `${fixedParams.filter(fp => fp.isOk === false).length} desvio(s)` : undefined}
         >
           {fixedParams.length === 0 ? (
-            <div className="bg-background border rounded-xl p-6 text-center">
-              <Settings2 className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-              <p className="text-sm font-medium text-muted-foreground">Nenhum parâmetro carregado</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                {form.productId && form.machineId
-                  ? 'Nenhuma configuração encontrada para este Produto + Máquina'
-                  : 'Selecione o Produto e a Máquina na Etapa 1'}
-              </p>
+            <div className="bg-background border rounded-xl p-6 text-center space-y-2">
+              <Settings2 className="h-8 w-8 text-muted-foreground mx-auto" />
+              {!form.productId || !form.machineId ? (
+                <p className="text-sm text-muted-foreground">Selecione o Produto e a Máquina na Etapa 1</p>
+              ) : config && config.params.length === 0 ? (
+                <>
+                  <p className="text-sm font-medium">Máquina sem parâmetros CEP</p>
+                  <p className="text-xs text-muted-foreground">Esta combinação Produto + Máquina não possui parâmetros fixos configurados.<br/>O lote será registrado normalmente — apenas sem validação de limites.</p>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">Nenhuma configuração encontrada para este Produto + Máquina</p>
+              )}
             </div>
           ) : (
             <div className="bg-background border rounded-xl overflow-x-auto">

@@ -23,23 +23,31 @@ interface ParamRow {
   sugerido: string
 }
 
-const DEFAULT_PARAMS: ParamRow[] = [
-  { ordem: 1,  nome: 'Velocidade da Máquina',              unidade: 'Un/Min', minimo: '', maximo: '', sugerido: '' },
-  { ordem: 2,  nome: 'Vel. Distribuidor Direito',           unidade: 'traços', minimo: '', maximo: '', sugerido: '' },
-  { ordem: 3,  nome: 'Vel. Distribuidor Esquerdo',          unidade: 'traços', minimo: '', maximo: '', sugerido: '' },
-  { ordem: 4,  nome: 'Manopla Compressão Princ. Direito',   unidade: 'mm',     minimo: '', maximo: '', sugerido: '' },
-  { ordem: 5,  nome: 'Manopla Compressão Princ. Esquerdo',  unidade: 'mm',     minimo: '', maximo: '', sugerido: '' },
-  { ordem: 6,  nome: 'Manopla Pré-Compressão Sup. Direito', unidade: 'mm',     minimo: '', maximo: '', sugerido: '' },
-  { ordem: 7,  nome: 'Manopla Pré-Compressão Sup. Esquerdo',unidade: 'mm',     minimo: '', maximo: '', sugerido: '' },
-  { ordem: 8,  nome: 'Rolo Pré-Compressão Inf. Direito',    unidade: 'mm',     minimo: '', maximo: '', sugerido: '' },
-  { ordem: 9,  nome: 'Rolo Pré-Compressão Inf. Esquerdo',   unidade: 'mm',     minimo: '', maximo: '', sugerido: '' },
-  { ordem: 10, nome: 'Limite Força Compressão Principal',   unidade: 'KN',     minimo: '', maximo: '', sugerido: '' },
-  { ordem: 11, nome: 'Força Pré-Compressão Dir. (Lado 1)',  unidade: 'KN',     minimo: '', maximo: '', sugerido: '' },
-  { ordem: 12, nome: 'Força Pré-Compressão Esq. (Lado 2)',  unidade: 'KN',     minimo: '', maximo: '', sugerido: '' },
-  { ordem: 13, nome: 'Posição do Funil',                    unidade: '—',      minimo: '', maximo: '', sugerido: '' },
-  { ordem: 14, nome: 'Came de Enchimento',                  unidade: '—',      minimo: '', maximo: '', sugerido: '' },
-  { ordem: 15, nome: 'Código do Jogo de Punções',           unidade: '—',      minimo: '', maximo: '', sugerido: '' },
+// Parâmetros padrão baseados na planilha MK IV (Punch Care)
+// Máquinas sem padrão CEP iniciam com lista vazia — o operador preenche manualmente
+const DEFAULT_PARAMS_MK_IV: ParamRow[] = [
+  { ordem: 1,  nome: 'Código do Jogo de Punções',                              unidade: '—',      minimo: '',       maximo: '',       sugerido: '' },
+  { ordem: 2,  nome: 'Came de Enchimento',                                     unidade: '—',      minimo: '',       maximo: '',       sugerido: '11.16' },
+  { ordem: 3,  nome: 'Vel. da Máquina (MK IV UN/MIN)',                         unidade: 'Un/Min', minimo: '3395',   maximo: '3605',   sugerido: '3500' },
+  { ordem: 4,  nome: 'Velocidade do Distribuidor Direito (Em Traços)',          unidade: 'traços', minimo: '29.7',   maximo: '36.3',   sugerido: '33' },
+  { ordem: 5,  nome: 'Velocidade do Distribuidor Esquerdo (Em Traços)',         unidade: 'traços', minimo: '29.7',   maximo: '36.3',   sugerido: '33' },
+  { ordem: 6,  nome: 'Manopla Compressão Princ. Dir. (Em mm)',                  unidade: 'mm',     minimo: '2.1',    maximo: '3.9',    sugerido: '3' },
+  { ordem: 7,  nome: 'Manopla Compressão Princ. Esq. (Em mm)',                  unidade: 'mm',     minimo: '2.1',    maximo: '3.9',    sugerido: '3' },
+  { ordem: 8,  nome: 'Manopla Pré-Compressão Sup. Dir. (Em mm)',               unidade: 'mm',     minimo: '2.1',    maximo: '3.9',    sugerido: '3' },
+  { ordem: 9,  nome: 'Manopla Pré-Compressão Sup. Esq. (Em mm)',               unidade: 'mm',     minimo: '2.1',    maximo: '3.9',    sugerido: '3' },
+  { ordem: 10, nome: 'Rolo Pré-Compressão Inf. Dir. (Em mm)',                  unidade: 'mm',     minimo: '6.48',   maximo: '7.92',   sugerido: '7.2' },
+  { ordem: 11, nome: 'Rolo Pré-Compressão Inf. Esq. (Em mm)',                  unidade: 'mm',     minimo: '6.48',   maximo: '7.92',   sugerido: '7.2' },
+  { ordem: 12, nome: 'Limite de Força de Compressão Principal (Em KN)',        unidade: 'KN',     minimo: '20',     maximo: '31.275', sugerido: '31.275' },
+  { ordem: 13, nome: 'Força Pré-Compressão Dir. — Lado 1 (Em KN)',             unidade: 'KN',     minimo: '0.8',    maximo: '1.2',    sugerido: '1' },
+  { ordem: 14, nome: 'Força Pré-Compressão Esq. — Lado 2 (Em KN)',             unidade: 'KN',     minimo: '0.8',    maximo: '1.2',    sugerido: '1' },
+  { ordem: 15, nome: 'Posição do Funil (± 5%)',                                unidade: '—',      minimo: '3.8',    maximo: '4.2',    sugerido: '4' },
 ]
+
+// Lista vazia para máquinas sem padrão CEP definido
+const DEFAULT_PARAMS_EMPTY: ParamRow[] = []
+
+// Template padrão a usar ao criar nova configuração
+const DEFAULT_PARAMS = DEFAULT_PARAMS_MK_IV
 
 function parseNum(v: string) {
   const n = parseFloat(v.replace(',', '.'))
@@ -138,63 +146,95 @@ export function ProductionConfigsTab() {
   }
 
   const ConfigForm = ({ isEdit }: { isEdit: boolean }) => (
-    <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
+    <div className="space-y-4 max-h-[75vh] overflow-y-auto pr-1">
       {!isEdit && (
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <Label>Produto *</Label>
-            <Select value={productId} onValueChange={setProductId}>
-              <SelectTrigger><SelectValue placeholder="Selecione o produto" /></SelectTrigger>
-              <SelectContent>{products.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
-            </Select>
+        <>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>Produto *</Label>
+              <Select value={productId} onValueChange={setProductId}>
+                <SelectTrigger><SelectValue placeholder="Selecione o produto" /></SelectTrigger>
+                <SelectContent>{products.map(pr => <SelectItem key={pr.id} value={pr.id}>{pr.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Máquina *</Label>
+              <Select value={machineId} onValueChange={setMachineId}>
+                <SelectTrigger><SelectValue placeholder="Selecione a máquina" /></SelectTrigger>
+                <SelectContent>{machines.map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
           </div>
-          <div className="space-y-1.5">
-            <Label>Máquina *</Label>
-            <Select value={machineId} onValueChange={setMachineId}>
-              <SelectTrigger><SelectValue placeholder="Selecione a máquina" /></SelectTrigger>
-              <SelectContent>{machines.map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}</SelectContent>
-            </Select>
+
+          {/* Seleção de template */}
+          <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Template de parâmetros</p>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setParams(DEFAULT_PARAMS_MK_IV)}
+                className={`text-left p-3 rounded-lg border-2 text-sm transition-colors ${params.length > 0 ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
+              >
+                <p className="font-medium">Padrão MK IV</p>
+                <p className="text-xs text-muted-foreground mt-0.5">15 parâmetros da planilha CEP</p>
+              </button>
+              <button
+                type="button"
+                onClick={() => setParams(DEFAULT_PARAMS_EMPTY)}
+                className={`text-left p-3 rounded-lg border-2 text-sm transition-colors ${params.length === 0 ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
+              >
+                <p className="font-medium">Sem parâmetros</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Máquina sem padrão CEP</p>
+              </button>
+            </div>
           </div>
-        </div>
+        </>
       )}
 
       <div>
         <div className="flex items-center justify-between mb-2">
-          <p className="text-sm font-medium">{p.paramsFixos}</p>
+          <div>
+            <p className="text-sm font-medium">{p.paramsFixos}</p>
+            {params.length === 0 && (
+              <p className="text-xs text-muted-foreground mt-0.5">Nenhum parâmetro — lotes serão registrados sem validação de limites</p>
+            )}
+          </div>
           <Button type="button" size="sm" variant="outline" onClick={addParam}>
             <Plus className="h-3 w-3" /> {p.addParam}
           </Button>
         </div>
-        <div className="rounded-lg border overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="min-w-[180px]">Parâmetro</TableHead>
-                <TableHead className="w-20">Unid.</TableHead>
-                <TableHead className="w-20">Mín.</TableHead>
-                <TableHead className="w-20">Máx.</TableHead>
-                <TableHead className="w-20">Sugerido</TableHead>
-                <TableHead className="w-10"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {params.map((row, idx) => (
-                <TableRow key={idx}>
-                  <TableCell><Input className="h-7 text-xs" value={row.nome} onChange={e => updateParam(idx, 'nome', e.target.value)} /></TableCell>
-                  <TableCell><Input className="h-7 text-xs" value={row.unidade} onChange={e => updateParam(idx, 'unidade', e.target.value)} /></TableCell>
-                  <TableCell><Input className="h-7 text-xs" value={row.minimo} onChange={e => updateParam(idx, 'minimo', e.target.value)} /></TableCell>
-                  <TableCell><Input className="h-7 text-xs" value={row.maximo} onChange={e => updateParam(idx, 'maximo', e.target.value)} /></TableCell>
-                  <TableCell><Input className="h-7 text-xs" value={row.sugerido} onChange={e => updateParam(idx, 'sugerido', e.target.value)} /></TableCell>
-                  <TableCell>
-                    <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => removeParam(idx)}>
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </TableCell>
+        {params.length > 0 && (
+          <div className="rounded-lg border overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="min-w-[200px]">Parâmetro</TableHead>
+                  <TableHead className="w-20">Unid.</TableHead>
+                  <TableHead className="w-20">Mín.</TableHead>
+                  <TableHead className="w-20">Máx.</TableHead>
+                  <TableHead className="w-20">Sugerido</TableHead>
+                  <TableHead className="w-10" />
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {params.map((row, idx) => (
+                  <TableRow key={idx}>
+                    <TableCell><Input className="h-7 text-xs" value={row.nome} onChange={e => updateParam(idx, 'nome', e.target.value)} /></TableCell>
+                    <TableCell><Input className="h-7 text-xs" value={row.unidade} onChange={e => updateParam(idx, 'unidade', e.target.value)} /></TableCell>
+                    <TableCell><Input className="h-7 text-xs" value={row.minimo} onChange={e => updateParam(idx, 'minimo', e.target.value)} /></TableCell>
+                    <TableCell><Input className="h-7 text-xs" value={row.maximo} onChange={e => updateParam(idx, 'maximo', e.target.value)} /></TableCell>
+                    <TableCell><Input className="h-7 text-xs" value={row.sugerido} onChange={e => updateParam(idx, 'sugerido', e.target.value)} /></TableCell>
+                    <TableCell>
+                      <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => removeParam(idx)}>
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
       </div>
 
       <Button
