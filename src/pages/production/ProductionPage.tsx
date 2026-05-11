@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   Plus, FileText, Settings, BarChart3, Pencil, Trash2,
   CheckCircle2, Clock, FlaskConical, ChevronRight, ArrowRight,
+  Printer, PenLine, Monitor,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -51,12 +52,14 @@ function EmptyBatches({ navigate, canEdit }: { navigate: ReturnType<typeof useNa
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">Como funciona</p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
           {[
-            { icon: '📋', title: 'Imprime', desc: 'Formulário em branco gerado pelo sistema com os parâmetros configurados' },
-            { icon: '✍️', title: 'Preenche', desc: 'Operador anota os dados no papel durante a produção, a cada hora' },
-            { icon: '💻', title: 'Registra', desc: 'Digita tudo no sistema, que valida e gera alertas automaticamente' },
+            { icon: Printer,  title: '1. Imprime',  desc: 'Formulário em branco gerado pelo sistema com os parâmetros configurados' },
+            { icon: PenLine,  title: '2. Preenche', desc: 'Operador anota os dados no papel durante a produção, a cada hora' },
+            { icon: Monitor,  title: '3. Registra', desc: 'Digita tudo no sistema, que valida e gera alertas automaticamente' },
           ].map(item => (
             <div key={item.title} className="flex gap-3">
-              <span className="text-xl flex-shrink-0">{item.icon}</span>
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <item.icon className="h-4 w-4 text-primary" />
+              </div>
               <div>
                 <p className="font-medium">{item.title}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>

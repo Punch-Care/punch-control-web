@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import {
   ArrowLeft, Plus, Trash2, Loader2, Printer, Download,
   CheckCircle2, ClipboardList, Settings2, Clock, AlertTriangle,
-  MessageSquare, ChevronRight, Factory,
+  MessageSquare, ChevronRight, Factory, XCircle,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -612,7 +612,12 @@ export function BatchFormPage() {
                         />
                       </td>
                       <td className="px-2 py-2 text-center text-base">
-                        {fp.isOk === null ? <span className="text-muted-foreground text-xs">—</span> : fp.isOk ? '✅' : '⚠️'}
+                        {fp.isOk === null
+                        ? <span className="text-muted-foreground text-xs">—</span>
+                        : fp.isOk
+                          ? <CheckCircle2 className="h-4 w-4 text-green-600 mx-auto" />
+                          : <XCircle className="h-4 w-4 text-red-500 mx-auto" />
+                      }
                       </td>
                     </tr>
                   ))}
@@ -778,7 +783,7 @@ export function BatchFormPage() {
                   >
                     <p className="font-medium text-sm">{labels[type].label}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">{labels[type].desc}</p>
-                    {active && <p className="text-xs text-destructive font-medium mt-1">✓ Registrado</p>}
+                    {active && <p className="text-xs text-destructive font-medium mt-1">Registrado</p>}
                   </button>
                 )
               })}

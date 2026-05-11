@@ -231,7 +231,10 @@ export function UsersPage() {
           <div>
             <h2 className="text-lg font-bold tracking-tight">{t.users.title}</h2>
             <p className="text-xs text-muted-foreground">
-              {selectedCompany ? selectedCompany.name : me?.company?.name ?? t.users.subtitle}
+              {selectedCompany
+                ? selectedCompany.name
+                : me?.company?.name
+                  ?? (isAdminLevel ? 'Equipe interna Punch Care' : t.users.subtitle)}
             </p>
           </div>
         </div>

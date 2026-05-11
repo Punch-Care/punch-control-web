@@ -51,11 +51,12 @@ const GROUPS_COMPANY: NavGroup[] = [
   },
 ]
 
-// Administração global — só Empresas (sem usuários, que são por empresa)
+// Administração global — Empresas + Usuários internos Punch Care
 const ADMIN_GLOBAL_GROUP: NavGroup = {
   groupKey: 'admin',
   items: [
     { to: '/companies', labelKey: 'companies', icon: Building2 },
+    { to: '/users',     labelKey: 'users',     icon: Users },
   ],
 }
 
