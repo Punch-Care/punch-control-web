@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { ArrowLeft, Plus, Trash2, Loader2, Link2, Unlink, Wrench } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Loader2, Link2, Unlink } from 'lucide-react'
 import { toast } from 'sonner'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
@@ -12,21 +12,14 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useAuth } from '@/hooks/useAuth'
 import { useLocale } from '@/hooks/useLocale'
-import type { PunchSet, Punch, Product, SetStatus, ToolingComponent, ToolingComponentType } from '@/types'
-
-const NORMAS_TOOLING = [
-  'EUB', 'EUBB', 'EUBD', 'TSMB', 'TSMBB', 'TSMDB',
-  'EUD', 'TSMD', 'EURO', "FETTE EU 1'441", 'PHARMA',
-  '20/28', '25/32 GROOVE DIE', '25/32 SLOTTED DIE',
-] as const
-
-const TOOLING_TYPES: ToolingComponentType[] = ['UPPER_PUNCH', 'LOWER_PUNCH', 'MATRIX', 'SEGMENT']
+import { ToolingSection } from './ToolingSection'
+import type { PunchSet, Punch, Product, SetStatus } from '@/types'
 
 const STATUS_VARIANTS: Record<SetStatus, 'success' | 'warning' | 'secondary' | 'destructive'> = {
   ACTIVE: 'success',
@@ -69,63 +62,6 @@ export function SetDetailPage() {
     queryFn: () => api.get(`/punch-sets/${id}/products`).then((r) => r.data),
     enabled: !!id,
   })
-
-  const { data: toolingComponents = [] } = useQuery<ToolingComponent[]>({
-    queryKey: ['tooling-components', id],
-    queryFn: () => api.get(`/punch-sets/${id}/tooling-components`).then((r) => r.data),
-    enabled: !!id,
-  })
-
-  const [toolingDraft, setToolingDraft] = useState<Record<ToolingComponentType, Partial<ToolingComponent>>>(() => {
-    const init: Record<ToolingComponentType, Partial<ToolingComponent>> = {
-      UPPER_PUNCH: {}, LOWER_PUNCH: {}, MATRIX: {}, SEGMENT: {},
-    }
-    return init
-  })
-
-  const toolingByType = useMemo(() => {
-    const map: Record<ToolingComponentType, ToolingComponent | undefined> = {
-      UPPER_PUNCH: undefined, LOWER_PUNCH: undefined, MATRIX: undefined, SEGMENT: undefined,
-    }
-    toolingComponents.forEach((c) => { map[c.type as ToolingComponentType] = c })
-    return map
-  }, [toolingComponents])
-
-  const savingToolingMutation = useMutation({
-    mutationFn: (components: Partial<ToolingComponent>[]) =>
-      api.put(`/punch-sets/${id}/tooling-components`, components),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['tooling-components', id] })
-      toast.success(t.tooling.saved)
-    },
-    onError: () => toast.error(t.tooling.saveError),
-  })
-
-  const handleSaveTooling = () => {
-    const payload = TOOLING_TYPES.map((type) => {
-      const existing = toolingByType[type]
-      const draft = toolingDraft[type]
-      return {
-        type,
-        qtdSolicitada: draft.qtdSolicitada !== undefined ? draft.qtdSolicitada : (existing?.qtdSolicitada ?? null),
-        numDesenho: draft.numDesenho !== undefined ? draft.numDesenho : (existing?.numDesenho ?? null),
-        norma: draft.norma !== undefined ? draft.norma : (existing?.norma ?? null),
-        dimensoes: draft.dimensoes !== undefined ? draft.dimensoes : (existing?.dimensoes ?? null),
-      }
-    })
-    savingToolingMutation.mutate(payload)
-  }
-
-  const setToolingField = (type: ToolingComponentType, field: keyof ToolingComponent, value: string | number | null) => {
-    setToolingDraft((prev) => ({ ...prev, [type]: { ...prev[type], [field]: value || null } }))
-  }
-
-  const getToolingValue = (type: ToolingComponentType, field: keyof ToolingComponent): string => {
-    const draft = toolingDraft[type]
-    if (draft[field] !== undefined) return String(draft[field] ?? '')
-    const existing = toolingByType[type]
-    return String(existing?.[field] ?? '')
-  }
 
   const { data: allProducts = [] } = useQuery<Product[]>({
     queryKey: ['products'],
@@ -359,87 +295,8 @@ export function SetDetailPage() {
         </div>
       </div>
 
-      {/* Ferramental */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Wrench className="h-4 w-4 text-muted-foreground" />
-            <h3 className="font-semibold text-base">{t.tooling.title}</h3>
-          </div>
-          {canEdit && (
-            <Button
-              size="sm"
-              onClick={handleSaveTooling}
-              disabled={savingToolingMutation.isPending}
-            >
-              {savingToolingMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-              {t.tooling.save}
-            </Button>
-          )}
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {TOOLING_TYPES.map((type) => (
-            <Card key={type}>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">{t.tooling[type]}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label className="text-xs">{t.tooling.qtdSolicitada}</Label>
-                    <Input
-                      type="number"
-                      min="1"
-                      value={getToolingValue(type, 'qtdSolicitada')}
-                      onChange={(e) => setToolingField(type, 'qtdSolicitada', e.target.value ? Number(e.target.value) : null)}
-                      disabled={!canEdit}
-                      className="h-8 text-sm"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">{t.tooling.numDesenho}</Label>
-                    <Input
-                      value={getToolingValue(type, 'numDesenho')}
-                      onChange={(e) => setToolingField(type, 'numDesenho', e.target.value)}
-                      disabled={!canEdit}
-                      className="h-8 text-sm"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">{t.tooling.norma}</Label>
-                  <Select
-                    value={getToolingValue(type, 'norma') || '__none__'}
-                    onValueChange={(v) => setToolingField(type, 'norma', v === '__none__' ? null : v)}
-                    disabled={!canEdit}
-                  >
-                    <SelectTrigger className="h-8 text-sm">
-                      <SelectValue placeholder={t.tooling.normaPlaceholder} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none__">—</SelectItem>
-                      {NORMAS_TOOLING.map((n) => (
-                        <SelectItem key={n} value={n}>{n}</SelectItem>
-                      ))}
-                      <SelectItem value="Outros">{t.machines.normaOther}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">{t.tooling.dimensoes}</Label>
-                  <Input
-                    value={getToolingValue(type, 'dimensoes')}
-                    onChange={(e) => setToolingField(type, 'dimensoes', e.target.value)}
-                    disabled={!canEdit}
-                    className="h-8 text-sm"
-                    placeholder="ex: Ø 9,525 x 133,35 mm"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
+      {/* Ferramental — componente expandido */}
+      {id && <ToolingSection setId={id} canEdit={canEdit} />}
 
       {/* Link product dialog */}
       <Dialog open={linkOpen} onOpenChange={(o) => { setLinkOpen(o); if (!o) setSelectedProductId('') }}>

@@ -100,10 +100,83 @@ export interface ToolingComponent {
   id: string
   setId: string
   type: ToolingComponentType
+  // base
   qtdSolicitada: number | null
   numDesenho: string | null
   norma: string | null
   dimensoes: string | null
+  // punções
+  cargaRealKN: number | null
+  qtdPontas: number | null
+  tipoFixacao: string | null
+  rebaixoRetentorOleo: boolean | null
+  formatoComprimido: string | null
+  profundidadeCavMm: number | null
+  raioR1: number | null
+  raioR2: number | null
+  raioR3: number | null
+  raioR4: number | null
+  raioRa: number | null
+  espessuraBorda: number | null
+  contemChaveta: boolean | null
+  tipoVinco: string | null
+  opcaoAco: string | null
+  opcaoRevestimento: string | null
+  opcaoTratamento: string | null
+  // matrizes
+  conicoOuParalelo: string | null
+}
+
+// ── Ciclo de Vida expandido ────────────────────────────────────────────────────
+
+export type ComponentInventoryType = 'P_SUPERIOR' | 'P_INFERIOR' | 'MATRIZ_1' | 'MATRIZ_2'
+
+export interface LifecycleConfig {
+  id: string
+  setId: string
+  fatorDepreciacao: number
+  pesoMedioPadrao: number | null
+}
+
+export interface ComponentInventory {
+  id: string
+  setId: string
+  tipo: ComponentInventoryType
+  qtdAdquirida: number
+  qtdUtilizada: number
+  pontoEncomenda: number | null
+}
+
+export interface LifecycleProductionRecord {
+  id: string
+  setId: string
+  batchId: string | null
+  produto: string
+  data: string
+  maquina: string | null
+  numLote: string
+  qtdKg: number
+  percUtilizacao: number
+  percAcumulado: number
+  createdAt: string
+}
+
+export interface LifecycleMaintenanceRecord {
+  id: string
+  setId: string
+  data: string
+  componente: ComponentInventoryType
+  quantidade: number
+  notas: string | null
+  createdAt: string
+}
+
+export interface LifecycleData {
+  config: LifecycleConfig | null
+  inventory: ComponentInventory[]
+  production: LifecycleProductionRecord[]
+  maintenance: LifecycleMaintenanceRecord[]
+  percAcumulado: number
 }
 
 export interface Product {
