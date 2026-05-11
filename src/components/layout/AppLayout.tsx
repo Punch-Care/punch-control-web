@@ -140,11 +140,13 @@ function SidebarContent({ isAdmin, onNavigate }: { isAdmin: boolean; onNavigate?
             </div>
           ))}
 
-          {/* Gestão da empresa: Empresas (só admin) + Usuários */}
+          {/* Gestão: Empresas (só admin, sem Usuários pois COMPANY_MGMT_GROUP já inclui) + Usuários */}
           <GroupLabel label={nav.admin} />
-          {isAdmin && selectedCompany && ADMIN_GLOBAL_GROUP.items.map(({ to, labelKey, icon }) => (
-            <NavItemLink key={to} to={to} icon={icon} label={nav[labelKey]} onNavigate={onNavigate} />
-          ))}
+          {isAdmin && selectedCompany && ADMIN_GLOBAL_GROUP.items
+            .filter(item => item.labelKey !== 'users')
+            .map(({ to, labelKey, icon }) => (
+              <NavItemLink key={to} to={to} icon={icon} label={nav[labelKey]} onNavigate={onNavigate} />
+            ))}
           {COMPANY_MGMT_GROUP.items.map(({ to, labelKey, icon }) => (
             <NavItemLink key={to} to={to} icon={icon} label={nav[labelKey]} onNavigate={onNavigate} />
           ))}
