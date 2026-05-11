@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, Pencil, Loader2 } from 'lucide-react'
+import { Plus, Pencil, Loader2, BarChart3 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { format } from 'date-fns'
@@ -19,6 +19,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useAuth } from '@/hooks/useAuth'
 import { useLocale } from '@/hooks/useLocale'
 import { useAdminCompany } from '@/hooks/useAdminCompany'
+import { OccurrencesAnalytics } from './OccurrencesAnalytics'
 import type { Occurrence, OccurrenceStatus, OccurrenceType, PunchSet, Machine, Product } from '@/types'
 
 const STATUS_VARIANTS: Record<OccurrenceStatus, 'destructive' | 'warning' | 'success'> = {
@@ -33,6 +34,7 @@ export function OccurrencesPage() {
   const { t } = useLocale()
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'MANAGER'
   const { companyId: adminCompanyId, selectedCompany } = useAdminCompany()
+  const [showAnalytics, setShowAnalytics] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
   const [editOcc, setEditOcc] = useState<Occurrence | null>(null)
   const [statusFilter, setStatusFilter] = useState<string>('all')
@@ -184,10 +186,19 @@ export function OccurrencesPage() {
           <h2 className="text-xl sm:text-2xl font-bold tracking-tight">{t.occurrences.title}</h2>
           <p className="text-muted-foreground text-sm mt-0.5">{t.occurrences.subtitle}</p>
         </div>
-        <Button size="sm" onClick={() => setCreateOpen(true)}>
-          <Plus className="h-4 w-4" /> {t.occurrences.newOccurrence}
-        </Button>
+        <div className="flex gap-2">
+          <Button size="sm" variant={showAnalytics ? 'default' : 'outline'} onClick={() => setShowAnalytics(!showAnalytics)}>
+            <BarChart3 className="h-4 w-4" /> Análise Histórica
+          </Button>
+          {!showAnalytics && (
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
+              <Plus className="h-4 w-4" /> {t.occurrences.newOccurrence}
+            </Button>
+          )}
+        </div>
       </div>
+
+      {showAnalytics && <OccurrencesAnalytics />}
 
       <div className="grid grid-cols-3 gap-3">
         <Card className="border-red-200"><CardContent className="p-3"><p className="text-xs text-muted-foreground">{t.occurrences.open}</p><p className="text-2xl font-bold text-red-500">{occurrences.filter((o) => o.status === 'OPEN').length}</p></CardContent></Card>
