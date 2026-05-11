@@ -2,18 +2,20 @@ import { useState, useMemo } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, Pencil, Loader2 } from 'lucide-react'
+import { Plus, Pencil, Loader2, Users } from 'lucide-react'
 import { toast } from 'sonner'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
 import { api } from '@/lib/api'
 import { useAuth } from '@/hooks/useAuth'
 import { useLocale } from '@/hooks/useLocale'
+import { useAdminCompany } from '@/hooks/useAdminCompany'
 import type { UserRole } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
+import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -43,6 +45,7 @@ function UserForm({
   onSubmit,
   loading,
   currentRole,
+  contextCompanyId,
   t,
 }: {
   mode: 'create' | 'edit'
@@ -50,8 +53,11 @@ function UserForm({
   onSubmit: (data: CreateForm | UpdateForm) => void
   loading: boolean
   currentRole: UserRole
+  contextCompanyId?: string   // empresa já definida pelo contexto (não exibir seletor)
   t: ReturnType<typeof useLocale>['t']
 }) {
+  const isAdminLevel = currentRole === 'ADMIN' || currentRole === 'MANAGER'
+
   const createSchema = useMemo(
     () =>
       z.object({
@@ -74,27 +80,38 @@ function UserForm({
 
   const schema = mode === 'create' ? createSchema : updateSchema
 
+  // Só busca empresas se for admin E não há empresa no contexto
   const { data: companies = [] } = useQuery<{ id: string; name: string }[]>({
-    queryKey: ['companies-list'],
+    queryKey: ['companies'],
     queryFn: () => api.get('/companies').then((r) => r.data),
+    enabled: isAdminLevel && !contextCompanyId,
   })
 
   const { register, handleSubmit, control, watch, formState: { errors } } = useForm<CreateForm>({
     resolver: zodResolver(schema),
-    defaultValues,
+    defaultValues: {
+      ...defaultValues,
+      companyId: contextCompanyId || defaultValues?.companyId,
+    },
   })
 
   const selectedRole = watch('role')
   const needsCompany = selectedRole === 'COMPANY' || selectedRole === 'CLIENT'
 
-  const availableRoles: { value: UserRole; label: string }[] = currentRole === 'COMPANY'
-    ? [{ value: 'CLIENT', label: t.roles.CLIENT }]
-    : [
-        { value: 'ADMIN', label: t.roles.ADMIN },
-        { value: 'MANAGER', label: t.roles.MANAGER },
-        { value: 'COMPANY', label: t.roles.COMPANY },
-        { value: 'CLIENT', label: t.roles.CLIENT },
-      ]
+  // Roles disponíveis: COMPANY role só cria CLIENTs; no contexto de empresa, admin também só cria COMPANY/CLIENT
+  const availableRoles: { value: UserRole; label: string }[] = useMemo(() => {
+    if (currentRole === 'COMPANY') return [{ value: 'CLIENT', label: t.roles.CLIENT }]
+    if (contextCompanyId) return [
+      { value: 'COMPANY', label: t.roles.COMPANY },
+      { value: 'CLIENT', label: t.roles.CLIENT },
+    ]
+    return [
+      { value: 'ADMIN', label: t.roles.ADMIN },
+      { value: 'MANAGER', label: t.roles.MANAGER },
+      { value: 'COMPANY', label: t.roles.COMPANY },
+      { value: 'CLIENT', label: t.roles.CLIENT },
+    ]
+  }, [currentRole, contextCompanyId, t])
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -130,7 +147,9 @@ function UserForm({
           )}
         />
       </div>
-      {needsCompany && (
+
+      {/* Empresa: oculto quando já há contexto de empresa */}
+      {needsCompany && !contextCompanyId && isAdminLevel && (
         <div className="space-y-1.5">
           <Label>{t.common.company} *</Label>
           <Controller
@@ -149,6 +168,7 @@ function UserForm({
           />
         </div>
       )}
+
       <Button type="submit" className="w-full" disabled={loading}>
         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
         {t.common.save}
@@ -161,16 +181,35 @@ export function UsersPage() {
   const qc = useQueryClient()
   const { user: me } = useAuth()
   const { t } = useLocale()
+  const { companyId: adminCompanyId, selectedCompany } = useAdminCompany()
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<UserItem | null>(null)
 
+  const isAdminLevel = me?.role === 'ADMIN' || me?.role === 'MANAGER'
+
+  // contextCompanyId: empresa do contexto (admin selecionou empresa, ou usuário COMPANY/CLIENT tem empresa fixa)
+  const contextCompanyId = selectedCompany?.id ?? me?.company?.id
+
   const { data: users = [], isLoading } = useQuery<UserItem[]>({
-    queryKey: ['users'],
-    queryFn: () => api.get('/users').then((r) => r.data),
+    queryKey: ['users', adminCompanyId],
+    queryFn: () => api.get('/users', { params: { companyId: adminCompanyId } }).then((r) => r.data),
   })
 
+  // Contadores por role
+  const counts = useMemo(() => ({
+    total: users.length,
+    admins: users.filter(u => u.role === 'COMPANY' || u.role === 'ADMIN' || u.role === 'MANAGER').length,
+    clients: users.filter(u => u.role === 'CLIENT').length,
+    active: users.filter(u => u.active).length,
+  }), [users])
+
   const createMutation = useMutation({
-    mutationFn: (data: CreateForm) => api.post('/users', data),
+    mutationFn: (data: CreateForm) => {
+      const payload = contextCompanyId && !data.companyId
+        ? { ...data, companyId: contextCompanyId }
+        : data
+      return api.post('/users', payload)
+    },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['users'] }); setOpen(false); toast.success(t.users.created) },
     onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? t.users.createError),
   })
@@ -182,21 +221,37 @@ export function UsersPage() {
   })
 
   return (
-    <div className="p-6 space-y-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">{t.users.title}</h2>
-          <p className="text-muted-foreground text-sm mt-0.5">{t.users.subtitle}</p>
+    <div className="p-4 sm:p-6 space-y-5">
+      {/* Cabeçalho */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+            <Users className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold tracking-tight">{t.users.title}</h2>
+            <p className="text-xs text-muted-foreground">
+              {selectedCompany ? selectedCompany.name : me?.company?.name ?? t.users.subtitle}
+            </p>
+          </div>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button size="sm"><Plus className="h-4 w-4" /> {t.users.newUser}</Button>
           </DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle>{t.users.newUser}</DialogTitle></DialogHeader>
+            <DialogHeader>
+              <DialogTitle>{t.users.newUser}</DialogTitle>
+              {contextCompanyId && (
+                <p className="text-sm text-muted-foreground">
+                  {selectedCompany?.name ?? me?.company?.name}
+                </p>
+              )}
+            </DialogHeader>
             <UserForm
               mode="create"
               currentRole={me?.role ?? 'CLIENT'}
+              contextCompanyId={contextCompanyId}
               onSubmit={(d) => createMutation.mutate(d as CreateForm)}
               loading={createMutation.isPending}
               t={t}
@@ -205,33 +260,77 @@ export function UsersPage() {
         </Dialog>
       </div>
 
-      <div className="rounded-xl border overflow-x-auto">
+      {/* Cards de resumo */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { label: 'Total', value: counts.total, color: 'text-foreground' },
+          { label: 'Ativos', value: counts.active, color: 'text-green-600' },
+          { label: 'Gestores', value: counts.admins, color: 'text-primary' },
+          { label: 'Clientes', value: counts.clients, color: 'text-muted-foreground' },
+        ].map(s => (
+          <Card key={s.label} className="border-0 shadow-sm">
+            <CardContent className="p-3">
+              <p className={`text-2xl font-bold tabular-nums ${s.color}`}>{s.value}</p>
+              <p className="text-xs text-muted-foreground">{s.label}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Tabela */}
+      <div className="rounded-xl border overflow-x-auto bg-background shadow-sm">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>{t.common.name}</TableHead>
-              <TableHead>{t.users.email}</TableHead>
-              <TableHead>{t.users.profile}</TableHead>
-              <TableHead>{t.common.company}</TableHead>
-              <TableHead>{t.common.status}</TableHead>
-              <TableHead className="w-16">{t.common.actions}</TableHead>
+            <TableRow className="bg-muted/30">
+              <TableHead className="font-semibold">{t.common.name}</TableHead>
+              <TableHead className="font-semibold">{t.users.email}</TableHead>
+              <TableHead className="font-semibold">{t.users.profile}</TableHead>
+              {/* Só mostra empresa se admin sem empresa selecionada */}
+              {isAdminLevel && !selectedCompany && (
+                <TableHead className="font-semibold">{t.common.company}</TableHead>
+              )}
+              <TableHead className="font-semibold">{t.common.status}</TableHead>
+              <TableHead className="w-16" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>
+              <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-10">{t.common.loading}</TableCell></TableRow>
             ) : users.length === 0 ? (
-              <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">{t.users.noUsers}</TableCell></TableRow>
+              <TableRow>
+                <TableCell colSpan={6} className="py-12">
+                  <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                    <Users className="h-8 w-8" />
+                    <p className="text-sm font-medium">{t.users.noUsers}</p>
+                    <p className="text-xs">Clique em "{t.users.newUser}" para adicionar o primeiro usuário</p>
+                  </div>
+                </TableCell>
+              </TableRow>
             ) : users.map((u) => (
-              <TableRow key={u.id}>
-                <TableCell className="font-medium">{u.name}</TableCell>
-                <TableCell className="text-muted-foreground">{u.email}</TableCell>
-                <TableCell><Badge variant={roleBadgeVariant[u.role]}>{t.roles[u.role]}</Badge></TableCell>
-                <TableCell className="text-muted-foreground">{u.company?.name ?? '—'}</TableCell>
-                <TableCell><Badge variant={u.active ? 'success' : 'secondary'}>{u.active ? t.users.active : t.users.inactive}</Badge></TableCell>
+              <TableRow key={u.id} className="hover:bg-muted/30">
                 <TableCell>
-                  <Button variant="ghost" size="icon" onClick={() => setEditing(u)}>
-                    <Pencil className="h-4 w-4" />
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary flex-shrink-0">
+                      {u.name[0].toUpperCase()}
+                    </div>
+                    <span className="font-medium">{u.name}</span>
+                  </div>
+                </TableCell>
+                <TableCell className="text-muted-foreground text-sm">{u.email}</TableCell>
+                <TableCell>
+                  <Badge variant={roleBadgeVariant[u.role]}>{t.roles[u.role]}</Badge>
+                </TableCell>
+                {isAdminLevel && !selectedCompany && (
+                  <TableCell className="text-muted-foreground text-sm">{u.company?.name ?? '—'}</TableCell>
+                )}
+                <TableCell>
+                  <Badge variant={u.active ? 'success' : 'secondary'}>
+                    {u.active ? t.users.active : t.users.inactive}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditing(u)}>
+                    <Pencil className="h-3.5 w-3.5" />
                   </Button>
                 </TableCell>
               </TableRow>
@@ -240,13 +339,22 @@ export function UsersPage() {
         </Table>
       </div>
 
+      {/* Edit dialog */}
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{t.users.editUser}</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>{t.users.editUser}</DialogTitle>
+            {contextCompanyId && (
+              <p className="text-sm text-muted-foreground">
+                {selectedCompany?.name ?? me?.company?.name}
+              </p>
+            )}
+          </DialogHeader>
           {editing && (
             <UserForm
               mode="edit"
               currentRole={me?.role ?? 'CLIENT'}
+              contextCompanyId={contextCompanyId}
               defaultValues={{ name: editing.name, email: editing.email, role: editing.role, companyId: editing.company?.id }}
               onSubmit={(d) => updateMutation.mutate(d as UpdateForm)}
               loading={updateMutation.isPending}

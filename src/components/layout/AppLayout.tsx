@@ -51,11 +51,19 @@ const GROUPS_COMPANY: NavGroup[] = [
   },
 ]
 
-const ADMIN_GROUP: NavGroup = {
+// Administração global — só Empresas (sem usuários, que são por empresa)
+const ADMIN_GLOBAL_GROUP: NavGroup = {
   groupKey: 'admin',
   items: [
     { to: '/companies', labelKey: 'companies', icon: Building2 },
-    { to: '/users',     labelKey: 'users',     icon: Users },
+  ],
+}
+
+// Dentro de uma empresa: Usuários daquela empresa
+const COMPANY_MGMT_GROUP: NavGroup = {
+  groupKey: 'admin',
+  items: [
+    { to: '/users', labelKey: 'users', icon: Users },
   ],
 }
 
@@ -108,19 +116,20 @@ function SidebarContent({ isAdmin, onNavigate }: { isAdmin: boolean; onNavigate?
       {/* Dashboard — sempre no topo */}
       <NavItemLink to="/dashboard" icon={LayoutDashboard} label={nav.dashboard} onNavigate={onNavigate} />
 
-      {/* Admin sem empresa selecionada → só Administração */}
+      {/* Admin sem empresa → só Empresas (Usuários ficam dentro de cada empresa) */}
       {isAdmin && !selectedCompany && (
         <>
           <GroupLabel label={nav.admin} />
-          {ADMIN_GROUP.items.map(({ to, labelKey, icon }) => (
+          {ADMIN_GLOBAL_GROUP.items.map(({ to, labelKey, icon }) => (
             <NavItemLink key={to} to={to} icon={icon} label={nav[labelKey]} onNavigate={onNavigate} />
           ))}
         </>
       )}
 
-      {/* Admin com empresa ou usuário de empresa → menu completo agrupado */}
+      {/* Admin com empresa selecionada ou usuário de empresa → menu completo */}
       {(!isAdmin || selectedCompany) && (
         <>
+          {/* Grupos operacionais */}
           {GROUPS_COMPANY.map(group => (
             <div key={group.groupKey}>
               <GroupLabel label={nav[group.groupKey]} />
@@ -130,24 +139,27 @@ function SidebarContent({ isAdmin, onNavigate }: { isAdmin: boolean; onNavigate?
             </div>
           ))}
 
-          {/* Admin: seção Administração abaixo dos grupos */}
+          {/* Gestão da empresa: Empresas (só admin) + Usuários */}
+          <GroupLabel label={nav.admin} />
+          {isAdmin && selectedCompany && ADMIN_GLOBAL_GROUP.items.map(({ to, labelKey, icon }) => (
+            <NavItemLink key={to} to={to} icon={icon} label={nav[labelKey]} onNavigate={onNavigate} />
+          ))}
+          {COMPANY_MGMT_GROUP.items.map(({ to, labelKey, icon }) => (
+            <NavItemLink key={to} to={to} icon={icon} label={nav[labelKey]} onNavigate={onNavigate} />
+          ))}
+
+          {/* Botão voltar — só admin com empresa selecionada */}
           {isAdmin && selectedCompany && (
-            <>
-              <GroupLabel label={nav.admin} />
-              {ADMIN_GROUP.items.map(({ to, labelKey, icon }) => (
-                <NavItemLink key={to} to={to} icon={icon} label={nav[labelKey]} onNavigate={onNavigate} />
-              ))}
-              <div className="mt-4 px-1">
-                <button
-                  type="button"
-                  onClick={handleBack}
-                  className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-xs text-sidebar-foreground/40 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
-                >
-                  <ChevronLeft className="h-3 w-3" />
-                  Todas as empresas
-                </button>
-              </div>
-            </>
+            <div className="mt-4 px-1">
+              <button
+                type="button"
+                onClick={handleBack}
+                className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-xs text-sidebar-foreground/40 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+              >
+                <ChevronLeft className="h-3 w-3" />
+                Todas as empresas
+              </button>
+            </div>
           )}
         </>
       )}
