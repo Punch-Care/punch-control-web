@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { ArrowLeft, Plus, Trash2, Loader2, Link2, Unlink } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Loader2, Link2, Unlink, FlaskConical, AlertTriangle, Activity, Ruler } from 'lucide-react'
 import { toast } from 'sonner'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
@@ -18,8 +18,33 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useAuth } from '@/hooks/useAuth'
 import { useLocale } from '@/hooks/useLocale'
+import { useAdminCompany } from '@/hooks/useAdminCompany'
+import { useProductsQuery } from '@/hooks/queries'
+import { Breadcrumb } from '@/components/ui/breadcrumb'
 import { ToolingSection } from './ToolingSection'
 import type { PunchSet, Punch, Product, SetStatus } from '@/types'
+
+function UsefulValueBar({ value, l30, l60 }: { value: number; l30: number; l60: number }) {
+  const color = value <= l30 ? 'bg-red-500' : value <= l60 ? 'bg-yellow-500' : 'bg-green-500'
+  const label = value <= l30 ? 'Crítico' : value <= l60 ? 'Atenção' : 'Saudável'
+  const labelColor = value <= l30 ? 'text-red-600' : value <= l60 ? 'text-yellow-600' : 'text-green-600'
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between text-xs">
+        <span className="text-muted-foreground font-medium">Vida útil do conjunto</span>
+        <span className={`font-semibold ${labelColor}`}>{value.toFixed(0)}% — {label}</span>
+      </div>
+      <div className="h-2 bg-muted rounded-full overflow-hidden">
+        <div className={`h-full rounded-full transition-all ${color}`} style={{ width: `${value}%` }} />
+      </div>
+      <div className="flex justify-between text-[10px] text-muted-foreground">
+        <span>Crítico em {l30}%</span>
+        <span>Alerta em {l60}%</span>
+        <span>100%</span>
+      </div>
+    </div>
+  )
+}
 
 const STATUS_VARIANTS: Record<SetStatus, 'success' | 'warning' | 'secondary' | 'destructive'> = {
   ACTIVE: 'success',
@@ -34,6 +59,7 @@ export function SetDetailPage() {
   const qc = useQueryClient()
   const { t } = useLocale()
   const { user } = useAuth()
+  const { companyId } = useAdminCompany()
   const canEdit = user?.role !== 'CLIENT'
   const [addOpen, setAddOpen] = useState(false)
   const [linkOpen, setLinkOpen] = useState(false)
@@ -63,11 +89,7 @@ export function SetDetailPage() {
     enabled: !!id,
   })
 
-  const { data: allProducts = [] } = useQuery<Product[]>({
-    queryKey: ['products'],
-    queryFn: () => api.get('/products').then((r) => r.data),
-    enabled: linkOpen,
-  })
+  const { data: allProducts = [] } = useProductsQuery(companyId, { enabled: linkOpen })
 
   const linkMutation = useMutation({
     mutationFn: (productId: string) => api.post(`/punch-sets/${id}/products`, { productId }),
@@ -146,15 +168,20 @@ export function SetDetailPage() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1 min-w-0">
+          <Breadcrumb items={[
+            { label: t.sets.title, href: '/sets' },
+            { label: `${set.code} — ${set.name}` },
+          ]} />
           <div className="flex items-center gap-2 flex-wrap">
             <h2 className="text-xl sm:text-2xl font-bold tracking-tight font-mono">{set.code}</h2>
             <Badge variant={STATUS_VARIANTS[set.status]}>{t.status[set.status]}</Badge>
           </div>
-          <p className="text-muted-foreground text-sm mt-0.5">{set.name}</p>
         </div>
-        <Button size="sm" onClick={() => setAddOpen(true)}>
-          <Plus className="h-4 w-4" /> {t.setDetail.addPunch}
-        </Button>
+        {canEdit && (
+          <Button size="sm" onClick={() => setAddOpen(true)}>
+            <Plus className="h-4 w-4" /> {t.setDetail.addPunch}
+          </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -182,6 +209,70 @@ export function SetDetailPage() {
             <p className="text-2xl font-bold mt-0.5">{matrixCount}</p>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Vida útil */}
+      <Card className="border-0 shadow-sm">
+        <CardContent className="p-4">
+          <UsefulValueBar
+            value={set.usefulValue ?? 100}
+            l30={set.l30Limit ?? 30}
+            l60={set.l60Limit ?? 60}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Hub de ações rápidas */}
+      <div>
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Ações rápidas</p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {[
+            {
+              icon: FlaskConical,
+              label: 'Novo Lote',
+              desc: 'Registrar produção',
+              color: 'bg-primary/10 text-primary hover:bg-primary/20',
+              onClick: () => navigate(`/production/new?setId=${id}`),
+              show: canEdit,
+            },
+            {
+              icon: AlertTriangle,
+              label: 'Ocorrências',
+              desc: 'Ver e registrar',
+              color: 'bg-red-50 text-red-700 hover:bg-red-100',
+              onClick: () => navigate(`/occurrences?setId=${id}`),
+              show: true,
+            },
+            {
+              icon: Activity,
+              label: 'Ciclo de Vida',
+              desc: 'Histórico e estoque',
+              color: 'bg-orange-50 text-orange-700 hover:bg-orange-100',
+              onClick: () => navigate(`/lifecycle?setId=${id}`),
+              show: true,
+            },
+            {
+              icon: Ruler,
+              label: 'Dimensionar',
+              desc: 'Registrar medições',
+              color: 'bg-blue-50 text-blue-700 hover:bg-blue-100',
+              onClick: () => navigate(`/dimensioning?setId=${id}`),
+              show: true,
+            },
+          ].filter(a => a.show).map(action => (
+            <button
+              key={action.label}
+              onClick={action.onClick}
+              className={`flex flex-col items-center gap-2 p-3 rounded-xl border text-center transition-colors ${action.color}`}
+            >
+              <action.icon className="h-5 w-5" />
+              <div>
+                <p className="text-xs font-semibold leading-tight">{action.label}</p>
+                <p className="text-[10px] opacity-70 mt-0.5">{action.desc}</p>
+              </div>
+            </button>
+          ))}
+        </div>
       </div>
 
       {set.notes && (

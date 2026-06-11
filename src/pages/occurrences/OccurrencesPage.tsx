@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -34,8 +35,9 @@ export function OccurrencesPage() {
   const { t } = useLocale()
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'MANAGER'
   const { companyId: adminCompanyId, selectedCompany } = useAdminCompany()
+  const [searchParams] = useSearchParams()
   const [showAnalytics, setShowAnalytics] = useState(false)
-  const [createOpen, setCreateOpen] = useState(false)
+  const [createOpen, setCreateOpen] = useState(() => !!searchParams.get('setId'))
   const [editOcc, setEditOcc] = useState<Occurrence | null>(null)
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [machineCreateOpen, setMachineCreateOpen] = useState(false)
@@ -121,7 +123,10 @@ export function OccurrencesPage() {
     queryFn: () => api.get('/occurrences/products', { params: { companyId: adminCompanyId } }).then((r) => r.data),
   })
 
-  const createForm = useForm<CreateData>({ resolver: zodResolver(createSchema) })
+  const createForm = useForm<CreateData>({
+    resolver: zodResolver(createSchema),
+    defaultValues: { setId: searchParams.get('setId') ?? undefined },
+  })
   const updateForm = useForm<UpdateData>({ resolver: zodResolver(updateSchema) })
   const machineForm = useForm<MachineData>({
     resolver: zodResolver(machineSchema),

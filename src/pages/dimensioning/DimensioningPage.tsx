@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -85,7 +86,8 @@ export function DimensioningPage() {
   const qc = useQueryClient()
   const { t } = useLocale()
   const { companyId: adminCompanyId } = useAdminCompany()
-  const [selectedSetId, setSelectedSetId] = useState<string>('')
+  const [searchParams] = useSearchParams()
+  const [selectedSetId, setSelectedSetId] = useState<string>(() => searchParams.get('setId') ?? '')
   const [createOpen, setCreateOpen] = useState(false)
 
   const valueSchema = useMemo(

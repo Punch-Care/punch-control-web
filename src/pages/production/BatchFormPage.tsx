@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import {
   ArrowLeft, Plus, Trash2, Loader2, Printer, Download,
   CheckCircle2, ClipboardList, Settings2, Clock, AlertTriangle,
-  MessageSquare, ChevronRight, Factory, XCircle,
+  MessageSquare, ChevronRight, Factory, XCircle, Activity,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -15,15 +15,17 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Breadcrumb } from '@/components/ui/breadcrumb'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { useProductsQuery, useMachinesQuery, usePunchSetsQuery } from '@/hooks/queries'
 import { useLocale } from '@/hooks/useLocale'
 import { useAdminCompany } from '@/hooks/useAdminCompany'
 import { useAuth } from '@/hooks/useAuth'
 import type {
   ProductionBatch, ProductionConfig,
   BatchFixedParam, BatchHourlyMeasurement, BatchOccurrence,
-  BatchOccurrenceType, Product, Machine, PunchSet,
+  BatchOccurrenceType,
 } from '@/types'
 import { format } from 'date-fns'
 
@@ -256,35 +258,31 @@ export function BatchFormPage() {
   const { t } = useLocale()
   const { user } = useAuth()
   const { companyId: adminCompanyId } = useAdminCompany()
+  const [searchParams] = useSearchParams()
   const p = t.production
   const isEdit = !!id
   const canEdit = user?.role !== 'CLIENT'
 
   const [form, setForm] = useState<BatchData>({
-    configId: '', productId: '', machineId: '', punchSetId: '',
+    configId: '', productId: '', machineId: '',
+    punchSetId: searchParams.get('setId') ?? '',
     loteNumero: '', dataProducao: format(new Date(), 'yyyy-MM-dd'),
     horaInicio: format(new Date(), 'HH:mm'),
     duracaoEstimadaHoras: '8', kgProduzidos: '',
     observacoesOperador: '', observacoesTecnico: '',
     separadoPor: '', status: 'DRAFT',
   })
+  const [showLifecyclePrompt, setShowLifecyclePrompt] = useState(false)
+  const [completedSetId, setCompletedSetId] = useState<string | null>(null)
+  const [completedSetCode, setCompletedSetCode] = useState<string | null>(null)
   const [fixedParams, setFixedParams] = useState<LocalFixed[]>([])
   const [measurements, setMeasurements] = useState<LocalMeasurement[]>([])
   const [occurrences, setOccurrences] = useState<LocalOccurrence[]>([])
 
-  // Queries
-  const { data: products = [] } = useQuery<Product[]>({
-    queryKey: ['products', adminCompanyId],
-    queryFn: () => api.get('/products', { params: { companyId: adminCompanyId } }).then(r => r.data),
-  })
-  const { data: machines = [] } = useQuery<Machine[]>({
-    queryKey: ['machines', adminCompanyId],
-    queryFn: () => api.get('/occurrences/machines', { params: { companyId: adminCompanyId } }).then(r => r.data),
-  })
-  const { data: sets = [] } = useQuery<PunchSet[]>({
-    queryKey: ['punch-sets', adminCompanyId],
-    queryFn: () => api.get('/punch-sets', { params: { companyId: adminCompanyId } }).then(r => r.data),
-  })
+  // Queries — shared hooks guarantee cache hit when user navigates from other pages
+  const { data: products = [] } = useProductsQuery(adminCompanyId)
+  const { data: machines = [] } = useMachinesQuery(adminCompanyId)
+  const { data: sets = [] } = usePunchSetsQuery(adminCompanyId)
 
   const { data: config } = useQuery<ProductionConfig | null>({
     queryKey: ['production-config-by-pm', form.productId, form.machineId],
@@ -408,7 +406,14 @@ export function BatchFormPage() {
     onSuccess: (_, status) => {
       qc.invalidateQueries({ queryKey: ['production-batches'] })
       toast.success(isEdit ? p.updated : p.created)
-      if (status === 'COMPLETED') navigate('/production')
+      if (status === 'COMPLETED' && form.punchSetId && form.kgProduzidos) {
+        const set = sets.find(s => s.id === form.punchSetId)
+        setCompletedSetId(form.punchSetId)
+        setCompletedSetCode(set ? `${set.code} — ${set.name}` : form.punchSetId)
+        setShowLifecyclePrompt(true)
+      } else if (status === 'COMPLETED') {
+        navigate('/production')
+      }
     },
     onError: () => toast.error(isEdit ? p.updateError : p.createError),
   })
@@ -422,6 +427,46 @@ export function BatchFormPage() {
 
   return (
     <div className="min-h-screen bg-muted/30">
+
+      {/* Prompt de atualização do ciclo de vida */}
+      <Dialog open={showLifecyclePrompt} onOpenChange={open => { if (!open) { setShowLifecyclePrompt(false); navigate('/production') } }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5 text-green-500" />
+              Lote concluído!
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Deseja registrar os <strong>{form.kgProduzidos} kg</strong> produzidos no ciclo de vida do conjunto{' '}
+              <strong className="text-foreground font-mono">{completedSetCode}</strong>?
+            </p>
+            <p className="text-xs text-muted-foreground bg-muted rounded-lg p-3">
+              Isso mantém o controle de depreciação do ferramental atualizado e evita que o ciclo de vida fique desatualizado.
+            </p>
+            <div className="flex flex-col gap-2">
+              <Button
+                className="w-full"
+                onClick={() => {
+                  setShowLifecyclePrompt(false)
+                  navigate(`/lifecycle?setId=${completedSetId}`)
+                }}
+              >
+                <Activity className="h-4 w-4" />
+                Sim, atualizar ciclo de vida
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => { setShowLifecyclePrompt(false); navigate('/production') }}
+              >
+                Não, obrigado
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
       {/* Sticky header */}
       <div className="sticky top-0 z-20 bg-background/95 backdrop-blur border-b px-4 sm:px-6 py-3">
         <div className="max-w-3xl mx-auto flex items-center justify-between gap-3">
@@ -430,6 +475,10 @@ export function BatchFormPage() {
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div className="min-w-0">
+              <Breadcrumb items={[
+                { label: 'Produção', href: '/production' },
+                { label: isEdit && form.loteNumero ? `Lote ${form.loteNumero}` : 'Novo Lote' },
+              ]} />
               <div className="flex items-center gap-2">
                 <h1 className="font-semibold text-sm truncate">
                   {isEdit ? 'Editar Lote' : 'Novo Lote de Produção'}

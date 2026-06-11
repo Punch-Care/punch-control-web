@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import {
@@ -82,7 +83,8 @@ function LifeBar({ value }: { value: number }) {
 }
 
 export function LifecyclePage() {
-  const [selectedSetId, setSelectedSetId] = useState<string>('')
+  const [searchParams] = useSearchParams()
+  const [selectedSetId, setSelectedSetId] = useState<string>(() => searchParams.get('setId') ?? '')
   const [addProdOpen, setAddProdOpen] = useState(false)
   const [addMaintOpen, setAddMaintOpen] = useState(false)
   const [editConfig, setEditConfig] = useState(false)

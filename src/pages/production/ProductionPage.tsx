@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Plus, FileText, Settings, BarChart3, Pencil, Trash2,
   CheckCircle2, Clock, FlaskConical, ChevronRight, ArrowRight,
@@ -108,7 +108,12 @@ export function ProductionPage() {
   const { user } = useAuth()
   const { companyId: adminCompanyId } = useAdminCompany()
   const p = t.production
-  const [activeTab, setActiveTab] = useState<Tab>('batches')
+  const [searchParams] = useSearchParams()
+  const [activeTab, setActiveTab] = useState<Tab>(() => {
+    const param = searchParams.get('tab')
+    if (param === 'configs' || param === 'cep' || param === 'batches') return param
+    return 'batches'
+  })
   const canEdit = user?.role !== 'CLIENT'
 
   const { data: batches = [], isLoading } = useQuery<ProductionBatch[]>({

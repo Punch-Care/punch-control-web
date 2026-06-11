@@ -11,6 +11,7 @@ import { api } from '@/lib/api'
 import { useAuth } from '@/hooks/useAuth'
 import { useLocale } from '@/hooks/useLocale'
 import { useAdminContextStore } from '@/store/admin-context.store'
+import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard'
 import type { DashboardStats, Occurrence, OccurrenceType, CompanyOverview, ProductionBatch } from '@/types'
 
 const TYPE_LABELS_PT: Record<OccurrenceType, string> = {
@@ -371,12 +372,15 @@ export function DashboardPage() {
 
         {/* ── USUÁRIO DE EMPRESA ────────────────────────────────────── */}
         {!isAdmin && (
-          <div className="space-y-6 lg:space-y-0 lg:grid lg:grid-cols-5 lg:gap-6">
-            <div className="lg:col-span-2 order-1">
-              <QuickActions navigate={navigate} canEdit={canEdit} lastBatches={recentBatches} />
-            </div>
-            <div className="lg:col-span-3 order-2">
-              <StatsSection d={d} TYPE_LABELS={TYPE_LABELS} />
+          <div className="space-y-6">
+            <OnboardingWizard />
+            <div className="space-y-6 lg:space-y-0 lg:grid lg:grid-cols-5 lg:gap-6">
+              <div className="lg:col-span-2 order-1">
+                <QuickActions navigate={navigate} canEdit={canEdit} lastBatches={recentBatches} />
+              </div>
+              <div className="lg:col-span-3 order-2">
+                <StatsSection d={d} TYPE_LABELS={TYPE_LABELS} />
+              </div>
             </div>
           </div>
         )}
