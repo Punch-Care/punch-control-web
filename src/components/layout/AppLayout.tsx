@@ -150,6 +150,10 @@ function SidebarContent({ isAdmin, onNavigate }: { isAdmin: boolean; onNavigate?
           {COMPANY_MGMT_GROUP.items.map(({ to, labelKey, icon }) => (
             <NavItemLink key={to} to={to} icon={icon} label={nav[labelKey]} onNavigate={onNavigate} />
           ))}
+          {/* Usuário de empresa edita os dados da própria empresa */}
+          {!isAdmin && (
+            <NavItemLink to="/my-company" icon={Building2} label={nav.myCompany} onNavigate={onNavigate} />
+          )}
 
           {/* Botão voltar — só admin com empresa selecionada */}
           {isAdmin && selectedCompany && (

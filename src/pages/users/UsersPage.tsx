@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, Pencil, Loader2, Users } from 'lucide-react'
+import { Plus, Pencil, Loader2, Users, Trash2, Power } from 'lucide-react'
 import { toast } from 'sonner'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
@@ -58,27 +58,41 @@ function UserForm({
 }) {
   const isAdminLevel = currentRole === 'ADMIN' || currentRole === 'MANAGER'
 
-  const createSchema = useMemo(
+  // Empresa é obrigatória para COMPANY/CLIENT quando não há empresa no contexto
+  const requireCompany = (data: { role: UserRole; companyId?: string }, ctx: z.RefinementCtx) => {
+    const requiresCompany = data.role === 'COMPANY' || data.role === 'CLIENT'
+    if (requiresCompany && !contextCompanyId && !data.companyId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['companyId'],
+        message: t.users.selectCompanyRequired,
+      })
+    }
+  }
+
+  const baseSchema = useMemo(
     () =>
       z.object({
         name: z.string().min(2, t.users.nameRequired),
         email: z.string().email(t.users.invalidEmail),
-        password: z.string().min(6, t.users.passwordMinLength),
         role: z.enum(['ADMIN', 'MANAGER', 'COMPANY', 'CLIENT']),
         companyId: z.string().optional(),
       }),
     [t],
   )
 
-  const updateSchema = useMemo(
+  const schema = useMemo(
     () =>
-      createSchema.omit({ password: true }).extend({
-        password: z.string().min(6).optional().or(z.literal('')),
-      }),
-    [createSchema],
+      mode === 'create'
+        ? baseSchema
+            .extend({ password: z.string().min(6, t.users.passwordMinLength) })
+            .superRefine(requireCompany)
+        : baseSchema
+            .extend({ password: z.string().min(6).optional().or(z.literal('')) })
+            .superRefine(requireCompany),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [mode, baseSchema, t, contextCompanyId],
   )
-
-  const schema = mode === 'create' ? createSchema : updateSchema
 
   // Só busca empresas se for admin E não há empresa no contexto
   const { data: companies = [] } = useQuery<{ id: string; name: string }[]>({
@@ -166,6 +180,7 @@ function UserForm({
               </Select>
             )}
           />
+          {errors.companyId && <p className="text-xs text-destructive">{errors.companyId.message}</p>}
         </div>
       )}
 
@@ -184,6 +199,7 @@ export function UsersPage() {
   const { companyId: adminCompanyId, selectedCompany } = useAdminCompany()
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<UserItem | null>(null)
+  const [deleting, setDeleting] = useState<UserItem | null>(null)
 
   const isAdminLevel = me?.role === 'ADMIN' || me?.role === 'MANAGER'
 
@@ -218,6 +234,18 @@ export function UsersPage() {
     mutationFn: (data: UpdateForm) => api.put(`/users/${editing!.id}`, data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['users'] }); setEditing(null); toast.success(t.users.updated) },
     onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? t.users.updateError),
+  })
+
+  const toggleActiveMutation = useMutation({
+    mutationFn: ({ id, active }: { id: string; active: boolean }) =>
+      api.patch(`/users/${id}/active`, { active }),
+    onSuccess: (_d, vars) => {
+      qc.invalidateQueries({ queryKey: ['users'] })
+      setDeleting(null)
+      toast.success(vars.active ? t.users.activated : t.users.deactivated)
+    },
+    onError: (e: { response?: { data?: { message?: string } } }) =>
+      toast.error(e.response?.data?.message ?? t.users.updateError),
   })
 
   return (
@@ -288,20 +316,16 @@ export function UsersPage() {
               <TableHead className="font-semibold">{t.common.name}</TableHead>
               <TableHead className="font-semibold">{t.users.email}</TableHead>
               <TableHead className="font-semibold">{t.users.profile}</TableHead>
-              {/* Só mostra empresa se admin sem empresa selecionada */}
-              {isAdminLevel && !selectedCompany && (
-                <TableHead className="font-semibold">{t.common.company}</TableHead>
-              )}
               <TableHead className="font-semibold">{t.common.status}</TableHead>
               <TableHead className="w-16" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-10">{t.common.loading}</TableCell></TableRow>
+              <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-10">{t.common.loading}</TableCell></TableRow>
             ) : users.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="py-12">
+                <TableCell colSpan={5} className="py-12">
                   <div className="flex flex-col items-center gap-2 text-muted-foreground">
                     <Users className="h-8 w-8" />
                     <p className="text-sm font-medium">{t.users.noUsers}</p>
@@ -332,9 +356,26 @@ export function UsersPage() {
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditing(u)}>
-                    <Pencil className="h-3.5 w-3.5" />
-                  </Button>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditing(u)}>
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    {u.id !== me?.id && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={`h-8 w-8 ${u.active ? 'text-destructive' : 'text-green-600'}`}
+                        title={u.active ? t.users.deactivate : t.users.activate}
+                        onClick={() =>
+                          u.active
+                            ? setDeleting(u)
+                            : toggleActiveMutation.mutate({ id: u.id, active: true })
+                        }
+                      >
+                        {u.active ? <Trash2 className="h-3.5 w-3.5" /> : <Power className="h-3.5 w-3.5" />}
+                      </Button>
+                    )}
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
@@ -364,6 +405,29 @@ export function UsersPage() {
               t={t}
             />
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmação de inativação (soft delete — preserva o registro) */}
+      <Dialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t.users.deactivateTitle}</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            {t.users.deactivateConfirm.replace('{name}', deleting?.name ?? '')}
+          </p>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="ghost" onClick={() => setDeleting(null)}>{t.common.cancel}</Button>
+            <Button
+              variant="destructive"
+              disabled={toggleActiveMutation.isPending}
+              onClick={() => deleting && toggleActiveMutation.mutate({ id: deleting.id, active: false })}
+            >
+              {toggleActiveMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              {t.users.deactivate}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

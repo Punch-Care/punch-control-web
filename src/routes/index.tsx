@@ -6,6 +6,7 @@ import { LandingPage } from '@/pages/landing/LandingPage'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { DashboardPage } from '@/pages/dashboard/DashboardPage'
 import { CompaniesPage } from '@/pages/companies/CompaniesPage'
+import { MyCompanyPage } from '@/pages/companies/MyCompanyPage'
 import { MachinesPage } from '@/pages/machines/MachinesPage'
 import { ProductionPage } from '@/pages/production/ProductionPage'
 import { BatchFormPage } from '@/pages/production/BatchFormPage'
@@ -39,6 +40,7 @@ export const router = createBrowserRouter([
           { path: '/lifecycle', element: <LifecyclePage /> },
           { path: '/reports', element: <ReportsPage /> },
           { path: '/companies', element: <CompaniesPage /> },
+          { path: '/my-company', element: <MyCompanyPage /> },
           { path: '/machines', element: <MachinesPage /> },
           { path: '/production', element: <ProductionPage /> },
           { path: '/production/new', element: <BatchFormPage /> },

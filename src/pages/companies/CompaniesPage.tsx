@@ -1,121 +1,41 @@
-import { useState, useMemo } from 'react'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { Plus, Pencil, Power, Loader2 } from 'lucide-react'
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Plus, Pencil, Power, LogIn } from 'lucide-react'
 import { toast } from 'sonner'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
 import { api } from '@/lib/api'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useLocale } from '@/hooks/useLocale'
+import { useAdminContextStore } from '@/store/admin-context.store'
 import type { Company } from '@/types'
-
-type FormData = {
-  name: string
-  cnpj?: string
-  razaoSocial?: string
-  inscricaoEstadual?: string
-  logradouro?: string
-  complemento?: string
-  cidade?: string
-  estado?: string
-  telefone?: string
-}
-
-function CompanyForm({
-  defaultValues,
-  onSubmit,
-  loading,
-  t,
-}: {
-  defaultValues?: Partial<FormData>
-  onSubmit: (data: FormData) => void
-  loading: boolean
-  t: ReturnType<typeof useLocale>['t']
-}) {
-  const c = t.companies
-
-  const formSchema = useMemo(
-    () =>
-      z.object({
-        name: z.string().min(2, c.nameMinLength),
-        cnpj: z.string().optional(),
-        razaoSocial: z.string().optional(),
-        inscricaoEstadual: z.string().optional(),
-        logradouro: z.string().optional(),
-        complemento: z.string().optional(),
-        cidade: z.string().optional(),
-        estado: z.string().optional(),
-        telefone: z.string().optional(),
-      }),
-    [c],
-  )
-
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
-    resolver: zodResolver(formSchema),
-    defaultValues,
-  })
-
-  return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-1.5">
-          <Label>{t.common.name} *</Label>
-          <Input placeholder={c.namePlaceholder} {...register('name')} />
-          {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
-        </div>
-        <div className="space-y-1.5">
-          <Label>{c.razaoSocial}</Label>
-          <Input placeholder={c.razaoSocialPlaceholder} {...register('razaoSocial')} />
-        </div>
-        <div className="space-y-1.5">
-          <Label>{c.cnpj}</Label>
-          <Input placeholder={c.cnpjPlaceholder} {...register('cnpj')} />
-        </div>
-        <div className="space-y-1.5">
-          <Label>{c.inscricaoEstadual}</Label>
-          <Input placeholder={c.inscricaoEstadualPlaceholder} {...register('inscricaoEstadual')} />
-        </div>
-        <div className="space-y-1.5 sm:col-span-2">
-          <Label>{c.logradouro}</Label>
-          <Input placeholder={c.logradouroPlaceholder} {...register('logradouro')} />
-        </div>
-        <div className="space-y-1.5">
-          <Label>{c.complemento}</Label>
-          <Input placeholder={c.complementoPlaceholder} {...register('complemento')} />
-        </div>
-        <div className="space-y-1.5">
-          <Label>{c.cidade}</Label>
-          <Input placeholder={c.cidadePlaceholder} {...register('cidade')} />
-        </div>
-        <div className="space-y-1.5">
-          <Label>{c.estado}</Label>
-          <Input placeholder={c.estadoPlaceholder} {...register('estado')} />
-        </div>
-        <div className="space-y-1.5">
-          <Label>{c.telefone}</Label>
-          <Input placeholder={c.telefonePlaceholder} {...register('telefone')} />
-        </div>
-      </div>
-      <Button type="submit" className="w-full" disabled={loading}>
-        {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-        {t.common.save}
-      </Button>
-    </form>
-  )
-}
+import { CompanyForm, type CompanyFormData as FormData } from './CompanyForm'
 
 export function CompaniesPage() {
   const qc = useQueryClient()
   const { t } = useLocale()
+  const navigate = useNavigate()
+  const { setSelectedCompany } = useAdminContextStore()
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<Company | null>(null)
+
+  // Entra no contexto da empresa e leva à gestão de usuários dela
+  const enterCompany = (c: Company) => {
+    setSelectedCompany({
+      id: c.id,
+      name: c.name,
+      cnpj: c.cnpj,
+      cidade: c.cidade,
+      estado: c.estado,
+      activeSets: 0,
+      openOccurrences: 0,
+      _count: { punchSets: 0, machines: 0, users: c._count.users },
+    })
+    navigate('/users')
+  }
 
   const { data: companies = [], isLoading } = useQuery<Company[]>({
     queryKey: ['companies'],
@@ -196,6 +116,9 @@ export function CompaniesPage() {
                 </TableCell>
                 <TableCell>
                   <div className="flex gap-1">
+                    <Button variant="ghost" size="sm" className="gap-1.5" onClick={() => enterCompany(c)}>
+                      <LogIn className="h-4 w-4" /> {t.companies.access}
+                    </Button>
                     <Button variant="ghost" size="icon" onClick={() => setEditing(c)}>
                       <Pencil className="h-4 w-4" />
                     </Button>
