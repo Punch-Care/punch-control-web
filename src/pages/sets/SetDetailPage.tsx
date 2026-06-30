@@ -22,6 +22,7 @@ import { useAdminCompany } from '@/hooks/useAdminCompany'
 import { useProductsQuery } from '@/hooks/queries'
 import { Breadcrumb } from '@/components/ui/breadcrumb'
 import { ToolingSection } from './ToolingSection'
+import { JogoSection } from './JogoSection'
 import type { PunchSet, Punch, Product, SetStatus } from '@/types'
 
 function UsefulValueBar({ value, l30, l60 }: { value: number; l30: number; l60: number }) {
@@ -385,6 +386,9 @@ export function SetDetailPage() {
           </Table>
         </div>
       </div>
+
+      {/* Jogo — status, datas e anexos */}
+      <JogoSection set={set} canEdit={canEdit} />
 
       {/* Ferramental — componente expandido */}
       {id && <ToolingSection setId={id} canEdit={canEdit} />}
