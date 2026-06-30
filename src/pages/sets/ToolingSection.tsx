@@ -9,65 +9,141 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useLocale } from '@/hooks/useLocale'
+import { knToTf } from '@/lib/utils'
 import type { ToolingComponent, ToolingComponentType } from '@/types'
 
 // ── Tabela A — Formato do Comprimido ──────────────────────────────────────────
 export const TABLET_FORMATS = [
   { value: '1', label: '1 - Plano' },
   { value: '2', label: '2 - Com raio (raso)' },
-  { value: '3', label: '3 - Com raio (fundo)' },
-  { value: '4', label: '4 - Côncavo' },
-  { value: '5', label: '5 - Formato especial' },
-  { value: '6', label: '6 - Duplo raio' },
-  { value: '7', label: '7 - Plano faced' },
-  { value: '8', label: '8 - Radial faced' },
-  { value: '9', label: '9 - Oblongo' },
-  { value: '10', label: '10 - Oval com 1 raio' },
-  { value: '11', label: '11 - Oval com 2 raios' },
-  { value: '12', label: '12 - Exótico' },
+  { value: '3', label: '3 - Com raio (normal)' },
+  { value: '4', label: '4 - Com raio profundo' },
+  { value: '5', label: '5 - Duplo raio' },
+  { value: '6', label: '6 - Face plana' },
+  { value: '7', label: '7 - Face radial' },
+  { value: '8', label: '8 - Oblongo' },
+  { value: '9', label: '9 - Oval com um raio' },
+  { value: '10', label: '10 - Oval com dois raios' },
+  { value: '11', label: '11 - Exótico' },
+  { value: '12', label: '12 - Outro (descrever)' },
 ]
 
 // ── Tabela B — Tipo de Vinco (Breaking Score) ─────────────────────────────────
 export const BREAKING_SCORES = [
-  { value: 'A', label: 'A - Pelo diâmetro' },
+  { value: '0', label: '0 - Sem vinco' },
+  { value: 'A', label: 'A - Projetando-se pelo raio' },
   { value: 'B', label: 'B - Pelo raio' },
-  { value: 'C', label: 'C - Bisotado' },
-  { value: 'D', label: 'D - Pelo bisotado' },
-  { value: 'E', label: 'E - Em toda reta' },
-  { value: 'F', label: 'F - Em toda reta (funda)' },
-  { value: 'G', label: 'G - Em toda reta (rasa)' },
-  { value: 'H', label: 'H - Em toda reta (profunda)' },
-  { value: 'U', label: 'U - Duplo ângulo' },
+  { value: 'C', label: 'C - Desaparecendo pelo raio convexo' },
+  { value: 'D', label: 'D - Desaparecendo pelo raio côncavo' },
+  { value: 'E', label: 'E - Parcial pelo raio' },
+  { value: 'F', label: 'F - Em toda reta' },
+  { value: 'G', label: 'G - Em toda reta superficial' },
+  { value: 'H', label: 'H - Ao longo de profunda reta' },
+  { value: 'U', label: 'U - Em todo com ângulo duplo' },
+]
+
+export const CONFIG_VINCO = [
+  'Vinco duplo cruzado', 'Um vinco', 'Dois vincos', 'Três vincos', 'Quatro vincos',
 ]
 
 export const NORMAS = [
-  'EU BBS', 'EU BB', 'EU B', 'EU D',
-  "FETTE EU 1'441", 'PHARMA', '20/28',
-  '25/32 GROOVE DIE', '25/32 SLOTTED DIE',
-  'TSMB', 'TSMBB', 'TSMBD', 'TSMD',
-]
-
-export const OPCOES_ACO = [
-  '1.2379 (D2 BY AISI)',
-  '1.3343 (M2 BY AISI)',
-  '1.2080 (D3 BY AISI)',
-  'Outro',
-]
-
-export const OPCOES_REVESTIMENTO = [
-  'Sem revestimento',
-  'Cr = Implantação de cromo galvânico',
-  'Nitretação à plasma',
-  'TiN = Nitreto de titânio (PVD)',
-  'DLC = Diamond-like carbon',
-  'Outro',
+  'EUB 19mm x 133,6mm',
+  'EU D 25,35 x 133,6mm',
+  'TSM B 19mm x 133,350mm',
+  'TSM D 25,35 x 133,350mm',
+  'FETTE EU 1" 441',
+  'PHARMA',
+  '20/28',
+  '25/32 GROOVE DIE',
+  '25/32 SLOTTED DIE',
+  'EUBBS',
+  'FS 12',
+  'Outra (descrever)',
 ]
 
 export const OPCOES_FIXACAO = [
   'Monobloco "Monolito"',
-  'Cônica / Ranhurada',
-  'Outra',
+  'Fixação por pino',
+  'Fixação da tampa externa',
+  'Fixação da tampa interna',
 ]
+
+export const REBAIXO_TIPOS = [
+  'Sem rebaixo de vedação',
+  'Rebaixo de vedação universal',
+  'Rebaixo de vedação tipo Fole',
+  'Rebaixo de vedação combinado',
+]
+
+export const CONICO_MATRIZ = [
+  'Paralelo',
+  'Cônico de um lado',
+  'Cônico dois lados',
+]
+
+export const ACO_PUNCOES = [
+  '1.2550 (SIMILAR TO S1 BY AISI)',
+  '1.2357 (S7)',
+  '1.2363 (A2 BY AISI)',
+  '1.2080 (D3 BY AISI)',
+  '1.2379 (D2 BY AISI)',
+  'K340',
+  '1.4112 (440 B BY AISI)',
+  '1.4125 (440 C BY AISI)',
+  '1.4528 (N690)',
+  '1.2358 60CrMoV18-5 (CALMAX)',
+  'M340',
+  '1.3343 (M2)',
+  'LC200N',
+  'US2000',
+  'Punções com ponta de carboneto',
+  'À definir',
+]
+
+export const ACO_MATRIZES = [
+  '1.2080 (D3 BY AISI)',
+  '1.2379 (D2 BY AISI)',
+  'K340',
+  '1.4112 (440 B BY AISI)',
+  '1.4125 (440 C BY AISI)',
+  'CPM-15V',
+  'Matrizes de carboneto',
+  'Matrizes inserto de carboneto',
+  'Matrizes total carboneto',
+  'Matrizes de cerâmica',
+  'Matrizes inserto de cerâmica',
+  'Matrizes total cerâmica',
+  'À definir',
+]
+
+export const ACO_SEGMENTOS = [
+  'Sleipner',
+  'À definir',
+]
+
+export const OPCOES_REVESTIMENTO = [
+  'Sem revestimento',
+  'Adacon',
+  'Cr = Implantação de cromo galvânico',
+  'PVD - CrN',
+  'Multi PVD CrN',
+  'TiN/TiAl (Nitreto de titânio ou alumínio)',
+  'DLC - Diamante como carbono',
+  'Nitretação à plasma',
+  'À definir',
+]
+
+export const OPCOES_TRATAMENTO = [
+  'Tratamento térmico especial',
+  'Nitretação à plasma',
+  'À definir',
+]
+
+function acoOptions(type: ToolingComponentType): string[] {
+  if (type === 'MATRIX') return ACO_MATRIZES
+  if (type === 'SEGMENT') return ACO_SEGMENTOS
+  return ACO_PUNCOES
+}
 
 const TOOLING_TYPES: ToolingComponentType[] = ['UPPER_PUNCH', 'LOWER_PUNCH', 'MATRIX', 'SEGMENT']
 
@@ -120,6 +196,22 @@ function num(value: number | null | undefined, onChange: (v: number | null) => v
   )
 }
 
+function txt(value: string | null | undefined, onChange: (v: string | null) => void, placeholder = '', disabled?: boolean) {
+  return (
+    <Input
+      className="h-8 text-xs"
+      value={value ?? ''}
+      onChange={e => onChange(e.target.value || null)}
+      placeholder={placeholder}
+      disabled={disabled}
+    />
+  )
+}
+
+function strOpts(arr: string[]) {
+  return arr.map(o => ({ value: o, label: o }))
+}
+
 function ComponentCard({
   type, data, onChange, canEdit,
 }: {
@@ -131,6 +223,7 @@ function ComponentCard({
   const [open, setOpen] = useState(true)
   const isPunch = type === 'UPPER_PUNCH' || type === 'LOWER_PUNCH'
   const isMatrix = type === 'MATRIX'
+  const cargaTf = knToTf(data.cargaRealKN)
 
   return (
     <div className="border rounded-xl overflow-hidden bg-background">
@@ -152,12 +245,12 @@ function ComponentCard({
               {num(data.qtdSolicitada, v => onChange('qtdSolicitada', v), 'ex: 84', !canEdit)}
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">Nº Desenho</Label>
+              <Label className="text-xs">Nº Desenho de Referência</Label>
               <Input className="h-8 text-xs" value={data.numDesenho ?? ''} onChange={e => onChange('numDesenho', e.target.value || null)} disabled={!canEdit} placeholder="ex: 777_26" />
             </div>
             <div className="space-y-1 sm:col-span-2">
               <Label className="text-xs">Norma</Label>
-              {sel(data.norma, v => onChange('norma', v || null), 'Selecione', NORMAS.map(n => ({ value: n, label: n })), !canEdit)}
+              {sel(data.norma, v => onChange('norma', v || null), 'Selecione', strOpts(NORMAS), !canEdit)}
             </div>
             <div className="space-y-1 sm:col-span-2">
               <Label className="text-xs">Dimensões (mm)</Label>
@@ -172,24 +265,23 @@ function ComponentCard({
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Especificações do Punção</p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   <div className="space-y-1">
-                    <Label className="text-xs">Carga real (KN)</Label>
+                    <Label className="text-xs">Carga real (kN)</Label>
                     {num(data.cargaRealKN, v => onChange('cargaRealKN', v), 'ex: 31.275', !canEdit)}
+                    {cargaTf !== null && (data.cargaRealKN ?? 0) > 0 && (
+                      <p className="text-[10px] text-muted-foreground">≈ {cargaTf} tf</p>
+                    )}
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">Qtd. Pontas</Label>
                     {num(data.qtdPontas, v => onChange('qtdPontas', v ? Math.round(v) : null), '1', !canEdit)}
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Tipo de Fixação</Label>
-                    {sel(data.tipoFixacao, v => onChange('tipoFixacao', v || null), 'Selecione', OPCOES_FIXACAO.map(o => ({ value: o, label: o })), !canEdit)}
+                    <Label className="text-xs">Tipo de Fixação das Pontas</Label>
+                    {sel(data.tipoFixacao, v => onChange('tipoFixacao', v || null), 'Selecione', strOpts(OPCOES_FIXACAO), !canEdit)}
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Rebaixo Retentor de Óleo</Label>
-                    {boolSel(data.rebaixoRetentorOleo, v => onChange('rebaixoRetentorOleo', v), !canEdit)}
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Contém Chaveta</Label>
-                    {boolSel(data.contemChaveta, v => onChange('contemChaveta', v), !canEdit)}
+                  <div className="space-y-1 sm:col-span-2">
+                    <Label className="text-xs">Rebaixo para Retentor de Óleo</Label>
+                    {sel(data.rebaixoVedacaoTipo, v => onChange('rebaixoVedacaoTipo', v || null), 'Selecione', strOpts(REBAIXO_TIPOS), !canEdit)}
                   </div>
                 </div>
               </div>
@@ -206,30 +298,68 @@ function ComponentCard({
                     {num(data.profundidadeCavMm, v => onChange('profundidadeCavMm', v), 'ex: 0.88', !canEdit)}
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Raio R1</Label>
+                    <Label className="text-xs">Raio da Cavidade R1 (mm)</Label>
                     {num(data.raioR1, v => onChange('raioR1', v), 'ex: 12', !canEdit)}
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Raio R2</Label>
+                    <Label className="text-xs">Raio R2 (mm)</Label>
                     {num(data.raioR2, v => onChange('raioR2', v), '—', !canEdit)}
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Raio R3</Label>
-                    {num(data.raioR3, v => onChange('raioR3', v), '—', !canEdit)}
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">Espessura Borda / Land (mm)</Label>
                     {num(data.espessuraBorda, v => onChange('espessuraBorda', v), 'ex: 0.1', !canEdit)}
                   </div>
+                  <div className="space-y-1 sm:col-span-3">
+                    <Label className="text-xs">Descrição do Formato Especial</Label>
+                    {txt(data.descricaoFormatoEspecial, v => onChange('descricaoFormatoEspecial', v), 'Texto livre', !canEdit)}
+                  </div>
                 </div>
               </div>
 
               <div className="border-t pt-3">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Vinco (Tabela B — Breaking Score)</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Chaveta</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Contém Chaveta</Label>
+                    {boolSel(data.contemChaveta, v => onChange('contemChaveta', v), !canEdit)}
+                  </div>
+                  {data.contemChaveta === true && (
+                    <>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Ângulo (graus)</Label>
+                        {num(data.chavetaAnguloGraus, v => onChange('chavetaAnguloGraus', v), 'ex: 30', !canEdit)}
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Altura (mm)</Label>
+                        {num(data.chavetaAlturaMm, v => onChange('chavetaAlturaMm', v), '—', !canEdit)}
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Espessura (mm)</Label>
+                        {num(data.chavetaEspessuraMm, v => onChange('chavetaEspessuraMm', v), '—', !canEdit)}
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Comprimento (mm)</Label>
+                        {num(data.chavetaComprimentoMm, v => onChange('chavetaComprimentoMm', v), '—', !canEdit)}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="border-t pt-3">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Vinco (Tabela B) e Gravação</p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="space-y-1">
                     <Label className="text-xs">Tipo de Vinco</Label>
                     {sel(data.tipoVinco, v => onChange('tipoVinco', v || null), 'Selecione o tipo', BREAKING_SCORES, !canEdit)}
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Configuração do Vinco</Label>
+                    {sel(data.configuracaoVinco, v => onChange('configuracaoVinco', v || null), 'Selecione', strOpts(CONFIG_VINCO), !canEdit)}
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Gravação da Ponta</Label>
+                    {txt(data.gravacaoPonta, v => onChange('gravacaoPonta', v), 'Texto livre', !canEdit)}
                   </div>
                 </div>
               </div>
@@ -242,8 +372,8 @@ function ComponentCard({
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Especificações da Matriz</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <div className="space-y-1">
-                  <Label className="text-xs">Cônico ou Paralelo</Label>
-                  {sel(data.conicoOuParalelo, v => onChange('conicoOuParalelo', v || null), 'Selecione', [{ value: 'Paralelo', label: 'Paralelo' }, { value: 'Cônico', label: 'Cônico' }], !canEdit)}
+                  <Label className="text-xs">Cônico / Paralelo</Label>
+                  {sel(data.conicoOuParalelo, v => onChange('conicoOuParalelo', v || null), 'Selecione', strOpts(CONICO_MATRIZ), !canEdit)}
                 </div>
               </div>
             </div>
@@ -255,15 +385,15 @@ function ComponentCard({
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-1">
                 <Label className="text-xs">Opção de Aço</Label>
-                {sel(data.opcaoAco, v => onChange('opcaoAco', v || null), 'Selecione', OPCOES_ACO.map(o => ({ value: o, label: o })), !canEdit)}
+                {sel(data.opcaoAco, v => onChange('opcaoAco', v || null), 'Selecione', strOpts(acoOptions(type)), !canEdit)}
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Revestimento</Label>
-                {sel(data.opcaoRevestimento, v => onChange('opcaoRevestimento', v || null), 'Selecione', OPCOES_REVESTIMENTO.map(o => ({ value: o, label: o })), !canEdit)}
+                {sel(data.opcaoRevestimento, v => onChange('opcaoRevestimento', v || null), 'Selecione', strOpts(OPCOES_REVESTIMENTO), !canEdit)}
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Tratamento</Label>
-                <Input className="h-8 text-xs" value={data.opcaoTratamento ?? ''} onChange={e => onChange('opcaoTratamento', e.target.value || null)} disabled={!canEdit} placeholder="ex: Nitretação" />
+                {sel(data.opcaoTratamento, v => onChange('opcaoTratamento', v || null), 'Selecione', strOpts(OPCOES_TRATAMENTO), !canEdit)}
               </div>
             </div>
           </div>
