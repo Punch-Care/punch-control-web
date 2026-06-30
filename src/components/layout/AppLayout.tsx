@@ -3,7 +3,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Package, Box, Ruler, AlertTriangle,
   RefreshCw, FileText, Users, Building2, Cog, FlaskConical,
-  LogOut, ChevronLeft, Menu, X,
+  LogOut, ChevronLeft, Menu, X, KeyRound, ShieldCheck,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
@@ -12,6 +12,7 @@ import { useAdminContextStore } from '@/store/admin-context.store'
 import { Button } from '@/components/ui/button'
 import { DeveloperCredit } from '@/components/layout/DeveloperCredit'
 import { AccessibilityButton } from '@/components/layout/AccessibilityPanel'
+import { ChangePasswordDialog } from '@/components/layout/ChangePasswordDialog'
 
 type NavKey = keyof ReturnType<typeof useLocale>['t']['nav']
 
@@ -103,8 +104,10 @@ function GroupLabel({ label }: { label: string }) {
 function SidebarContent({ isAdmin, onNavigate }: { isAdmin: boolean; onNavigate?: () => void }) {
   const { t } = useLocale()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const { selectedCompany, clearSelectedCompany } = useAdminContextStore()
   const nav = t.nav
+  const isSuperAdmin = user?.role === 'ADMIN'
 
   const handleBack = () => {
     clearSelectedCompany()
@@ -124,6 +127,9 @@ function SidebarContent({ isAdmin, onNavigate }: { isAdmin: boolean; onNavigate?
           {ADMIN_GLOBAL_GROUP.items.map(({ to, labelKey, icon }) => (
             <NavItemLink key={to} to={to} icon={icon} label={nav[labelKey]} onNavigate={onNavigate} />
           ))}
+          {isSuperAdmin && (
+            <NavItemLink to="/audit" icon={ShieldCheck} label={nav.audit} onNavigate={onNavigate} />
+          )}
         </>
       )}
 
@@ -177,10 +183,11 @@ function SidebarContent({ isAdmin, onNavigate }: { isAdmin: boolean; onNavigate?
 // ── Layout principal ───────────────────────────────────────────────────────────
 
 export function AppLayout() {
-  const { user, logout } = useAuth()
+  const { user, logout, passwordExpired } = useAuth()
   const { t } = useLocale()
   const { selectedCompany } = useAdminContextStore()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [pwOpen, setPwOpen] = useState(false)
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'MANAGER'
 
   const sidebarHeader = isAdmin && selectedCompany
@@ -218,6 +225,12 @@ export function AppLayout() {
             </div>
           </div>
           <AccessibilityButton />
+          <Button
+            variant="ghost" size="sm" onClick={() => setPwOpen(true)}
+            className="w-full justify-start text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          >
+            <KeyRound className="h-4 w-4 mr-2" /> {t.auth.changePassword}
+          </Button>
           <Button
             variant="ghost" size="sm" onClick={logout}
             className="w-full justify-start text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
@@ -301,6 +314,13 @@ export function AppLayout() {
           <DeveloperCredit />
         </footer>
       </div>
+
+      {/* Troca de senha — forçada quando expirada */}
+      <ChangePasswordDialog
+        open={pwOpen || passwordExpired}
+        onOpenChange={setPwOpen}
+        forced={passwordExpired}
+      />
     </div>
   )
 }
