@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useLocale } from '@/hooks/useLocale'
 import { useAuth } from '@/hooks/useAuth'
 import { useAdminCompany } from '@/hooks/useAdminCompany'
+import { knToTf } from '@/lib/utils'
 import type { Machine, Company } from '@/types'
 
 const NORMAS = [
@@ -24,6 +25,8 @@ const NORMAS = [
   'EUD', 'TSMD', 'EURO', "FETTE EU 1'441", 'PHARMA',
   '20/28', '25/32 GROOVE DIE', '25/32 SLOTTED DIE',
 ] as const
+
+const MACHINE_NAME = 'Compressora'
 
 type FormData = {
   name: string
@@ -36,6 +39,15 @@ type FormData = {
   norma?: string
   normaCustom?: string
   anguloChaveta?: string
+  tipoCompressora?: 'PADRAO' | 'MULT_LAYER'
+  capacidadeMinCph?: number
+  capacidadeMaxCph?: number
+  qtdSaidas?: number
+  torreIntercambiavel?: boolean
+  forcaPreCompressaoKN?: number
+  forcaCompressaoKN?: number
+  diametroMaxComprimidoMm?: number
+  espessuraMaxComprimidoMm?: number
   companyId: string
 }
 
@@ -74,18 +86,31 @@ function MachineForm({
         norma: z.string().optional(),
         normaCustom: z.string().optional(),
         anguloChaveta: z.string().optional(),
+        tipoCompressora: z.enum(['PADRAO', 'MULT_LAYER']).optional().or(z.literal('')),
+        capacidadeMinCph: z.coerce.number().int().min(0).optional().or(z.literal('')),
+        capacidadeMaxCph: z.coerce.number().int().min(0).optional().or(z.literal('')),
+        qtdSaidas: z.coerce.number().int().min(0).optional().or(z.literal('')),
+        torreIntercambiavel: z.boolean().optional(),
+        forcaPreCompressaoKN: z.coerce.number().min(0).optional().or(z.literal('')),
+        forcaCompressaoKN: z.coerce.number().min(0).optional().or(z.literal('')),
+        diametroMaxComprimidoMm: z.coerce.number().min(0).optional().or(z.literal('')),
+        espessuraMaxComprimidoMm: z.coerce.number().min(0).optional().or(z.literal('')),
         companyId: (isAdmin && !hasCompanyContext) ? z.string().uuid(m.selectCompanyRequired) : z.string().optional(),
       }),
     [m, isAdmin, hasCompanyContext],
   )
 
-  const { register, handleSubmit, control, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, control, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       ...defaultValues,
+      name: MACHINE_NAME,
       norma: normaValue === 'OTHER' ? defaultValues?.norma : defaultValues?.norma,
     },
   })
+
+  const forcaPre = watch('forcaPreCompressaoKN')
+  const forcaPrinc = watch('forcaCompressaoKN')
 
   const { data: companies = [] } = useQuery<Company[]>({
     queryKey: ['companies'],
@@ -95,17 +120,22 @@ function MachineForm({
 
   const handleFormSubmit = (data: FormData) => {
     const normaFinal = normaValue === 'OTHER' ? data.normaCustom : normaValue || undefined
-    onSubmit({ ...data, norma: normaFinal || undefined })
+    // Remove campos numéricos vazios ('' ou NaN) para não falhar a validação do backend
+    const cleaned = Object.fromEntries(
+      Object.entries({ ...data, name: MACHINE_NAME, norma: normaFinal || undefined })
+        .filter(([, v]) => v !== '' && !(typeof v === 'number' && Number.isNaN(v))),
+    ) as FormData
+    onSubmit(cleaned)
   }
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {/* Name */}
+        {/* Name — fixo "Compressora" */}
         <div className="space-y-1.5 sm:col-span-2">
-          <Label>{t.common.name} *</Label>
-          <Input placeholder="ex: Fette 1200" {...register('name')} />
-          {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
+          <Label>{t.common.name}</Label>
+          <Input value={MACHINE_NAME} disabled readOnly />
+          <input type="hidden" {...register('name')} />
         </div>
 
         {/* Company (admin only, sem contexto de empresa) */}
@@ -196,6 +226,96 @@ function MachineForm({
         <div className="space-y-1.5">
           <Label>{m.anguloChaveta} <span className="text-muted-foreground text-xs">({t.common.optional})</span></Label>
           <Input placeholder={m.anguloChavetaPlaceholder} {...register('anguloChaveta')} />
+        </div>
+
+        {/* ── Especificações técnicas da compressora ── */}
+        <div className="sm:col-span-2 border-t pt-3 mt-1">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{m.techSpecsTitle}</p>
+        </div>
+
+        {/* Tipo (Padrão / Mult-layer) */}
+        <div className="space-y-1.5">
+          <Label>{m.tipoCompressora}</Label>
+          <Controller
+            control={control}
+            name="tipoCompressora"
+            render={({ field }) => (
+              <Select value={field.value || '__none__'} onValueChange={(v) => field.onChange(v === '__none__' ? undefined : v)}>
+                <SelectTrigger><SelectValue placeholder={m.selectPlaceholder} /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">—</SelectItem>
+                  <SelectItem value="PADRAO">{m.tipoPadrao}</SelectItem>
+                  <SelectItem value="MULT_LAYER">{m.tipoMultLayer}</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          />
+        </div>
+
+        {/* Torre intercambiável */}
+        <div className="space-y-1.5">
+          <Label>{m.torreIntercambiavel}</Label>
+          <Controller
+            control={control}
+            name="torreIntercambiavel"
+            render={({ field }) => (
+              <Select
+                value={field.value === true ? 'sim' : field.value === false ? 'nao' : '__none__'}
+                onValueChange={(v) => field.onChange(v === '__none__' ? undefined : v === 'sim')}
+              >
+                <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">—</SelectItem>
+                  <SelectItem value="sim">{t.common.yes}</SelectItem>
+                  <SelectItem value="nao">{t.common.no}</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          />
+        </div>
+
+        {/* Capacidade mín/máx CP/HR */}
+        <div className="space-y-1.5">
+          <Label>{m.capacidadeMinCph}</Label>
+          <Input type="number" placeholder="ex: 100000" {...register('capacidadeMinCph')} />
+        </div>
+        <div className="space-y-1.5">
+          <Label>{m.capacidadeMaxCph}</Label>
+          <Input type="number" placeholder="ex: 300000" {...register('capacidadeMaxCph')} />
+        </div>
+
+        {/* Qtd saídas */}
+        <div className="space-y-1.5">
+          <Label>{m.qtdSaidas}</Label>
+          <Input type="number" placeholder="ex: 1" {...register('qtdSaidas')} />
+        </div>
+
+        {/* Força pré-compressão KN + conversão ton */}
+        <div className="space-y-1.5">
+          <Label>{m.forcaPreCompressaoKN}</Label>
+          <Input type="number" step="any" placeholder="ex: 10" {...register('forcaPreCompressaoKN')} />
+          {knToTf(Number(forcaPre)) !== null && Number(forcaPre) > 0 && (
+            <p className="text-xs text-muted-foreground">≈ {knToTf(Number(forcaPre))} tf</p>
+          )}
+        </div>
+
+        {/* Força compressão principal KN + conversão ton */}
+        <div className="space-y-1.5">
+          <Label>{m.forcaCompressaoKN}</Label>
+          <Input type="number" step="any" placeholder="ex: 100" {...register('forcaCompressaoKN')} />
+          {knToTf(Number(forcaPrinc)) !== null && Number(forcaPrinc) > 0 && (
+            <p className="text-xs text-muted-foreground">≈ {knToTf(Number(forcaPrinc))} tf</p>
+          )}
+        </div>
+
+        {/* Diâmetro / espessura máx do comprimido */}
+        <div className="space-y-1.5">
+          <Label>{m.diametroMaxComprimidoMm}</Label>
+          <Input type="number" step="any" placeholder="ex: 25" {...register('diametroMaxComprimidoMm')} />
+        </div>
+        <div className="space-y-1.5">
+          <Label>{m.espessuraMaxComprimidoMm}</Label>
+          <Input type="number" step="any" placeholder="ex: 8" {...register('espessuraMaxComprimidoMm')} />
         </div>
       </div>
 
@@ -344,6 +464,15 @@ export function MachinesPage() {
                 qtdEstacao: editing.qtdEstacao ?? undefined,
                 norma: editing.norma ?? '',
                 anguloChaveta: editing.anguloChaveta ?? '',
+                tipoCompressora: editing.tipoCompressora ?? undefined,
+                capacidadeMinCph: editing.capacidadeMinCph ?? undefined,
+                capacidadeMaxCph: editing.capacidadeMaxCph ?? undefined,
+                qtdSaidas: editing.qtdSaidas ?? undefined,
+                torreIntercambiavel: editing.torreIntercambiavel ?? undefined,
+                forcaPreCompressaoKN: editing.forcaPreCompressaoKN ?? undefined,
+                forcaCompressaoKN: editing.forcaCompressaoKN ?? undefined,
+                diametroMaxComprimidoMm: editing.diametroMaxComprimidoMm ?? undefined,
+                espessuraMaxComprimidoMm: editing.espessuraMaxComprimidoMm ?? undefined,
                 companyId: editing.companyId,
               }}
               onSubmit={(d) => updateMutation.mutate(d as unknown as FormData)}
