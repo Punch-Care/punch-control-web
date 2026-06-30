@@ -2,6 +2,14 @@ export type UserRole = 'ADMIN' | 'MANAGER' | 'COMPANY' | 'CLIENT'
 
 export type SetStatus = 'ACTIVE' | 'IN_REPAIR' | 'INACTIVE' | 'DISCARDED'
 
+export type JogoStatus =
+  | 'LIMPO'
+  | 'NAO_LIMPO'
+  | 'EM_MANUTENCAO'
+  | 'EM_POLIMENTO'
+  | 'EXCLUIDO'
+  | 'AGUARDANDO_DECISAO'
+
 export type OccurrenceStatus = 'OPEN' | 'MONITORING' | 'CLOSED'
 
 export type OccurrenceType = 'COMPRESSION' | 'DIMENSIONAL' | 'MAINTENANCE' | 'OTHER'
@@ -18,6 +26,7 @@ export interface User {
 export interface AuthResponse {
   token: string
   user: User
+  passwordExpired?: boolean
 }
 
 export interface ApiError {
@@ -35,6 +44,16 @@ export interface PunchSet {
   l60Limit: number
   notes: string | null
   companyId: string
+  statusJogo: JogoStatus
+  dataUltimaLimpeza: string | null
+  dataUltimoPolimento: string | null
+  fotoSuperiorUrl: string | null
+  fotoFrontalUrl: string | null
+  fotoLateralUrl: string | null
+  desenhoPuncaoUrl: string | null
+  desenhoPontaUrl: string | null
+  desenhoMatrizUrl: string | null
+  desenhoGravacaoUrl: string | null
   createdAt: string
   updatedAt: string
   company: { id: string; name: string }
@@ -90,6 +109,15 @@ export interface Machine {
   qtdEstacao: number | null
   norma: string | null
   anguloChaveta: string | null
+  tipoCompressora: 'PADRAO' | 'MULT_LAYER' | null
+  capacidadeMinCph: number | null
+  capacidadeMaxCph: number | null
+  qtdSaidas: number | null
+  torreIntercambiavel: boolean | null
+  forcaPreCompressaoKN: number | null
+  forcaCompressaoKN: number | null
+  diametroMaxComprimidoMm: number | null
+  espessuraMaxComprimidoMm: number | null
   companyId: string
   active: boolean
 }
@@ -118,8 +146,16 @@ export interface ToolingComponent {
   raioR4: number | null
   raioRa: number | null
   espessuraBorda: number | null
+  descricaoFormatoEspecial: string | null
+  rebaixoVedacaoTipo: string | null
   contemChaveta: boolean | null
+  chavetaAnguloGraus: number | null
+  chavetaAlturaMm: number | null
+  chavetaEspessuraMm: number | null
+  chavetaComprimentoMm: number | null
   tipoVinco: string | null
+  configuracaoVinco: string | null
+  gravacaoPonta: string | null
   opcaoAco: string | null
   opcaoRevestimento: string | null
   opcaoTratamento: string | null
@@ -211,7 +247,9 @@ export interface Company {
   cnpj: string | null
   razaoSocial: string | null
   inscricaoEstadual: string | null
+  cep: string | null
   logradouro: string | null
+  numero: string | null
   complemento: string | null
   cidade: string | null
   estado: string | null
@@ -321,6 +359,26 @@ export interface ProductionBatch {
   hourlyMeasurements?: BatchHourlyMeasurement[]
   batchOccurrences?: BatchOccurrence[]
   _count?: { hourlyMeasurements: number; batchOccurrences: number }
+}
+
+export interface AuditLog {
+  id: string
+  userId: string | null
+  userEmail: string | null
+  userRole: string | null
+  method: string
+  path: string
+  action: string
+  statusCode: number
+  ip: string | null
+  createdAt: string
+}
+
+export interface AuditLogResponse {
+  total: number
+  page: number
+  pageSize: number
+  rows: AuditLog[]
 }
 
 export interface DashboardStats {
