@@ -18,6 +18,7 @@ import { OccurrencesPage } from '@/pages/occurrences/OccurrencesPage'
 import { LifecyclePage } from '@/pages/lifecycle/LifecyclePage'
 import { ReportsPage } from '@/pages/reports/ReportsPage'
 import { ProductsPage } from '@/pages/products/ProductsPage'
+import { AuditPage } from '@/pages/audit/AuditPage'
 
 export const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
@@ -46,6 +47,7 @@ export const router = createBrowserRouter([
           { path: '/production/new', element: <BatchFormPage /> },
           { path: '/production/:id', element: <BatchFormPage /> },
           { path: '/users', element: <UsersPage /> },
+          { path: '/audit', element: <AuditPage /> },
           { path: '*', element: <Navigate to="/dashboard" replace /> },
         ],
       },
