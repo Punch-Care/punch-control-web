@@ -35,9 +35,13 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+          if [ -z "${{ secrets.EC2_HOST }}" ]; then
+            echo "::error::EC2_HOST secret is empty — set it to the EC2 public IP (100.56.136.248)"
+            exit 1
+          fi
+          ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
 
       - name: Rsync dist to EC2
         run: |
-          rsync -az --delete -e "ssh -i ~/.ssh/id_ed25519" \
+          rsync -az --delete -e "ssh -o StrictHostKeyChecking=accept-new -i ~/.ssh/id_ed25519" \
             dist/ deploy@${{ secrets.EC2_HOST }}:/opt/punch-care/web/
