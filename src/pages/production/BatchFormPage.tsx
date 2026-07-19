@@ -125,7 +125,7 @@ function generateCompletedPdf(batch: ProductionBatch) {
   const info = [
     `Produto: ${batch.product.name}`,
     `Máquina: ${batch.machine.name}`,
-    `Conjunto: ${batch.punchSet.code} — ${batch.punchSet.name}`,
+    `Jogo: ${batch.punchSet.code} — ${batch.punchSet.name}`,
     `Data: ${format(new Date(batch.dataProducao), 'dd/MM/yyyy')}  ${batch.horaInicio}`,
     batch.kgProduzidos ? `KG: ${batch.kgProduzidos}` : '',
   ].filter(Boolean).join('     ')
@@ -439,7 +439,7 @@ export function BatchFormPage() {
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Deseja registrar os <strong>{form.kgProduzidos} kg</strong> produzidos no ciclo de vida do conjunto{' '}
+              Deseja registrar os <strong>{form.kgProduzidos} kg</strong> produzidos no ciclo de vida do jogo{' '}
               <strong className="text-foreground font-mono">{completedSetCode}</strong>?
             </p>
             <p className="text-xs text-muted-foreground bg-muted rounded-lg p-3">
@@ -521,7 +521,7 @@ export function BatchFormPage() {
           step={1}
           icon={Factory}
           title="Identificação do Lote"
-          subtitle="Selecione o produto, a máquina e o conjunto de punções que serão utilizados nesta produção."
+          subtitle="Selecione o produto, a máquina e o jogo de punções que serão utilizados nesta produção."
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-background rounded-xl border p-4">
             <div className="space-y-1.5">
@@ -547,11 +547,11 @@ export function BatchFormPage() {
             </div>
 
             <div className="space-y-1.5 sm:col-span-2">
-              <Label className="text-xs font-medium">Conjunto de Punções *</Label>
+              <Label className="text-xs font-medium">Jogo de Punções *</Label>
               <Select value={form.punchSetId || '__none__'} onValueChange={v => setField('punchSetId', v === '__none__' ? '' : v)} disabled={!canEdit}>
-                <SelectTrigger><SelectValue placeholder="Selecione o conjunto de punções" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Selecione o jogo de punções" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__none__" disabled>Selecione o conjunto</SelectItem>
+                  <SelectItem value="__none__" disabled>Selecione o jogo</SelectItem>
                   {sets.map(s => <SelectItem key={s.id} value={s.id}><span className="font-mono">{s.code}</span> — {s.name}</SelectItem>)}
                 </SelectContent>
               </Select>
@@ -914,7 +914,7 @@ export function BatchFormPage() {
 
             {!canSubmit && (
               <p className="text-xs text-muted-foreground text-center">
-                Preencha Produto, Máquina, Conjunto e Nº do Lote para salvar
+                Preencha Produto, Máquina, Jogo e Nº do Lote para salvar
               </p>
             )}
           </div>

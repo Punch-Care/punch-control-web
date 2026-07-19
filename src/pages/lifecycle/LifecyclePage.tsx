@@ -222,7 +222,7 @@ export function LifecyclePage() {
         <CardContent><StatusFlow sets={sets} statusLabels={t.status} /></CardContent>
       </Card>
 
-      {/* Seletor de conjunto */}
+      {/* Seletor de jogo */}
       <div className="space-y-1.5 max-w-sm">
         <Label>{t.lifecycle.selectSet}</Label>
         <Select value={selectedSetId || '__none__'} onValueChange={v => setSelectedSetId(v === '__none__' ? '' : v)}>
@@ -251,7 +251,7 @@ export function LifecyclePage() {
 
       {selectedSetId && !lcLoading && lifecycleData && (
         <div className="space-y-6">
-          {/* Cabeçalho do conjunto */}
+          {/* Cabeçalho do jogo */}
           <Card className="border-0 shadow-sm">
             <CardContent className="p-4">
               <div className="flex items-start justify-between gap-4 flex-wrap">

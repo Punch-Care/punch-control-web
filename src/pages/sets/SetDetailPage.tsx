@@ -32,7 +32,7 @@ function UsefulValueBar({ value, l30, l60 }: { value: number; l30: number; l60: 
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between text-xs">
-        <span className="text-muted-foreground font-medium">Vida útil do conjunto</span>
+        <span className="text-muted-foreground font-medium">Vida útil do jogo</span>
         <span className={`font-semibold ${labelColor}`}>{value.toFixed(0)}% — {label}</span>
       </div>
       <div className="h-2 bg-muted rounded-full overflow-hidden">

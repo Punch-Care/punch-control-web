@@ -246,7 +246,7 @@ function DashboardMockup() {
           {/* KPI cards */}
           <div className="grid grid-cols-2 gap-2">
             {[
-              { label: 'Conjuntos Ativos', value: '47', color: '#F05922' },
+              { label: 'Jogos Ativos', value: '47', color: '#F05922' },
               { label: 'Em Reparo', value: '8', color: '#F4A623' },
               { label: 'Ocorrências', value: '3', color: '#E84A43' },
               { label: 'Descartados', value: '12', color: '#5D5D61' },
@@ -292,17 +292,17 @@ const features = [
   {
     icon: LayoutDashboard,
     title: 'Dashboard & Visualização',
-    desc: 'Indicadores consolidados com gráficos U-Waveguide, BW e LDS. Visão em tempo real de todos os conjuntos.',
+    desc: 'Indicadores consolidados com gráficos U-Waveguide, BW e LDS. Visão em tempo real de todos os jogos.',
   },
   {
     icon: Package,
-    title: 'Cadastro de Conjuntos',
-    desc: 'Registre punções, matrizes e conjuntos com código, parâmetros e limites operacionais L30% e L60%.',
+    title: 'Cadastro de Jogos',
+    desc: 'Registre punções, matrizes e jogos com código, parâmetros e limites operacionais L30% e L60%.',
   },
   {
     icon: Ruler,
     title: 'Controle Dimensional',
-    desc: 'Registre medições críticas e receba alertas automáticos de desvio dimensional por conjunto.',
+    desc: 'Registre medições críticas e receba alertas automáticos de desvio dimensional por jogo.',
   },
   {
     icon: AlertTriangle,

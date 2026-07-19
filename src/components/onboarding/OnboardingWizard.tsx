@@ -175,21 +175,21 @@ function PunchSetStepForm({ companyId, onSuccess }: { companyId: string; onSucce
     mutationFn: (data: PunchSetFormData) => api.post('/punch-sets', { ...data, companyId }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['punch-sets'] })
-      toast.success('Conjunto cadastrado com sucesso!')
+      toast.success('Jogo cadastrado com sucesso!')
       form.reset()
       onSuccess()
     },
-    onError: () => toast.error('Erro ao cadastrar conjunto. Tente novamente.'),
+    onError: () => toast.error('Erro ao cadastrar jogo. Tente novamente.'),
   })
 
   return (
     <form onSubmit={form.handleSubmit(d => mutation.mutate(d))} className="pt-2 pb-1 space-y-3">
       <p className="text-xs text-muted-foreground">
-        Adicione o conjunto de punções e matrizes utilizado na fabricação.
+        Adicione o jogo de punções e matrizes utilizado na fabricação.
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="space-y-1">
-          <Label className="text-xs font-medium">Código do conjunto *</Label>
+          <Label className="text-xs font-medium">Código do jogo *</Label>
           <Input
             placeholder="ex: PC-001"
             className="h-8 text-sm"
@@ -214,7 +214,7 @@ function PunchSetStepForm({ companyId, onSuccess }: { companyId: string; onSucce
       <div className="flex justify-end pt-1">
         <Button type="submit" size="sm" disabled={mutation.isPending}>
           {mutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-          Cadastrar conjunto
+          Cadastrar jogo
         </Button>
       </div>
     </form>
@@ -381,7 +381,7 @@ export function OnboardingWizard() {
   const steps = [
     { done: products.length > 0, doneDetail: products[0]?.name ?? `${products.length} produto(s)` },
     { done: machines.length > 0, doneDetail: machines[0]?.name ?? `${machines.length} máquina(s)` },
-    { done: sets.length > 0, doneDetail: sets[0] ? `${sets[0].code} — ${sets[0].name}` : `${sets.length} conjunto(s)` },
+    { done: sets.length > 0, doneDetail: sets[0] ? `${sets[0].code} — ${sets[0].name}` : `${sets.length} jogo(s)` },
     { done: configs.length > 0, doneDetail: `${configs.length} configuração(ões) criada(s)` },
   ]
 
@@ -476,7 +476,7 @@ export function OnboardingWizard() {
           <StepItem
             index={2}
             icon={Layers3}
-            label="Cadastrar conjunto de punções"
+            label="Cadastrar jogo de punções"
             hint="O ferramental utilizado na compressão dos comprimidos"
             isDone={steps[2].done}
             doneDetail={steps[2].doneDetail}

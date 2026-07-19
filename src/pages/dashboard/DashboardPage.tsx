@@ -182,7 +182,7 @@ function QuickActions({ navigate, canEdit, lastBatches }: {
     {
       icon: AlertTriangle,
       label: 'Registrar Ocorrência',
-      desc: 'Abrir uma ocorrência em um conjunto de punções',
+      desc: 'Abrir uma ocorrência em um jogo de punções',
       color: 'bg-red-50 text-red-700 border border-red-200',
       onClick: () => navigate('/occurrences'),
       primary: false,
@@ -191,7 +191,7 @@ function QuickActions({ navigate, canEdit, lastBatches }: {
     {
       icon: Ruler,
       label: 'Novo Dimensionamento',
-      desc: 'Registrar medições dimensionais de um conjunto',
+      desc: 'Registrar medições dimensionais de um jogo',
       color: 'bg-blue-50 text-blue-700 border border-blue-200',
       onClick: () => navigate('/dimensioning'),
       primary: false,

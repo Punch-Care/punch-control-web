@@ -99,7 +99,7 @@ export function CepTab() {
           </Select>
         </div>
         <div className="space-y-1.5">
-          <Label className="text-xs">Conjunto de Punções</Label>
+          <Label className="text-xs">Jogo de Punções</Label>
           <Select value={punchSetId || '__all__'} onValueChange={v => setPunchSetId(v === '__all__' ? '' : v)}>
             <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Todos" /></SelectTrigger>
             <SelectContent>

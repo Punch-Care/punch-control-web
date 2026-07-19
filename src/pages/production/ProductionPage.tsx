@@ -28,7 +28,7 @@ type Tab = 'batches' | 'cep' | 'configs'
 function EmptyBatches({ navigate, canEdit }: { navigate: ReturnType<typeof useNavigate>; canEdit: boolean }) {
   const steps = [
     { num: '1', label: 'Cadastrar Máquinas', desc: 'Registre as máquinas da empresa com modelo e norma', path: '/machines', done: false },
-    { num: '2', label: 'Cadastrar Conjuntos', desc: 'Adicione os conjuntos de punções com suas especificações', path: '/sets', done: false },
+    { num: '2', label: 'Cadastrar Jogos', desc: 'Adicione os jogos de punções com suas especificações', path: '/sets', done: false },
     { num: '3', label: 'Configurar Processo', desc: 'Defina os parâmetros fixos para cada Produto + Máquina', path: null, action: 'configs', done: false },
     { num: '4', label: 'Criar o Primeiro Lote', desc: 'Imprima o formulário, preencha na produção e registre os dados', path: '/production/new', done: false },
   ]
@@ -222,7 +222,7 @@ export function ProductionPage() {
                         <TableHead className="font-semibold">Data</TableHead>
                         <TableHead className="font-semibold">Produto</TableHead>
                         <TableHead className="font-semibold">Máquina</TableHead>
-                        <TableHead className="font-semibold">Conjunto</TableHead>
+                        <TableHead className="font-semibold">Jogo</TableHead>
                         <TableHead className="font-semibold">KG</TableHead>
                         <TableHead className="w-20" />
                       </TableRow>
