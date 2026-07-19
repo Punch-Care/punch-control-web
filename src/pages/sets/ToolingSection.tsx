@@ -12,20 +12,43 @@ import { useLocale } from '@/hooks/useLocale'
 import { knToTf } from '@/lib/utils'
 import type { ToolingComponent, ToolingComponentType } from '@/types'
 
-// ── Tabela A — Formato do Comprimido ──────────────────────────────────────────
+// ── Tabela A — Formato do Comprimido (Nomenclatura de Formatos, Adamus) ────────
+// Códigos conforme o PDF "Dimensões dos Comprimidos – Nomenclatura de Formatos".
+// value = código técnico (TA_*), label = "Família · Descrição (código)".
 export const TABLET_FORMATS = [
-  { value: '1', label: '1 - Plano' },
-  { value: '2', label: '2 - Com raio (raso)' },
-  { value: '3', label: '3 - Com raio (normal)' },
-  { value: '4', label: '4 - Com raio profundo' },
-  { value: '5', label: '5 - Duplo raio' },
-  { value: '6', label: '6 - Face plana' },
-  { value: '7', label: '7 - Face radial' },
-  { value: '8', label: '8 - Oblongo' },
-  { value: '9', label: '9 - Oval com um raio' },
-  { value: '10', label: '10 - Oval com dois raios' },
-  { value: '11', label: '11 - Exótico' },
-  { value: '12', label: '12 - Outro (descrever)' },
+  // Oval (TA_OW)
+  { value: 'TA_OW_P', label: 'Oval · Achatado, aresta reta (TA_OW_P)' },
+  { value: 'TA_OW_PF', label: 'Oval · Achatado e chanfrado (TA_OW_PF)' },
+  { value: 'TA_OW_PR', label: 'Oval · Achatado com um raio (TA_OW_PR)' },
+  { value: 'TA_OW_PF_R', label: 'Oval · Com um raio e chanfrado (TA_OW_PF_R)' },
+  { value: 'TA_OW_R', label: 'Oval · Biconvexo com um raio (TA_OW_R)' },
+  { value: 'TA_OW_R2', label: 'Oval · Biconvexo com dois raios (TA_OW_R2)' },
+  { value: 'TA_OW_R3', label: 'Oval · Biconvexo com três raios (TA_OW_R3)' },
+  { value: 'TA_OW_R4', label: 'Oval · Biconvexo com quatro raios (TA_OW_R4)' },
+  { value: 'TA_OW_R5', label: 'Oval · Biconvexo (variante cinco raios) (TA_OW_R5)' },
+  // Redondo (TA_FI)
+  { value: 'TA_FI_P', label: 'Redondo · Achatado, aresta reta (TA_FI_P)' },
+  { value: 'TA_FI_PF', label: 'Redondo · Achatado e chanfrado (TA_FI_PF)' },
+  { value: 'TA_FI_PR', label: 'Redondo · Achatado com um raio (TA_FI_PR)' },
+  { value: 'TA_FI_PF_R', label: 'Redondo · Com um raio e chanfrado (TA_FI_PF_R)' },
+  { value: 'TA_FI_R', label: 'Redondo · Biconvexo com um raio (TA_FI_R)' },
+  { value: 'TA_FI_RR', label: 'Redondo · Biconvexo com dois raios (TA_FI_RR)' },
+  // Oblongo / Caplet (TA_OB)
+  { value: 'TA_OB_P', label: 'Oblongo · Achatado, aresta reta (TA_OB_P)' },
+  { value: 'TA_OB_PF', label: 'Oblongo · Achatado e chanfrado (TA_OB_PF)' },
+  { value: 'TA_OB_PR', label: 'Oblongo · Achatado com um raio (TA_OB_PR)' },
+  { value: 'TA_OB_PF_R', label: 'Oblongo · Com um raio e chanfrado (TA_OB_PF_R)' },
+  { value: 'TA_OB_R', label: 'Oblongo · Biconvexo com um raio (TA_OB_R)' },
+  { value: 'TA_OB_R2', label: 'Oblongo · Biconvexo com dois raios (TA_OB_R2)' },
+  { value: 'TA_OB_R3', label: 'Oblongo · Biconvexo com três raios (TA_OB_R3)' },
+  { value: 'TA_OB_R4', label: 'Oblongo · Biconvexo com quatro raios (TA_OB_R4)' },
+  // Escape
+  { value: 'OUTRO', label: 'Outro (descrever no formato especial)' },
+]
+
+// Opções de "Característica do produto" (RFQ) — Característica principal + até 6.
+export const CARACTERISTICAS_PRODUTO = [
+  'Normal', 'Abrasivo', 'Aderente', 'Corrosivo', 'Oxidante', 'Carga elevada',
 ]
 
 // ── Tabela B — Tipo de Vinco (Breaking Score) ─────────────────────────────────

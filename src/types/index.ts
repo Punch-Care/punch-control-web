@@ -54,6 +54,13 @@ export interface PunchSet {
   desenhoPontaUrl: string | null
   desenhoMatrizUrl: string | null
   desenhoGravacaoUrl: string | null
+  // Dados do solicitante (RFQ)
+  solicitante: string | null
+  funcaoSolicitante: string | null
+  emailSolicitante: string | null
+  telefoneSolicitante: string | null
+  // Características do produto (RFQ) — JSON string array
+  caracteristicas: string | null
   createdAt: string
   updatedAt: string
   company: { id: string; name: string }
@@ -251,6 +258,7 @@ export interface Company {
   logradouro: string | null
   numero: string | null
   complemento: string | null
+  bairro: string | null
   cidade: string | null
   estado: string | null
   telefone: string | null
