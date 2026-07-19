@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, Pencil, Trash2, Loader2, Eye } from 'lucide-react'
+import { Plus, Trash2, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
@@ -49,7 +49,6 @@ export function SetsPage() {
   const { companyId: adminCompanyId, selectedCompany } = useAdminCompany()
 
   const [createOpen, setCreateOpen] = useState(false)
-  const [editSet, setEditSet] = useState<PunchSet | null>(null)
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [createCompanyId, setCreateCompanyId] = useState<string>('')
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([])
@@ -69,23 +68,7 @@ export function SetsPage() {
     [t],
   )
 
-  const updateSchema = useMemo(
-    () =>
-      z.object({
-        code: z.string().min(1).optional(),
-        name: z.string().min(2).optional(),
-        status: z.enum(['ACTIVE', 'IN_REPAIR', 'INACTIVE', 'DISCARDED']).optional(),
-        usefulValue: z.coerce.number().min(0).max(100).optional(),
-        l30Limit: z.coerce.number().min(0).max(100).optional(),
-        l60Limit: z.coerce.number().min(0).max(100).optional(),
-        notes: z.string().optional(),
-        reason: z.string().optional(),
-      }),
-    [],
-  )
-
   type CreateData = z.infer<typeof createSchema>
-  type UpdateData = z.infer<typeof updateSchema>
 
   const { data: sets = [], isLoading } = useQuery<PunchSet[]>({
     queryKey: ['punch-sets', adminCompanyId],
@@ -118,8 +101,6 @@ export function SetsPage() {
     defaultValues: { l30Limit: 30, l60Limit: 60 },
   })
 
-  const updateForm = useForm<UpdateData>({ resolver: zodResolver(updateSchema) })
-
   const createMutation = useMutation({
     mutationFn: async (data: CreateData) => {
       const companyId = isAdmin ? (selectedCompany?.id || data.companyId) : (user?.company?.id ?? '')
@@ -143,17 +124,6 @@ export function SetsPage() {
     },
     onError: (e: { response?: { data?: { message?: string } } }) =>
       toast.error(e.response?.data?.message ?? t.sets.createError),
-  })
-
-  const updateMutation = useMutation({
-    mutationFn: (data: UpdateData) => api.put(`/punch-sets/${editSet!.id}`, data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['punch-sets'] })
-      setEditSet(null)
-      toast.success(t.sets.updated)
-    },
-    onError: (e: { response?: { data?: { message?: string } } }) =>
-      toast.error(e.response?.data?.message ?? t.sets.updateError),
   })
 
   const deleteMutation = useMutation({
@@ -226,7 +196,7 @@ export function SetsPage() {
             ) : filtered.length === 0 ? (
               <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">{t.sets.noSetsFound}</TableCell></TableRow>
             ) : filtered.map((s) => (
-              <TableRow key={s.id}>
+              <TableRow key={s.id} className="cursor-pointer hover:bg-muted/40" onClick={() => navigate(`/sets/${s.id}`)}>
                 <TableCell className="font-mono font-medium">{s.code}</TableCell>
                 <TableCell>{s.name}</TableCell>
                 <TableCell>
@@ -238,20 +208,12 @@ export function SetsPage() {
                 <TableCell className="text-muted-foreground">{s._count.punches}</TableCell>
                 <TableCell className="text-muted-foreground">{s._count.occurrences}</TableCell>
                 {isAdmin && !selectedCompany && <TableCell className="text-muted-foreground text-xs">{s.company.name}</TableCell>}
-                <TableCell>
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => navigate(`/sets/${s.id}`)}>
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => { setEditSet(s); updateForm.reset({ code: s.code, name: s.name, status: s.status, usefulValue: s.usefulValue, l30Limit: s.l30Limit, l60Limit: s.l60Limit, notes: s.notes ?? '' }) }}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="text-destructive" onClick={() => {
-                      if (confirm(t.sets.deleteConfirm)) deleteMutation.mutate(s.id)
-                    }}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                <TableCell onClick={(e) => e.stopPropagation()}>
+                  <Button variant="ghost" size="icon" className="text-destructive" onClick={() => {
+                    if (confirm(t.sets.deleteConfirm)) deleteMutation.mutate(s.id)
+                  }}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </TableCell>
               </TableRow>
             ))}
@@ -341,65 +303,6 @@ export function SetsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit dialog */}
-      <Dialog open={!!editSet} onOpenChange={(o) => !o && setEditSet(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>{t.sets.editSet}</DialogTitle></DialogHeader>
-          {editSet && (
-            <form onSubmit={updateForm.handleSubmit((d) => updateMutation.mutate(d))} className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label>{t.common.code}</Label>
-                  <Input {...updateForm.register('code')} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>{t.common.name}</Label>
-                  <Input {...updateForm.register('name')} />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label>{t.common.status}</Label>
-                  <Select defaultValue={editSet.status} onValueChange={(v) => updateForm.setValue('status', v as SetStatus)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {(['ACTIVE', 'IN_REPAIR', 'INACTIVE', 'DISCARDED'] as SetStatus[]).map((s) => (
-                        <SelectItem key={s} value={s}>{t.status[s]}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label>{t.sets.usefulValue}</Label>
-                  <Input type="number" step="0.1" {...updateForm.register('usefulValue')} />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label>{t.sets.l30Limit}</Label>
-                  <Input type="number" step="0.1" {...updateForm.register('l30Limit')} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>{t.sets.l60Limit}</Label>
-                  <Input type="number" step="0.1" {...updateForm.register('l60Limit')} />
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label>{t.sets.changeReason}</Label>
-                <Input placeholder={t.common.optional} {...updateForm.register('reason')} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>{t.common.notes}</Label>
-                <Input placeholder={t.common.optional} {...updateForm.register('notes')} />
-              </div>
-              <Button type="submit" className="w-full" disabled={updateMutation.isPending}>
-                {updateMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                {t.common.save}
-              </Button>
-            </form>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }
