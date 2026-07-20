@@ -51,6 +51,15 @@ export const CARACTERISTICAS_PRODUTO = [
   'Normal', 'Abrasivo', 'Aderente', 'Corrosivo', 'Oxidante', 'Carga elevada',
 ]
 
+// Nº de raios da cavidade por formato (Tabela A) — define quantas caixas Rn aparecem.
+export const RADII_BY_FORMAT: Record<string, number> = {
+  TA_OW_P: 0, TA_OW_PF: 0, TA_OW_PR: 1, TA_OW_PF_R: 1, TA_OW_R: 1, TA_OW_R2: 2, TA_OW_R3: 3, TA_OW_R4: 4, TA_OW_R5: 5,
+  TA_FI_P: 0, TA_FI_PF: 0, TA_FI_PR: 1, TA_FI_PF_R: 1, TA_FI_R: 1, TA_FI_RR: 2,
+  TA_OB_P: 0, TA_OB_PF: 0, TA_OB_PR: 1, TA_OB_PF_R: 1, TA_OB_R: 1, TA_OB_R2: 2, TA_OB_R3: 3, TA_OB_R4: 4,
+  OUTRO: 5,
+}
+export const MAX_RADII = 5
+
 // ── Tabela B — Tipo de Vinco (Breaking Score) ─────────────────────────────────
 export const BREAKING_SCORES = [
   { value: '0', label: '0 - Sem vinco' },
@@ -235,6 +244,18 @@ function strOpts(arr: string[]) {
   return arr.map(o => ({ value: o, label: o }))
 }
 
+// Nº de caixas de raio a exibir: conforme o formato (Tabela A), sem esconder raios já preenchidos.
+function radiiCount(format: string | null | undefined, data: LocalComp): number {
+  const base = format
+    ? (format in RADII_BY_FORMAT ? RADII_BY_FORMAT[format] : 0)
+    : 2 // sem formato: mantém R1/R2 por padrão
+  let filled = 0
+  for (let n = 1; n <= MAX_RADII; n++) {
+    if ((data as Record<string, unknown>)[`raioR${n}`] != null) filled = n
+  }
+  return Math.min(MAX_RADII, Math.max(base, filled))
+}
+
 function ComponentCard({
   type, data, onChange, canEdit,
 }: {
@@ -320,14 +341,17 @@ function ComponentCard({
                     <Label className="text-xs">Prof. Cavidade (mm)</Label>
                     {num(data.profundidadeCavMm, v => onChange('profundidadeCavMm', v), 'ex: 0.88', !canEdit)}
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Raio da Cavidade R1 (mm)</Label>
-                    {num(data.raioR1, v => onChange('raioR1', v), 'ex: 12', !canEdit)}
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Raio R2 (mm)</Label>
-                    {num(data.raioR2, v => onChange('raioR2', v), '—', !canEdit)}
-                  </div>
+                  {Array.from({ length: radiiCount(data.formatoComprimido, data) }, (_, i) => i + 1).map(n => (
+                    <div className="space-y-1" key={n}>
+                      <Label className="text-xs">Raio da Cavidade R{n} (mm)</Label>
+                      {num(
+                        data[`raioR${n}` as keyof ToolingComponent] as number | null | undefined,
+                        v => onChange(`raioR${n}` as keyof ToolingComponent, v),
+                        n === 1 ? 'ex: 12' : '—',
+                        !canEdit,
+                      )}
+                    </div>
+                  ))}
                   <div className="space-y-1">
                     <Label className="text-xs">Espessura Borda / Land (mm)</Label>
                     {num(data.espessuraBorda, v => onChange('espessuraBorda', v), 'ex: 0.1', !canEdit)}

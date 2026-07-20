@@ -151,6 +151,7 @@ export interface ToolingComponent {
   raioR2: number | null
   raioR3: number | null
   raioR4: number | null
+  raioR5: number | null
   raioRa: number | null
   espessuraBorda: number | null
   descricaoFormatoEspecial: string | null
