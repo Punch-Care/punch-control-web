@@ -208,9 +208,38 @@ interface BatchData {
   status: 'DRAFT' | 'COMPLETED'
 }
 
-interface LocalFixed extends Omit<BatchFixedParam, 'id' | 'batchId'> {}
-interface LocalMeasurement extends Omit<BatchHourlyMeasurement, 'id' | 'batchId'> {}
+// Campos numéricos ficam como texto enquanto o usuário digita. Converter a cada
+// tecla apagaria o separador decimal recém-digitado ("1," virava "1"), o que
+// tornava impossível informar casas decimais.
+const NUMERIC_MEASUREMENT_FIELDS = [
+  'roloCmpDir', 'roloCmpEsq', 'rampaDosEsq', 'rampaDosDir',
+  'pressaoCFCL1', 'pressaoCFCL2', 'coefVarL1', 'coefVarL2',
+] as const
+type NumericMeasurementField = typeof NUMERIC_MEASUREMENT_FIELDS[number]
+
+type LocalFixed = Omit<BatchFixedParam, 'id' | 'batchId' | 'valorReal'> & { valorReal: string }
+type LocalMeasurement =
+  Omit<BatchHourlyMeasurement, 'id' | 'batchId' | NumericMeasurementField>
+  & Record<NumericMeasurementField, string>
 interface LocalOccurrence extends Omit<BatchOccurrence, 'id' | 'batchId'> {}
+
+// Mantém apenas o que pode compor um número — impede letras sem atrapalhar quem
+// está no meio da digitação ("1,", "-", "0.").
+function sanitizeDecimal(raw: string): string {
+  return raw.replace(/[^\d.,-]/g, '')
+}
+
+// Texto → número. Devolve null enquanto o texto ainda não formar um número válido.
+function parseDecimal(raw: string): number | null {
+  const normalized = raw.trim().replace(',', '.')
+  if (normalized === '') return null
+  const n = Number(normalized)
+  return Number.isFinite(n) ? n : null
+}
+
+function toRaw(v: number | null | undefined): string {
+  return v === null || v === undefined ? '' : String(v)
+}
 
 // ── Componente de seção ───────────────────────────────────────────────────────
 
@@ -318,8 +347,11 @@ export function BatchFormPage() {
       separadoPor: existingBatch.separadoPor ?? '',
       status: existingBatch.status,
     })
-    setFixedParams(existingBatch.fixedParams ?? [])
-    setMeasurements(existingBatch.hourlyMeasurements ?? [])
+    setFixedParams((existingBatch.fixedParams ?? []).map(fp => ({ ...fp, valorReal: toRaw(fp.valorReal) })))
+    setMeasurements((existingBatch.hourlyMeasurements ?? []).map(m => ({
+      ...m,
+      ...Object.fromEntries(NUMERIC_MEASUREMENT_FIELDS.map(f => [f, toRaw(m[f])])) as Record<NumericMeasurementField, string>,
+    })))
     setOccurrences((existingBatch.batchOccurrences ?? []).map(o => ({ type: o.type, notas: o.notas })))
   }, [existingBatch])
 
@@ -329,7 +361,7 @@ export function BatchFormPage() {
     setFixedParams(config.params.map(pr => ({
       ordem: pr.ordem, nome: pr.nome, unidade: pr.unidade,
       minimo: pr.minimo, maximo: pr.maximo, sugerido: pr.sugerido,
-      valorReal: null, isOk: null,
+      valorReal: '', isOk: null,
     })))
     setForm(f => ({ ...f, configId: config.id }))
   }, [config])
@@ -339,10 +371,10 @@ export function BatchFormPage() {
   const updateFixedParam = (idx: number, rawValue: string) => {
     setFixedParams(prev => prev.map((fp, i) => {
       if (i !== idx) return fp
-      const n = rawValue === '' ? null : parseFloat(rawValue.replace(',', '.'))
-      const valorReal = n === null || isNaN(n) ? null : n
-      const isOk = valorReal === null ? null
-        : (fp.minimo === null || valorReal >= fp.minimo) && (fp.maximo === null || valorReal <= fp.maximo)
+      const valorReal = sanitizeDecimal(rawValue)
+      const n = parseDecimal(valorReal)
+      const isOk = n === null ? null
+        : (fp.minimo === null || n >= fp.minimo) && (fp.maximo === null || n <= fp.maximo)
       return { ...fp, valorReal, isOk }
     }))
   }
@@ -354,10 +386,10 @@ export function BatchFormPage() {
     setMeasurements(prev => [...prev, {
       ordem: prev.length + 1,
       horario: `${String(lastH).padStart(2, '0')}:00`,
-      roloCmpDir: null, roloCmpEsq: null,
-      rampaDosEsq: null, rampaDosDir: null,
-      pressaoCFCL1: null, pressaoCFCL2: null,
-      coefVarL1: null, coefVarL2: null,
+      roloCmpDir: '', roloCmpEsq: '',
+      rampaDosEsq: '', rampaDosDir: '',
+      pressaoCFCL1: '', pressaoCFCL2: '',
+      coefVarL1: '', coefVarL2: '',
       responsavel: null, observacoes: null,
     }])
   }
@@ -365,9 +397,9 @@ export function BatchFormPage() {
   const updateMeasurement = (idx: number, field: keyof LocalMeasurement, raw: string) => {
     setMeasurements(prev => prev.map((m, i) => {
       if (i !== idx) return m
-      if (field === 'horario' || field === 'responsavel' || field === 'observacoes') return { ...m, [field]: raw || null }
-      const n = parseFloat(raw.replace(',', '.'))
-      return { ...m, [field]: isNaN(n) ? null : n }
+      if (field === 'horario') return { ...m, horario: raw }
+      if (field === 'responsavel' || field === 'observacoes') return { ...m, [field]: raw || null }
+      return { ...m, [field]: sanitizeDecimal(raw) }
     }))
   }
 
@@ -395,8 +427,12 @@ export function BatchFormPage() {
     observacoesTecnico: form.observacoesTecnico || null,
     separadoPor: form.separadoPor || null,
     status,
-    fixedParams,
-    hourlyMeasurements: measurements,
+    // Os campos numéricos são editados como texto; convertem-se aqui, na gravação.
+    fixedParams: fixedParams.map(fp => ({ ...fp, valorReal: parseDecimal(fp.valorReal) })),
+    hourlyMeasurements: measurements.map(m => ({
+      ...m,
+      ...Object.fromEntries(NUMERIC_MEASUREMENT_FIELDS.map(f => [f, parseDecimal(m[f])])),
+    })),
     batchOccurrences: occurrences,
   })
 
@@ -654,7 +690,7 @@ export function BatchFormPage() {
                       <td className="px-2 py-2">
                         <Input
                           className="h-7 text-sm text-center tabular-nums"
-                          value={fp.valorReal?.toString() ?? ''}
+                          value={fp.valorReal}
                           onChange={e => updateFixedParam(idx, e.target.value)}
                           disabled={!canEdit}
                           placeholder="—"
@@ -722,10 +758,10 @@ export function BatchFormPage() {
                         ['CFC L2', 'pressaoCFCL2'],
                         ['CV L1 (%)', 'coefVarL1'],
                         ['CV L2 (%)', 'coefVarL2'],
-                      ] as [string, keyof LocalMeasurement][]).map(([label, field]) => (
+                      ] as [string, NumericMeasurementField][]).map(([label, field]) => (
                         <div key={field} className="space-y-1">
                           <p className="text-[10px] text-muted-foreground font-medium">{label}</p>
-                          <Input className="h-7 text-xs" value={m[field]?.toString() ?? ''} onChange={e => updateMeasurement(idx, field, e.target.value)} disabled={!canEdit} placeholder="—" />
+                          <Input className="h-7 text-xs" value={m[field]} onChange={e => updateMeasurement(idx, field, e.target.value)} disabled={!canEdit} placeholder="—" />
                         </div>
                       ))}
                     </div>
@@ -770,7 +806,7 @@ export function BatchFormPage() {
                         </td>
                         {(['roloCmpDir', 'roloCmpEsq', 'rampaDosEsq', 'rampaDosDir', 'pressaoCFCL1', 'pressaoCFCL2', 'coefVarL1', 'coefVarL2'] as const).map(field => (
                           <td key={field} className="px-1 py-1">
-                            <Input className="h-7 text-xs text-center w-16" value={m[field]?.toString() ?? ''} onChange={e => updateMeasurement(idx, field, e.target.value)} disabled={!canEdit} placeholder="—" />
+                            <Input className="h-7 text-xs text-center w-16" value={m[field]} onChange={e => updateMeasurement(idx, field, e.target.value)} disabled={!canEdit} placeholder="—" />
                           </td>
                         ))}
                         <td className="px-1 py-1"><Input className="h-7 text-xs w-20" value={m.responsavel ?? ''} onChange={e => updateMeasurement(idx, 'responsavel', e.target.value)} disabled={!canEdit} /></td>
