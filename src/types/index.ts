@@ -34,14 +34,22 @@ export interface ApiError {
   errors?: Record<string, string[]>
 }
 
+// Limite de % de vida útil — lista dinâmica por jogo (substituiu os fixos L30/L60)
+export interface PunchSetLimit {
+  id: string
+  setId: string
+  percentual: number
+  label: string | null
+  cor: string
+}
+
 export interface PunchSet {
   id: string
   code: string
   name: string
   status: SetStatus
   usefulValue: number
-  l30Limit: number
-  l60Limit: number
+  limits: PunchSetLimit[]
   notes: string | null
   companyId: string
   statusJogo: JogoStatus
@@ -61,6 +69,12 @@ export interface PunchSet {
   telefoneSolicitante: string | null
   // Características do produto (RFQ) — JSON string array
   caracteristicas: string | null
+  // Identificação/procedência do jogo
+  fabricante: string | null
+  dataFabricacao: string | null
+  dataAquisicao: string | null
+  numeroNotaFiscal: string | null
+  fornecedor: string | null
   createdAt: string
   updatedAt: string
   company: { id: string; name: string }
@@ -125,6 +139,7 @@ export interface Machine {
   forcaCompressaoKN: number | null
   diametroMaxComprimidoMm: number | null
   espessuraMaxComprimidoMm: number | null
+  observacoes: string | null
   companyId: string
   active: boolean
 }

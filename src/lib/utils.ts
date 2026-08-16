@@ -52,3 +52,29 @@ export function knToTf(kn: number | null | undefined): number | null {
   if (kn === null || kn === undefined || Number.isNaN(kn)) return null
   return Math.round(kn * 0.10197 * 100) / 100
 }
+
+// ── Limites de vida útil do jogo ──────────────────────────────────────────────
+
+/** Verde de "saudável" — usado quando a vida útil está acima de todos os limites */
+export const HEALTHY_COLOR = '#22c55e'
+
+/** Paleta sugerida ao adicionar um limite novo (do mais crítico ao mais folgado) */
+export const LIMIT_COLORS = ['#dc2626', '#ef4444', '#f59e0b', '#eab308', '#84cc16'] as const
+
+type LimitLike = { percentual: number; cor: string; label?: string | null }
+
+/**
+ * Encontra o limite que classifica um valor de vida útil: o mais baixo que o
+ * valor ainda não ultrapassou. Devolve null quando o valor está acima de todos
+ * (jogo saudável). Generaliza a regra antiga de L30/L60.
+ */
+export function resolveLimit<T extends LimitLike>(limits: T[], value: number): T | null {
+  return [...limits]
+    .sort((a, b) => a.percentual - b.percentual)
+    .find((l) => value <= l.percentual) ?? null
+}
+
+/** Rótulo de exibição do limite — cai em "L<percentual>" quando não há nome */
+export function limitLabel(limit: LimitLike): string {
+  return limit.label?.trim() || `L${limit.percentual}`
+}

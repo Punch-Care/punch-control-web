@@ -2,9 +2,11 @@ import { useState, useMemo } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, Pencil, Power, Loader2 } from 'lucide-react'
+import { Plus, Pencil, Power, Loader2, Copy, Printer } from 'lucide-react'
 import { toast } from 'sonner'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 import { api } from '@/lib/api'
 import { Button } from '@/components/ui/button'
@@ -27,6 +29,110 @@ const NORMAS = [
 ] as const
 
 const MACHINE_NAME = 'Compressora'
+const BRAND: [number, number, number] = [240, 89, 34]
+
+/**
+ * Machine → valores do formulário. Ao duplicar, código e nº de série ficam em
+ * branco: identificam a máquina física e não podem ser repetidos na cópia.
+ */
+function machineToFormValues(m: Machine, { forDuplicate = false } = {}): Partial<FormData> {
+  return {
+    name: m.name,
+    code: forDuplicate ? '' : (m.code ?? ''),
+    numeroSerie: forDuplicate ? '' : (m.numeroSerie ?? ''),
+    fabricante: m.fabricante ?? '',
+    modelo: m.modelo ?? '',
+    anoFabricacao: m.anoFabricacao ?? undefined,
+    qtdEstacao: m.qtdEstacao ?? undefined,
+    norma: m.norma ?? '',
+    anguloChaveta: m.anguloChaveta ?? '',
+    tipoCompressora: m.tipoCompressora ?? undefined,
+    capacidadeMinCph: m.capacidadeMinCph ?? undefined,
+    capacidadeMaxCph: m.capacidadeMaxCph ?? undefined,
+    qtdSaidas: m.qtdSaidas ?? undefined,
+    torreIntercambiavel: m.torreIntercambiavel ?? undefined,
+    forcaPreCompressaoKN: m.forcaPreCompressaoKN ?? undefined,
+    forcaCompressaoKN: m.forcaCompressaoKN ?? undefined,
+    diametroMaxComprimidoMm: m.diametroMaxComprimidoMm ?? undefined,
+    espessuraMaxComprimidoMm: m.espessuraMaxComprimidoMm ?? undefined,
+    observacoes: m.observacoes ?? '',
+    companyId: m.companyId,
+  }
+}
+
+/** Ficha técnica da compressora em PDF — mesma identidade visual dos demais relatórios */
+function generateMachinePdf(machine: Machine, companyName: string, t: ReturnType<typeof useLocale>['t']) {
+  const m = t.machines
+  const doc = new jsPDF()
+  const W = doc.internal.pageSize.width
+
+  doc.setFillColor(...BRAND)
+  doc.rect(0, 0, W, 20, 'F')
+  doc.setTextColor(255, 255, 255)
+  doc.setFontSize(13)
+  doc.setFont('helvetica', 'bold')
+  doc.text(m.sheetTitle, 14, 11)
+  doc.setFontSize(8)
+  doc.setFont('helvetica', 'normal')
+  doc.text(`Punch Control · Punch Care${companyName ? ` · ${companyName}` : ''}`, 14, 17)
+
+  const yesNo = (v: boolean | null) => (v === null ? '—' : v ? t.common.yes : t.common.no)
+  const val = (v: string | number | null | undefined) =>
+    v === null || v === undefined || v === '' ? '—' : String(v)
+
+  const rows: [string, string][] = [
+    [t.common.name, val(machine.name)],
+    [t.common.code, val(machine.code)],
+    [m.fabricante, val(machine.fabricante)],
+    [m.modelo, val(machine.modelo)],
+    [m.numeroSerie, val(machine.numeroSerie)],
+    [m.anoFabricacao, val(machine.anoFabricacao)],
+    [m.qtdEstacao, val(machine.qtdEstacao)],
+    [m.norma, val(machine.norma)],
+    [m.anguloChaveta, val(machine.anguloChaveta)],
+    [m.tipoCompressora, machine.tipoCompressora === 'MULT_LAYER' ? m.tipoMultLayer : machine.tipoCompressora === 'PADRAO' ? m.tipoPadrao : '—'],
+    [m.torreIntercambiavel, yesNo(machine.torreIntercambiavel)],
+    [m.capacidadeMinCph, val(machine.capacidadeMinCph)],
+    [m.capacidadeMaxCph, val(machine.capacidadeMaxCph)],
+    [m.qtdSaidas, val(machine.qtdSaidas)],
+    [m.forcaPreCompressaoKN, machine.forcaPreCompressaoKN === null ? '—' : `${machine.forcaPreCompressaoKN} kN (≈ ${knToTf(machine.forcaPreCompressaoKN)} tf)`],
+    [m.forcaCompressaoKN, machine.forcaCompressaoKN === null ? '—' : `${machine.forcaCompressaoKN} kN (≈ ${knToTf(machine.forcaCompressaoKN)} tf)`],
+    [m.diametroMaxComprimidoMm, val(machine.diametroMaxComprimidoMm)],
+    [m.espessuraMaxComprimidoMm, val(machine.espessuraMaxComprimidoMm)],
+    [t.common.status, machine.active ? t.common.active : t.common.inactive],
+  ]
+
+  autoTable(doc, {
+    startY: 28,
+    head: [[m.sheetField, m.sheetValue]],
+    body: rows,
+    headStyles: { fillColor: BRAND, fontSize: 9, fontStyle: 'bold' },
+    bodyStyles: { fontSize: 9 },
+    columnStyles: { 0: { cellWidth: 78, fontStyle: 'bold' } },
+    margin: { left: 14, right: 14 },
+  })
+
+  let y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY ?? 28
+  if (machine.observacoes) {
+    y += 8
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'bold')
+    doc.text(`${m.observacoes}:`, 14, y)
+    doc.setFont('helvetica', 'normal')
+    doc.text(doc.splitTextToSize(machine.observacoes, W - 28), 14, y + 5)
+  }
+
+  doc.setFontSize(7)
+  doc.setTextColor(160, 160, 160)
+  doc.text(
+    `Gerado em: ${new Date().toLocaleString('pt-BR')} · Punch Control`,
+    14,
+    doc.internal.pageSize.height - 6,
+  )
+
+  const slug = (machine.code || machine.modelo || 'compressora').replace(/[^\w-]+/g, '_')
+  doc.save(`compressora_${slug}.pdf`)
+}
 
 type FormData = {
   name: string
@@ -48,8 +154,10 @@ type FormData = {
   forcaCompressaoKN?: number
   diametroMaxComprimidoMm?: number
   espessuraMaxComprimidoMm?: number
+  observacoes?: string
   companyId: string
 }
+
 
 function MachineForm({
   defaultValues,
@@ -95,6 +203,7 @@ function MachineForm({
         forcaCompressaoKN: z.coerce.number().min(0).optional().or(z.literal('')),
         diametroMaxComprimidoMm: z.coerce.number().min(0).optional().or(z.literal('')),
         espessuraMaxComprimidoMm: z.coerce.number().min(0).optional().or(z.literal('')),
+        observacoes: z.string().optional(),
         companyId: (isAdmin && !hasCompanyContext) ? z.string().uuid(m.selectCompanyRequired) : z.string().optional(),
       }),
     [m, isAdmin, hasCompanyContext],
@@ -130,6 +239,7 @@ function MachineForm({
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
+      <p className="text-xs text-muted-foreground">{m.allOptionalHint}</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Name — fixo "Compressora" */}
         <div className="space-y-1.5 sm:col-span-2">
@@ -180,13 +290,13 @@ function MachineForm({
 
         {/* Numero de Serie */}
         <div className="space-y-1.5">
-          <Label>{m.numeroSerie} <span className="text-muted-foreground text-xs">({t.common.optional})</span></Label>
+          <Label>{m.numeroSerie}</Label>
           <Input placeholder={m.numeroSeriePlaceholder} {...register('numeroSerie')} />
         </div>
 
         {/* Ano fabricacao */}
         <div className="space-y-1.5">
-          <Label>{m.anoFabricacao} <span className="text-muted-foreground text-xs">({t.common.optional})</span></Label>
+          <Label>{m.anoFabricacao}</Label>
           <Input type="number" placeholder={m.anoFabricacaoPlaceholder} {...register('anoFabricacao')} />
         </div>
 
@@ -198,7 +308,7 @@ function MachineForm({
 
         {/* Norma */}
         <div className="space-y-1.5">
-          <Label>{m.norma} <span className="text-muted-foreground text-xs">({t.common.optional})</span></Label>
+          <Label>{m.norma}</Label>
           <Select value={normaValue} onValueChange={setNormaValue}>
             <SelectTrigger><SelectValue placeholder={m.normaPlaceholder} /></SelectTrigger>
             <SelectContent>
@@ -224,7 +334,7 @@ function MachineForm({
 
         {/* Angulo Chaveta */}
         <div className="space-y-1.5">
-          <Label>{m.anguloChaveta} <span className="text-muted-foreground text-xs">({t.common.optional})</span></Label>
+          <Label>{m.anguloChaveta}</Label>
           <Input placeholder={m.anguloChavetaPlaceholder} {...register('anguloChaveta')} />
         </div>
 
@@ -317,6 +427,16 @@ function MachineForm({
           <Label>{m.espessuraMaxComprimidoMm}</Label>
           <Input type="number" step="any" placeholder="ex: 8" {...register('espessuraMaxComprimidoMm')} />
         </div>
+
+        {/* Observações */}
+        <div className="space-y-1.5 sm:col-span-2">
+          <Label>{m.observacoes}</Label>
+          <textarea
+            className="flex min-h-[72px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            placeholder={m.observacoesPlaceholder}
+            {...register('observacoes')}
+          />
+        </div>
       </div>
 
       <Button type="submit" className="w-full" disabled={loading}>
@@ -336,6 +456,10 @@ export function MachinesPage() {
 
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<Machine | null>(null)
+  // Compressora usada como base ao duplicar — só preenche o formulário de criação
+  const [duplicateSource, setDuplicateSource] = useState<Machine | null>(null)
+
+  const closeCreate = () => { setOpen(false); setDuplicateSource(null) }
 
   const { data: machines = [], isLoading } = useQuery<Machine[]>({
     queryKey: ['machines', adminCompanyId],
@@ -349,7 +473,7 @@ export function MachinesPage() {
         : { ...data, companyId: user?.company?.id }
       return api.post('/occurrences/machines', payload)
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['machines'] }); setOpen(false); toast.success(t.machines.created) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['machines'] }); closeCreate(); toast.success(t.machines.created) },
     onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? t.machines.createError),
   })
 
@@ -372,13 +496,21 @@ export function MachinesPage() {
           <h2 className="text-2xl font-bold tracking-tight">{t.machines.title}</h2>
           <p className="text-muted-foreground text-sm mt-0.5">{t.machines.subtitle}</p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={(o) => (o ? setOpen(true) : closeCreate())}>
           <DialogTrigger asChild>
             <Button size="sm"><Plus className="h-4 w-4" /> {t.machines.newMachine}</Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
-            <DialogHeader><DialogTitle>{t.machines.newMachine}</DialogTitle></DialogHeader>
+            <DialogHeader>
+              <DialogTitle>{duplicateSource ? t.machines.duplicateTitle : t.machines.newMachine}</DialogTitle>
+            </DialogHeader>
+            {duplicateSource && (
+              <p className="text-xs text-muted-foreground -mt-2">{t.machines.duplicateHint}</p>
+            )}
             <MachineForm
+              // remonta o formulário ao alternar entre criar em branco e duplicar
+              key={duplicateSource?.id ?? 'new'}
+              defaultValues={duplicateSource ? machineToFormValues(duplicateSource, { forDuplicate: true }) : undefined}
               onSubmit={(d) => createMutation.mutate(d as unknown as FormData)}
               loading={createMutation.isPending}
               t={t}
@@ -400,7 +532,7 @@ export function MachinesPage() {
               <TableHead>{t.machines.qtdEstacao}</TableHead>
               {isAdmin && !selectedCompany && <TableHead>{t.common.company}</TableHead>}
               <TableHead>{t.common.status}</TableHead>
-              <TableHead className="w-24">{t.common.actions}</TableHead>
+              <TableHead className="w-36">{t.common.actions}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -429,9 +561,31 @@ export function MachinesPage() {
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <div className="flex gap-1">
+                  <div className="flex gap-0.5">
                     <Button variant="ghost" size="icon" onClick={() => setEditing(m)}>
                       <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      title={t.machines.duplicate}
+                      onClick={() => { setDuplicateSource(m); setOpen(true) }}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      title={t.machines.print}
+                      onClick={() => {
+                        try {
+                          generateMachinePdf(m, selectedCompany?.name ?? user?.company?.name ?? '', t)
+                        } catch {
+                          toast.error(t.machines.printError)
+                        }
+                      }}
+                    >
+                      <Printer className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="ghost"
@@ -454,27 +608,7 @@ export function MachinesPage() {
           <DialogHeader><DialogTitle>{t.machines.editMachine}</DialogTitle></DialogHeader>
           {editing && (
             <MachineForm
-              defaultValues={{
-                name: editing.name,
-                code: editing.code ?? '',
-                fabricante: editing.fabricante ?? '',
-                modelo: editing.modelo ?? '',
-                numeroSerie: editing.numeroSerie ?? '',
-                anoFabricacao: editing.anoFabricacao ?? undefined,
-                qtdEstacao: editing.qtdEstacao ?? undefined,
-                norma: editing.norma ?? '',
-                anguloChaveta: editing.anguloChaveta ?? '',
-                tipoCompressora: editing.tipoCompressora ?? undefined,
-                capacidadeMinCph: editing.capacidadeMinCph ?? undefined,
-                capacidadeMaxCph: editing.capacidadeMaxCph ?? undefined,
-                qtdSaidas: editing.qtdSaidas ?? undefined,
-                torreIntercambiavel: editing.torreIntercambiavel ?? undefined,
-                forcaPreCompressaoKN: editing.forcaPreCompressaoKN ?? undefined,
-                forcaCompressaoKN: editing.forcaCompressaoKN ?? undefined,
-                diametroMaxComprimidoMm: editing.diametroMaxComprimidoMm ?? undefined,
-                espessuraMaxComprimidoMm: editing.espessuraMaxComprimidoMm ?? undefined,
-                companyId: editing.companyId,
-              }}
+              defaultValues={machineToFormValues(editing)}
               onSubmit={(d) => updateMutation.mutate(d as unknown as FormData)}
               loading={updateMutation.isPending}
               t={t}

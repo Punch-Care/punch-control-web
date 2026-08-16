@@ -19,6 +19,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useAuth } from '@/hooks/useAuth'
 import { useLocale } from '@/hooks/useLocale'
 import { useAdminCompany } from '@/hooks/useAdminCompany'
+import {
+  LimitsEditor, UsefulValueBar, DEFAULT_LIMIT_DRAFTS, limitsToPayload, validateLimits,
+  type LimitDraft,
+} from './LimitsEditor'
 import type { PunchSet, Product, SetStatus } from '@/types'
 
 const STATUS_VARIANTS: Record<SetStatus, 'success' | 'warning' | 'secondary' | 'destructive'> = {
@@ -26,18 +30,6 @@ const STATUS_VARIANTS: Record<SetStatus, 'success' | 'warning' | 'secondary' | '
   IN_REPAIR: 'warning',
   INACTIVE: 'secondary',
   DISCARDED: 'destructive',
-}
-
-function UsefulValueBar({ value, l30, l60 }: { value: number; l30: number; l60: number }) {
-  const color = value <= l30 ? 'bg-red-500' : value <= l60 ? 'bg-yellow-500' : 'bg-green-500'
-  return (
-    <div className="flex items-center gap-2 min-w-[120px]">
-      <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-        <div className={`h-full rounded-full ${color}`} style={{ width: `${value}%` }} />
-      </div>
-      <span className="text-xs tabular-nums w-10 text-right">{value.toFixed(0)}%</span>
-    </div>
-  )
 }
 
 export function SetsPage() {
@@ -52,6 +44,7 @@ export function SetsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [createCompanyId, setCreateCompanyId] = useState<string>('')
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([])
+  const [limitDrafts, setLimitDrafts] = useState<LimitDraft[]>(DEFAULT_LIMIT_DRAFTS)
 
   const createSchema = useMemo(
     () =>
@@ -61,8 +54,6 @@ export function SetsPage() {
         companyId: isAdmin && !selectedCompany
           ? z.string().uuid(t.sets.selectCompanyRequired)
           : z.string().optional(),
-        l30Limit: z.coerce.number().min(0).max(100).default(30),
-        l60Limit: z.coerce.number().min(0).max(100).default(60),
         notes: z.string().optional(),
       }),
     [t],
@@ -96,15 +87,12 @@ export function SetsPage() {
       prev.includes(productId) ? prev.filter((id) => id !== productId) : [...prev, productId],
     )
 
-  const createForm = useForm<CreateData>({
-    resolver: zodResolver(createSchema),
-    defaultValues: { l30Limit: 30, l60Limit: 60 },
-  })
+  const createForm = useForm<CreateData>({ resolver: zodResolver(createSchema) })
 
   const createMutation = useMutation({
     mutationFn: async (data: CreateData) => {
       const companyId = isAdmin ? (selectedCompany?.id || data.companyId) : (user?.company?.id ?? '')
-      const set = await api.post('/punch-sets', { ...data, companyId })
+      const set = await api.post('/punch-sets', { ...data, companyId, limits: limitsToPayload(limitDrafts) })
       if (selectedProductIds.length > 0) {
         await Promise.all(
           selectedProductIds.map((productId) =>
@@ -120,6 +108,7 @@ export function SetsPage() {
       createForm.reset()
       setSelectedProductIds([])
       setCreateCompanyId('')
+      setLimitDrafts(DEFAULT_LIMIT_DRAFTS)
       toast.success(t.sets.created)
     },
     onError: (e: { response?: { data?: { message?: string } } }) =>
@@ -203,7 +192,7 @@ export function SetsPage() {
                   <Badge variant={STATUS_VARIANTS[s.status]}>{t.status[s.status]}</Badge>
                 </TableCell>
                 <TableCell>
-                  <UsefulValueBar value={s.usefulValue} l30={s.l30Limit} l60={s.l60Limit} />
+                  <UsefulValueBar value={s.usefulValue} limits={s.limits ?? []} />
                 </TableCell>
                 <TableCell className="text-muted-foreground">{s._count.punches}</TableCell>
                 <TableCell className="text-muted-foreground">{s._count.occurrences}</TableCell>
@@ -225,7 +214,14 @@ export function SetsPage() {
       <Dialog open={createOpen} onOpenChange={(o) => { setCreateOpen(o); if (!o) { setSelectedProductIds([]); setCreateCompanyId('') } }}>
         <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{t.sets.newSet}</DialogTitle></DialogHeader>
-          <form onSubmit={createForm.handleSubmit((d) => createMutation.mutate(d))} className="space-y-4">
+          <form
+            onSubmit={createForm.handleSubmit((d) => {
+              const limitError = validateLimits(limitDrafts, t)
+              if (limitError) { toast.error(limitError); return }
+              createMutation.mutate(d)
+            })}
+            className="space-y-4"
+          >
             {isAdmin && !selectedCompany && (
               <div className="space-y-1.5">
                 <Label>{t.common.company} *</Label>
@@ -250,16 +246,7 @@ export function SetsPage() {
                 {createForm.formState.errors.name && <p className="text-xs text-destructive">{createForm.formState.errors.name.message}</p>}
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>{t.sets.l30Limit} *</Label>
-                <Input type="number" step="0.1" {...createForm.register('l30Limit')} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>{t.sets.l60Limit} *</Label>
-                <Input type="number" step="0.1" {...createForm.register('l60Limit')} />
-              </div>
-            </div>
+            <LimitsEditor limits={limitDrafts} onChange={setLimitDrafts} />
             <div className="space-y-1.5">
               <Label>{t.common.notes}</Label>
               <Input placeholder={t.common.optional} {...createForm.register('notes')} />

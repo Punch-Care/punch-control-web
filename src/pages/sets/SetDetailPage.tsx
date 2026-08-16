@@ -23,29 +23,13 @@ import { useProductsQuery } from '@/hooks/queries'
 import { Breadcrumb } from '@/components/ui/breadcrumb'
 import { JogoSection } from './JogoSection'
 import { RfqSection } from './RfqSection'
+import { LimitsEditor, UsefulValueBar, limitsToPayload, validateLimits, type LimitDraft } from './LimitsEditor'
 import type { PunchSet, Punch, Product, SetStatus } from '@/types'
 
-function UsefulValueBar({ value, l30, l60 }: { value: number; l30: number; l60: number }) {
-  const color = value <= l30 ? 'bg-red-500' : value <= l60 ? 'bg-yellow-500' : 'bg-green-500'
-  const label = value <= l30 ? 'Crítico' : value <= l60 ? 'Atenção' : 'Saudável'
-  const labelColor = value <= l30 ? 'text-red-600' : value <= l60 ? 'text-yellow-600' : 'text-green-600'
-  return (
-    <div className="space-y-1.5">
-      <div className="flex items-center justify-between text-xs">
-        <span className="text-muted-foreground font-medium">Vida útil do jogo</span>
-        <span className={`font-semibold ${labelColor}`}>{value.toFixed(0)}% — {label}</span>
-      </div>
-      <div className="h-2 bg-muted rounded-full overflow-hidden">
-        <div className={`h-full rounded-full transition-all ${color}`} style={{ width: `${value}%` }} />
-      </div>
-      <div className="flex justify-between text-[10px] text-muted-foreground">
-        <span>Crítico em {l30}%</span>
-        <span>Alerta em {l60}%</span>
-        <span>100%</span>
-      </div>
-    </div>
-  )
-}
+/** ISO → valor de <input type="date"> */
+const toDateInput = (iso: string | null | undefined) => (iso ? iso.slice(0, 10) : '')
+/** yyyy-MM-dd → ISO datetime (ou null) */
+const fromDateInput = (v: string) => (v ? new Date(`${v}T00:00:00.000Z`).toISOString() : null)
 
 const STATUS_VARIANTS: Record<SetStatus, 'success' | 'warning' | 'secondary' | 'destructive'> = {
   ACTIVE: 'success',
@@ -66,7 +50,13 @@ export function SetDetailPage() {
   const [linkOpen, setLinkOpen] = useState(false)
   const [selectedProductId, setSelectedProductId] = useState('')
   const [tab, setTab] = useState<'overview' | 'rfq' | 'anexos'>('overview')
-  const [basicsDraft, setBasicsDraft] = useState<Partial<{ code: string; name: string; status: SetStatus; l30Limit: number; l60Limit: number; notes: string }>>({})
+  const [basicsDraft, setBasicsDraft] = useState<Partial<{
+    code: string; name: string; status: SetStatus; notes: string
+    fabricante: string; dataFabricacao: string; dataAquisicao: string
+    numeroNotaFiscal: string; fornecedor: string
+  }>>({})
+  // null = ainda não carregado do servidor; o efeito abaixo sincroniza uma vez
+  const [limitDrafts, setLimitDrafts] = useState<LimitDraft[] | null>(null)
 
   const addPunchSchema = useMemo(
     () =>
@@ -141,18 +131,30 @@ export function SetDetailPage() {
     onError: () => toast.error(t.setDetail.punchRemoveError),
   })
 
+  // Enquanto o usuário não mexe nos limites, o rascunho espelha o que veio do servidor
+  const limits: LimitDraft[] = limitDrafts ?? (set?.limits ?? []).map((l) => ({
+    percentual: String(l.percentual),
+    label: l.label ?? '',
+    cor: l.cor,
+  }))
+
   const basicsMutation = useMutation({
     mutationFn: () => api.put(`/punch-sets/${id}`, {
       code: basicsDraft.code ?? set?.code,
       name: basicsDraft.name ?? set?.name,
       status: basicsDraft.status ?? set?.status,
-      l30Limit: basicsDraft.l30Limit ?? set?.l30Limit,
-      l60Limit: basicsDraft.l60Limit ?? set?.l60Limit,
       notes: (basicsDraft.notes ?? set?.notes) || null,
+      limits: limitsToPayload(limits),
+      fabricante: (basicsDraft.fabricante ?? set?.fabricante) || null,
+      fornecedor: (basicsDraft.fornecedor ?? set?.fornecedor) || null,
+      numeroNotaFiscal: (basicsDraft.numeroNotaFiscal ?? set?.numeroNotaFiscal) || null,
+      dataFabricacao: fromDateInput(basicsDraft.dataFabricacao ?? toDateInput(set?.dataFabricacao)),
+      dataAquisicao: fromDateInput(basicsDraft.dataAquisicao ?? toDateInput(set?.dataAquisicao)),
     }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['punch-set', id] })
       setBasicsDraft({})
+      setLimitDrafts(null) // volta a espelhar o servidor
       toast.success(t.sets.updated)
     },
     onError: (e: { response?: { data?: { message?: string } } }) =>
@@ -182,7 +184,15 @@ export function SetDetailPage() {
   const lowerCount = set.punches?.filter((p) => p.type === 'lower').length ?? 0
   const matrixCount = set.punches?.filter((p) => p.type === 'matrix').length ?? 0
 
-  const b = { code: set.code, name: set.name, status: set.status, l30Limit: set.l30Limit, l60Limit: set.l60Limit, notes: set.notes ?? '', ...basicsDraft }
+  const b = {
+    code: set.code, name: set.name, status: set.status, notes: set.notes ?? '',
+    fabricante: set.fabricante ?? '',
+    fornecedor: set.fornecedor ?? '',
+    numeroNotaFiscal: set.numeroNotaFiscal ?? '',
+    dataFabricacao: toDateInput(set.dataFabricacao),
+    dataAquisicao: toDateInput(set.dataAquisicao),
+    ...basicsDraft,
+  }
   const setB = (patch: Partial<typeof b>) => setBasicsDraft((prev) => ({ ...prev, ...patch }))
 
   return (
@@ -235,7 +245,16 @@ export function SetDetailPage() {
         <div className="flex items-center justify-between">
           <h3 className="font-semibold text-base">Dados básicos</h3>
           {canEdit && (
-            <Button size="sm" variant="outline" onClick={() => basicsMutation.mutate()} disabled={basicsMutation.isPending}>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                const limitError = validateLimits(limits, t)
+                if (limitError) { toast.error(limitError); return }
+                basicsMutation.mutate()
+              }}
+              disabled={basicsMutation.isPending}
+            >
               {basicsMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} {t.common.save}
             </Button>
           )}
@@ -260,18 +279,42 @@ export function SetDetailPage() {
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-1">
-            <Label className="text-xs">{t.sets.l30Limit}</Label>
-            <Input type="number" step="0.1" className="h-8 text-xs" value={b.l30Limit} onChange={(e) => setB({ l30Limit: e.target.value === '' ? 0 : parseFloat(e.target.value) })} disabled={!canEdit} />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">{t.sets.l60Limit}</Label>
-            <Input type="number" step="0.1" className="h-8 text-xs" value={b.l60Limit} onChange={(e) => setB({ l60Limit: e.target.value === '' ? 0 : parseFloat(e.target.value) })} disabled={!canEdit} />
-          </div>
           <div className="space-y-1 sm:col-span-3">
             <Label className="text-xs">{t.common.notes}</Label>
             <Input className="h-8 text-xs" value={b.notes} onChange={(e) => setB({ notes: e.target.value })} disabled={!canEdit} placeholder={t.common.optional} />
           </div>
+        </div>
+
+        {/* Identificação/procedência */}
+        <div className="border-t pt-3">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{t.sets.identificationTitle}</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="space-y-1">
+              <Label className="text-xs">{t.sets.fabricante}</Label>
+              <Input className="h-8 text-xs" value={b.fabricante} onChange={(e) => setB({ fabricante: e.target.value })} disabled={!canEdit} placeholder={t.common.optional} />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">{t.sets.dataFabricacao}</Label>
+              <Input type="date" className="h-8 text-xs" value={b.dataFabricacao} onChange={(e) => setB({ dataFabricacao: e.target.value })} disabled={!canEdit} />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">{t.sets.dataAquisicao}</Label>
+              <Input type="date" className="h-8 text-xs" value={b.dataAquisicao} onChange={(e) => setB({ dataAquisicao: e.target.value })} disabled={!canEdit} />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">{t.sets.fornecedor}</Label>
+              <Input className="h-8 text-xs" value={b.fornecedor} onChange={(e) => setB({ fornecedor: e.target.value })} disabled={!canEdit} placeholder={t.common.optional} />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">{t.sets.numeroNotaFiscal}</Label>
+              <Input className="h-8 text-xs" value={b.numeroNotaFiscal} onChange={(e) => setB({ numeroNotaFiscal: e.target.value })} disabled={!canEdit} placeholder={t.common.optional} />
+            </div>
+          </div>
+        </div>
+
+        {/* Limites de vida útil */}
+        <div className="border-t pt-3">
+          <LimitsEditor limits={limits} onChange={setLimitDrafts} disabled={!canEdit} />
         </div>
       </div>
 
@@ -305,11 +348,7 @@ export function SetDetailPage() {
       {/* Vida útil */}
       <Card className="border-0 shadow-sm">
         <CardContent className="p-4">
-          <UsefulValueBar
-            value={set.usefulValue ?? 100}
-            l30={set.l30Limit ?? 30}
-            l60={set.l60Limit ?? 60}
-          />
+          <UsefulValueBar value={set.usefulValue ?? 100} limits={set.limits ?? []} detailed />
         </CardContent>
       </Card>
 
