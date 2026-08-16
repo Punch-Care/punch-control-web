@@ -292,8 +292,12 @@ export function BatchFormPage() {
   const isEdit = !!id
   const canEdit = user?.role !== 'CLIENT'
 
+  // Produto, máquina e jogo podem vir da URL — é assim que "repetir lote" e o
+  // atalho do detalhe do jogo chegam aqui já preenchidos.
   const [form, setForm] = useState<BatchData>({
-    configId: '', productId: '', machineId: '',
+    configId: '',
+    productId: searchParams.get('productId') ?? '',
+    machineId: searchParams.get('machineId') ?? '',
     punchSetId: searchParams.get('setId') ?? '',
     loteNumero: '', dataProducao: format(new Date(), 'yyyy-MM-dd'),
     horaInicio: format(new Date(), 'HH:mm'),
@@ -322,6 +326,24 @@ export function BatchFormPage() {
     },
     enabled: !!form.productId && !!form.machineId,
   })
+
+  // Faixa habitual de cada campo horário, vinda do histórico daquele
+  // produto + máquina. Serve de referência enquanto o operador digita.
+  const { data: cep } = useQuery<{
+    medicaoStats: Record<string, { min: number | null; max: number | null; median: number | null; amostras: number }>
+  }>({
+    queryKey: ['cep-medicoes', form.productId, form.machineId],
+    queryFn: () => api.get('/production-batches/cep', {
+      params: { companyId: adminCompanyId, productId: form.productId, machineId: form.machineId },
+    }).then(r => r.data),
+    enabled: !!form.productId && !!form.machineId,
+  })
+
+  const referencia = (campo: NumericMeasurementField) => {
+    const s = cep?.medicaoStats?.[campo]
+    if (!s || s.amostras === 0 || s.median === null) return null
+    return { mediana: s.median, min: s.min, max: s.max, amostras: s.amostras }
+  }
 
   const { data: existingBatch } = useQuery<ProductionBatch>({
     queryKey: ['production-batch', id],
@@ -381,26 +403,50 @@ export function BatchFormPage() {
     }))
   }
 
+  /** Linha vazia no horário indicado, herdando o responsável da anterior */
+  const novaMedicao = (ordem: number, hora: number, responsavel: string | null): LocalMeasurement => ({
+    ordem,
+    horario: `${String(hora % 24).padStart(2, '0')}:00`,
+    roloCmpDir: '', roloCmpEsq: '',
+    rampaDosEsq: '', rampaDosDir: '',
+    pressaoCFCL1: '', pressaoCFCL2: '',
+    coefVarL1: '', coefVarL2: '',
+    responsavel, observacoes: null,
+  })
+
   const addMeasurement = () => {
-    const lastH = measurements.length > 0
-      ? (parseInt(measurements[measurements.length - 1].horario.split(':')[0]) + 1) % 24
-      : parseInt(form.horaInicio.split(':')[0] || '0')
-    setMeasurements(prev => [...prev, {
-      ordem: prev.length + 1,
-      horario: `${String(lastH).padStart(2, '0')}:00`,
-      roloCmpDir: '', roloCmpEsq: '',
-      rampaDosEsq: '', rampaDosDir: '',
-      pressaoCFCL1: '', pressaoCFCL2: '',
-      coefVarL1: '', coefVarL2: '',
-      responsavel: null, observacoes: null,
-    }])
+    setMeasurements(prev => {
+      const ultima = prev[prev.length - 1]
+      const proximaHora = ultima
+        ? parseInt(ultima.horario.split(':')[0]) + 1
+        : parseInt(form.horaInicio.split(':')[0] || '0')
+      // O responsável costuma ser o mesmo no lote inteiro — herdar evita redigitar
+      return [...prev, novaMedicao(prev.length + 1, proximaHora, ultima?.responsavel ?? null)]
+    })
+  }
+
+  /** Cria de uma vez uma linha por hora da duração estimada */
+  const gerarMedicoes = (substituir = false) => {
+    const horaBase = parseInt(form.horaInicio.split(':')[0] || '0')
+    const responsavel = measurements[0]?.responsavel ?? null
+    const linhas = Array.from({ length: numHoras }, (_, i) =>
+      novaMedicao(i + 1, horaBase + i, responsavel),
+    )
+    setMeasurements(prev => (substituir ? linhas : [...prev, ...linhas.slice(prev.length)]))
   }
 
   const updateMeasurement = (idx: number, field: keyof LocalMeasurement, raw: string) => {
     setMeasurements(prev => prev.map((m, i) => {
+      // O responsável se propaga para as linhas seguintes que ainda estão vazias,
+      // sem sobrescrever quem já foi preenchido à mão.
+      if (field === 'responsavel') {
+        if (i < idx) return m
+        if (i > idx && m.responsavel) return m
+        return { ...m, responsavel: raw || null }
+      }
       if (i !== idx) return m
       if (field === 'horario') return { ...m, horario: raw }
-      if (field === 'responsavel' || field === 'observacoes') return { ...m, [field]: raw || null }
+      if (field === 'observacoes') return { ...m, observacoes: raw || null }
       return { ...m, [field]: sanitizeDecimal(raw) }
     }))
   }
@@ -458,10 +504,26 @@ export function BatchFormPage() {
 
   const numHoras = parseInt(form.duracaoEstimadaHoras) || 8
   const hasAlerts = fixedParams.some(fp => fp.isOk === false)
-  const canSubmit = !!form.productId && !!form.machineId && !!form.punchSetId && !!form.loteNumero
   const selectedProduct = products.find(pr => pr.id === form.productId)
   const selectedMachine = machines.find(m => m.id === form.machineId)
   const selectedSet = sets.find(s => s.id === form.punchSetId)
+
+  // Só gerente e admin usam jogo fora de LIMPO — mesma regra que o servidor aplica
+  const podeLiberarJogo = user?.role === 'ADMIN' || user?.role === 'MANAGER'
+  const jogoBloqueado = !podeLiberarJogo && selectedSet && selectedSet.statusJogo !== 'LIMPO'
+    ? selectedSet
+    : null
+
+  // O que falta para o lote poder ser salvo — usado no rodapé e no topo
+  const pendencias = [
+    !form.productId && 'Produto',
+    !form.machineId && 'Máquina',
+    !form.punchSetId && 'Jogo de punções',
+    !form.loteNumero && 'Nº do lote',
+    jogoBloqueado && 'Jogo liberado para produção',
+  ].filter((v): v is string => typeof v === 'string')
+
+  const canSubmit = pendencias.length === 0
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -549,6 +611,15 @@ export function BatchFormPage() {
             )}
           </div>
         </div>
+
+        {/* Pendências no topo — antes ficavam só no rodapé da etapa 5, o que
+            obrigava a descer a tela inteira para descobrir o que faltava. */}
+        {canEdit && !canSubmit && (
+          <div className="max-w-3xl mx-auto mt-2 flex items-start gap-2 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5">
+            <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
+            <span>Para concluir, falta: <strong>{pendencias.join(' · ')}</strong></span>
+          </div>
+        )}
       </div>
 
       {/* Main content */}
@@ -590,9 +661,42 @@ export function BatchFormPage() {
                 <SelectTrigger><SelectValue placeholder="Selecione o jogo de punções" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__none__" disabled>Selecione o jogo</SelectItem>
-                  {sets.map(s => <SelectItem key={s.id} value={s.id}><span className="font-mono">{s.code}</span> — {s.name}</SelectItem>)}
+                  {sets.map(s => {
+                    // Jogo fora de LIMPO é recusado na gravação para quem não é
+                    // gerente; melhor barrar aqui do que ao final do formulário.
+                    const bloqueado = !podeLiberarJogo && s.statusJogo !== 'LIMPO'
+                    return (
+                      <SelectItem key={s.id} value={s.id} disabled={bloqueado}>
+                        <span className="font-mono">{s.code}</span> — {s.name}
+                        <span className={bloqueado ? 'ml-2 text-xs text-destructive' : 'ml-2 text-xs text-muted-foreground'}>
+                          · {t.jogo.statuses[s.statusJogo]}
+                        </span>
+                      </SelectItem>
+                    )
+                  })}
                 </SelectContent>
               </Select>
+
+              {/* Jogo bloqueado já selecionado — chega aqui por link do detalhe do jogo */}
+              {jogoBloqueado && (
+                <div className="flex items-start gap-2 text-xs text-destructive bg-destructive/5 border border-destructive/20 rounded-lg px-3 py-2">
+                  <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
+                  <span>
+                    Este jogo está <strong>{t.jogo.statuses[jogoBloqueado.statusJogo]}</strong> e não pode ser usado em
+                    produção. Solicite a liberação ao Gerente ou escolha outro jogo — o lote não será aceito assim.
+                  </span>
+                </div>
+              )}
+
+              {podeLiberarJogo && selectedSet && selectedSet.statusJogo !== 'LIMPO' && (
+                <div className="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                  <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
+                  <span>
+                    Jogo <strong>{t.jogo.statuses[selectedSet.statusJogo]}</strong>. Como gerente, você pode prosseguir,
+                    mas o técnico não conseguiria.
+                  </span>
+                </div>
+              )}
             </div>
 
             <div className="space-y-1.5">
@@ -726,9 +830,20 @@ export function BatchFormPage() {
               <Clock className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
               <p className="text-sm font-medium text-muted-foreground">Nenhuma medição registrada</p>
               {canEdit && (
-                <Button size="sm" className="mt-3" onClick={addMeasurement}>
-                  <Plus className="h-3.5 w-3.5" /> Adicionar primeira medição
-                </Button>
+                <>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    A duração estimada é de {numHoras}h — as linhas podem ser criadas de uma vez,
+                    com os horários a partir de {form.horaInicio || '00:00'}.
+                  </p>
+                  <div className="flex flex-wrap gap-2 justify-center mt-3">
+                    <Button size="sm" onClick={() => gerarMedicoes(true)}>
+                      <Plus className="h-3.5 w-3.5" /> Gerar {numHoras} linhas
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={addMeasurement}>
+                      Adicionar só uma
+                    </Button>
+                  </div>
+                </>
               )}
             </div>
           ) : (
@@ -760,12 +875,26 @@ export function BatchFormPage() {
                         ['CFC L2', 'pressaoCFCL2'],
                         ['CV L1 (%)', 'coefVarL1'],
                         ['CV L2 (%)', 'coefVarL2'],
-                      ] as [string, NumericMeasurementField][]).map(([label, field]) => (
-                        <div key={field} className="space-y-1">
-                          <p className="text-[10px] text-muted-foreground font-medium">{label}</p>
-                          <Input className="h-7 text-xs" value={m[field]} onChange={e => updateMeasurement(idx, field, e.target.value)} disabled={!canEdit} placeholder="—" />
-                        </div>
-                      ))}
+                      ] as [string, NumericMeasurementField][]).map(([label, field]) => {
+                        const ref = referencia(field)
+                        return (
+                          <div key={field} className="space-y-1">
+                            <p className="text-[10px] text-muted-foreground font-medium">{label}</p>
+                            <Input
+                              className="h-7 text-xs"
+                              value={m[field]}
+                              onChange={e => updateMeasurement(idx, field, e.target.value)}
+                              disabled={!canEdit}
+                              placeholder={ref ? String(ref.mediana) : '—'}
+                            />
+                            {ref && (
+                              <p className="text-[9px] text-muted-foreground tabular-nums">
+                                usual {ref.min} – {ref.max}
+                              </p>
+                            )}
+                          </div>
+                        )
+                      })}
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div className="space-y-1">
@@ -801,16 +930,37 @@ export function BatchFormPage() {
                     </tr>
                   </thead>
                   <tbody>
+                    {/* Referência do histórico — a planilha traz as linhas de
+                        valores medianos logo acima da digitação, pelo mesmo motivo. */}
+                    {NUMERIC_MEASUREMENT_FIELDS.some(f => referencia(f)) && (
+                      <tr className="border-b bg-primary/5 text-[10px]">
+                        <td className="px-1 py-1 text-center font-medium text-muted-foreground">usual</td>
+                        {NUMERIC_MEASUREMENT_FIELDS.map(field => {
+                          const ref = referencia(field)
+                          return (
+                            <td key={field} className="px-1 py-1 text-center tabular-nums text-muted-foreground">
+                              {ref ? <><span className="font-semibold text-primary">{ref.mediana}</span><br />{ref.min}–{ref.max}</> : '—'}
+                            </td>
+                          )
+                        })}
+                        <td colSpan={canEdit ? 3 : 2} className="px-1 py-1 text-muted-foreground">
+                          mediana e faixa dos lotes anteriores
+                        </td>
+                      </tr>
+                    )}
                     {measurements.map((m, idx) => (
                       <tr key={idx} className={`border-b last:border-0 ${idx % 2 ? 'bg-muted/20' : ''}`}>
                         <td className="px-1 py-1">
                           <Input className="h-7 text-xs text-center w-14" value={m.horario} onChange={e => updateMeasurement(idx, 'horario', e.target.value)} disabled={!canEdit} />
                         </td>
-                        {(['roloCmpDir', 'roloCmpEsq', 'rampaDosEsq', 'rampaDosDir', 'pressaoCFCL1', 'pressaoCFCL2', 'coefVarL1', 'coefVarL2'] as const).map(field => (
-                          <td key={field} className="px-1 py-1">
-                            <Input className="h-7 text-xs text-center w-16" value={m[field]} onChange={e => updateMeasurement(idx, field, e.target.value)} disabled={!canEdit} placeholder="—" />
-                          </td>
-                        ))}
+                        {NUMERIC_MEASUREMENT_FIELDS.map(field => {
+                          const ref = referencia(field)
+                          return (
+                            <td key={field} className="px-1 py-1">
+                              <Input className="h-7 text-xs text-center w-16" value={m[field]} onChange={e => updateMeasurement(idx, field, e.target.value)} disabled={!canEdit} placeholder={ref ? String(ref.mediana) : '—'} />
+                            </td>
+                          )
+                        })}
                         <td className="px-1 py-1"><Input className="h-7 text-xs w-20" value={m.responsavel ?? ''} onChange={e => updateMeasurement(idx, 'responsavel', e.target.value)} disabled={!canEdit} /></td>
                         <td className="px-1 py-1"><Input className="h-7 text-xs w-24" value={m.observacoes ?? ''} onChange={e => updateMeasurement(idx, 'observacoes', e.target.value)} disabled={!canEdit} /></td>
                         {canEdit && (
@@ -827,10 +977,18 @@ export function BatchFormPage() {
               </div>
 
               {canEdit && (
-                <div className="p-3 border-t bg-muted/30">
+                <div className="p-3 border-t bg-muted/30 flex flex-wrap items-center gap-2">
                   <Button size="sm" variant="outline" onClick={addMeasurement}>
                     <Plus className="h-3.5 w-3.5" /> Adicionar medição
                   </Button>
+                  {measurements.length < numHoras && (
+                    <Button size="sm" variant="outline" onClick={() => gerarMedicoes(false)}>
+                      Completar até {numHoras} linhas
+                    </Button>
+                  )}
+                  <span className="text-xs text-muted-foreground ml-auto">
+                    {measurements.length} de {numHoras} hora(s)
+                  </span>
                 </div>
               )}
             </div>
@@ -952,7 +1110,7 @@ export function BatchFormPage() {
 
             {!canSubmit && (
               <p className="text-xs text-muted-foreground text-center">
-                Preencha Produto, Máquina, Jogo e Nº do Lote para salvar
+                Falta preencher: {pendencias.join(' · ')}
               </p>
             )}
           </div>

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
-  Plus, FileText, Settings, BarChart3, Pencil, Trash2,
+  Plus, FileText, Settings, BarChart3, Pencil, Trash2, CopyPlus,
   CheckCircle2, Clock, FlaskConical, ChevronRight, ArrowRight,
   Printer, PenLine, Monitor,
 } from 'lucide-react'
@@ -257,6 +257,17 @@ export function ProductionPage() {
                               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/production/${b.id}`)}>
                                 <Pencil className="h-3.5 w-3.5" />
                               </Button>
+                              {canEdit && (
+                                <Button
+                                  variant="ghost" size="icon" className="h-7 w-7"
+                                  title="Novo lote com o mesmo produto, máquina e jogo"
+                                  onClick={() => navigate(
+                                    `/production/new?productId=${b.productId}&machineId=${b.machineId}&setId=${b.punchSetId}`,
+                                  )}
+                                >
+                                  <CopyPlus className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
                               {canEdit && (
                                 <Button
                                   variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive"
