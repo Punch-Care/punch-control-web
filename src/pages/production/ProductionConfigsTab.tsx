@@ -56,6 +56,34 @@ const ORIGEM_LABEL: Record<ParamSuggestionSource, string> = {
   MEDIA_CFC: 'Média do CFC × fator',
 }
 
+/**
+ * Aplica as tolerâncias do padrão MK IV às linhas cujo nome bate com o template.
+ *
+ * As configurações criadas antes desta versão têm mínimo e máximo digitados e
+ * seguem em modo fixo. Em vez de reescrever esses dados por migração — sem
+ * ninguém olhando —, a conversão fica aqui: quem edita a configuração vê o que
+ * vai mudar e decide salvar ou não.
+ */
+function aplicarToleranciasPadrao(rows: ParamRow[]): { params: ParamRow[]; aplicados: number } {
+  let aplicados = 0
+  const params = rows.map(row => {
+    const padrao = DEFAULT_PARAMS_MK_IV.find(d => d.nome === row.nome)
+    if (!padrao || (!padrao.toleranciaPerc && padrao.origemSugerido === 'MANUAL')) return row
+    aplicados += 1
+    return {
+      ...row,
+      toleranciaPerc: padrao.toleranciaPerc,
+      origemSugerido: padrao.origemSugerido,
+      fatorSugerido: padrao.fatorSugerido,
+      // O que estava digitado vira o valor de partida, usado enquanto não houver histórico
+      sugerido: row.sugerido || padrao.sugerido,
+      minimo: '',
+      maximo: '',
+    }
+  })
+  return { params, aplicados }
+}
+
 /** Reproduz na tela o que o servidor calcula, para o usuário ver a faixa antes de salvar */
 function previewFaixa(row: ParamRow): string {
   const sugerido = parseNum(row.sugerido)
@@ -247,9 +275,23 @@ export function ProductionConfigsTab() {
               <p className="text-xs text-muted-foreground mt-0.5">Nenhum parâmetro — lotes serão registrados sem validação de limites</p>
             )}
           </div>
-          <Button type="button" size="sm" variant="outline" onClick={addParam}>
-            <Plus className="h-3 w-3" /> {p.addParam}
-          </Button>
+          <div className="flex gap-2">
+            {params.some(r => !r.toleranciaPerc && DEFAULT_PARAMS_MK_IV.some(d => d.nome === r.nome && d.toleranciaPerc)) && (
+              <Button
+                type="button" size="sm" variant="outline"
+                onClick={() => {
+                  const { params: novos, aplicados } = aplicarToleranciasPadrao(params)
+                  setParams(novos)
+                  toast.success(`Tolerância padrão aplicada a ${aplicados} parâmetro(s). Confira e salve.`)
+                }}
+              >
+                Aplicar tolerâncias padrão
+              </Button>
+            )}
+            <Button type="button" size="sm" variant="outline" onClick={addParam}>
+              <Plus className="h-3 w-3" /> {p.addParam}
+            </Button>
+          </div>
         </div>
         {params.length > 0 && (
           <div className="rounded-lg border overflow-x-auto">

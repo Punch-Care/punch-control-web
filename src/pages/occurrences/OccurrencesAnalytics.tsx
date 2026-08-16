@@ -1,5 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { BarChart3 } from 'lucide-react'
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+} from 'recharts'
 import { api } from '@/lib/api'
 import { useAdminCompany } from '@/hooks/useAdminCompany'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -35,6 +38,17 @@ const OCC_LABELS: Record<OccurrenceType, string> = {
   QUEBRA: 'Quebra',
   OXIDACAO: 'Oxidação',
   OUTROS: 'Outros',
+}
+
+// Cores distintas por tipo — a planilha tem uma aba de gráfico por ano; aqui a
+// evolução dos seis tipos cabe num gráfico só.
+const OCC_COLORS: Record<OccurrenceType, string> = {
+  CAPPING: '#dc2626',
+  STICKING: '#ea580c',
+  TRAVAMENTO: '#ca8a04',
+  QUEBRA: '#2563eb',
+  OXIDACAO: '#7c3aed',
+  OUTROS: '#64748b',
 }
 
 export function OccurrencesAnalytics() {
@@ -170,6 +184,44 @@ export function OccurrencesAnalytics() {
                   Em vermelho, os anos acima da mediana histórica daquele tipo de ocorrência.
                 </p>
               </div>
+
+              {/* Evolução da taxa mensal — o gráfico que a planilha tem por ano */}
+              {allYears.length > 1 && (
+                <div className="space-y-1.5">
+                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                    Evolução da taxa mensal
+                  </p>
+                  <ResponsiveContainer width="100%" height={240}>
+                    <LineChart
+                      data={allYears.map(a => ({
+                        ano: a.year,
+                        ...Object.fromEntries(OCC_TYPES.map(t => [OCC_LABELS[t], a.taxaMensal[t]])),
+                      }))}
+                      margin={{ top: 8, right: 12, left: -18, bottom: 0 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                      <XAxis dataKey="ano" tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} />
+                      <Tooltip
+                        contentStyle={{ borderRadius: '8px', fontSize: '12px' }}
+                        formatter={(v, n) => [`${Number(v).toFixed(1)} / mês`, String(n)]}
+                      />
+                      <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }} />
+                      {OCC_TYPES.map(t => (
+                        <Line
+                          key={t}
+                          type="monotone"
+                          dataKey={OCC_LABELS[t]}
+                          stroke={OCC_COLORS[t]}
+                          strokeWidth={2}
+                          dot={{ r: 3 }}
+                          activeDot={{ r: 5 }}
+                        />
+                      ))}
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
             </CardContent>
           </Card>
         )
