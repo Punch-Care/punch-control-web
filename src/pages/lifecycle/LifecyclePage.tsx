@@ -93,11 +93,11 @@ export function LifecyclePage() {
   const [prodForm, setProdForm] = useState({ produto: '', data: format(new Date(), 'yyyy-MM-dd'), maquina: '', numLote: '', qtdKg: '' })
   const [maintForm, setMaintForm] = useState({ data: format(new Date(), 'yyyy-MM-dd'), componente: 'P_SUPERIOR' as ComponentInventoryType, quantidade: '', notas: '' })
   const [configForm, setConfigForm] = useState({ fatorDepreciacao: '0.00015', pesoMedioPadrao: '' })
-  const [inventory, setInventory] = useState<Record<ComponentInventoryType, { qtdAdquirida: string; qtdUtilizada: string; pontoEncomenda: string }>>({
-    P_SUPERIOR: { qtdAdquirida: '0', qtdUtilizada: '0', pontoEncomenda: '' },
-    P_INFERIOR: { qtdAdquirida: '0', qtdUtilizada: '0', pontoEncomenda: '' },
-    MATRIZ_1: { qtdAdquirida: '0', qtdUtilizada: '0', pontoEncomenda: '' },
-    MATRIZ_2: { qtdAdquirida: '0', qtdUtilizada: '0', pontoEncomenda: '' },
+  const [inventory, setInventory] = useState<Record<ComponentInventoryType, { dimensao: string; qtdAdquirida: string; qtdUtilizada: string; pontoEncomenda: string }>>({
+    P_SUPERIOR: { dimensao: '', qtdAdquirida: '0', qtdUtilizada: '0', pontoEncomenda: '' },
+    P_INFERIOR: { dimensao: '', qtdAdquirida: '0', qtdUtilizada: '0', pontoEncomenda: '' },
+    MATRIZ_1: { dimensao: '', qtdAdquirida: '0', qtdUtilizada: '0', pontoEncomenda: '' },
+    MATRIZ_2: { dimensao: '', qtdAdquirida: '0', qtdUtilizada: '0', pontoEncomenda: '' },
   })
 
   const { t } = useLocale()
@@ -128,7 +128,7 @@ export function LifecyclePage() {
         const inv = { ...prev }
         for (const item of lifecycleData.inventory) {
           const k = item.tipo as ComponentInventoryType
-          inv[k] = { qtdAdquirida: item.qtdAdquirida.toString(), qtdUtilizada: item.qtdUtilizada.toString(), pontoEncomenda: item.pontoEncomenda?.toString() ?? '' }
+          inv[k] = { dimensao: item.dimensao ?? '', qtdAdquirida: item.qtdAdquirida.toString(), qtdUtilizada: item.qtdUtilizada.toString(), pontoEncomenda: item.pontoEncomenda?.toString() ?? '' }
         }
         return inv
       })
@@ -153,6 +153,7 @@ export function LifecyclePage() {
         tipo,
         qtdAdquirida: parseInt(inventory[tipo].qtdAdquirida) || 0,
         qtdUtilizada: parseInt(inventory[tipo].qtdUtilizada) || 0,
+        dimensao: inventory[tipo].dimensao || null,
         pontoEncomenda: inventory[tipo].pontoEncomenda ? parseInt(inventory[tipo].pontoEncomenda) : null,
       }))
     ),
@@ -350,6 +351,7 @@ export function LifecyclePage() {
                 <TableHeader>
                   <TableRow className="bg-muted/30">
                     <TableHead>Componente</TableHead>
+                    <TableHead className="text-center">Dimensão</TableHead>
                     <TableHead className="text-center">Adquirida</TableHead>
                     <TableHead className="text-center">Utilizada</TableHead>
                     <TableHead className="text-center">Sobra</TableHead>
@@ -367,6 +369,9 @@ export function LifecyclePage() {
                     return (
                       <TableRow key={tipo} className={alerta ? 'bg-orange-50' : ''}>
                         <TableCell className="font-medium text-sm">{COMPONENT_LABELS[tipo]}</TableCell>
+                        <TableCell className="text-center">
+                          <Input className="h-7 text-xs text-center w-24 mx-auto" placeholder="ex: 24mm" value={inventory[tipo].dimensao} onChange={e => setInventory(prev => ({ ...prev, [tipo]: { ...prev[tipo], dimensao: e.target.value } }))} />
+                        </TableCell>
                         <TableCell className="text-center">
                           <Input type="number" className="h-7 text-xs text-center w-20 mx-auto" value={inventory[tipo].qtdAdquirida} onChange={e => setInventory(prev => ({ ...prev, [tipo]: { ...prev[tipo], qtdAdquirida: e.target.value } }))} />
                         </TableCell>

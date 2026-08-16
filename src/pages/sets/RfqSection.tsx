@@ -99,7 +99,7 @@ export function RfqSection({ set, canEdit }: { set: PunchSet; canEdit: boolean }
   const [emailSolicitante, setEmail] = useState(set.emailSolicitante ?? '')
   const [telefoneSolicitante, setTel] = useState(set.telefoneSolicitante ?? '')
   const [caracteristicas, setCaracteristicas] = useState<string[]>(parseCaracteristicas(set.caracteristicas))
-  const [notes, setNotes] = useState(set.notes ?? '')
+  const [observacoesRfq, setObservacoesRfq] = useState(set.observacoesRfq ?? '')
 
   // ── Exportação do RFQ ────────────────────────────────────────────────────────
   const { data: components = [] } = useQuery<ToolingComponent[]>({
@@ -130,7 +130,7 @@ export function RfqSection({ set, canEdit }: { set: PunchSet; canEdit: boolean }
       emailSolicitante: emailSolicitante || null,
       telefoneSolicitante: telefoneSolicitante || null,
       caracteristicas: caracteristicas.length ? JSON.stringify(caracteristicas) : null,
-      notes: notes || null,
+      observacoesRfq: observacoesRfq || null,
     }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['punch-set', set.id] }); toast.success('Dados do RFQ salvos') },
     onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? 'Erro ao salvar'),
@@ -223,7 +223,7 @@ export function RfqSection({ set, canEdit }: { set: PunchSet; canEdit: boolean }
         </div>
 
         <div className="border-t pt-3">
-          {field('Observações', notes, setNotes, !canEdit, 'Texto livre')}
+          {field('Observações', observacoesRfq, setObservacoesRfq, !canEdit, 'Texto livre')}
         </div>
       </section>
 

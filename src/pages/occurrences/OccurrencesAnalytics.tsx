@@ -19,6 +19,8 @@ interface YearData extends CountsByType {
 
 interface ProductData {
   produto: string
+  produtoId: string
+  produtoCodigo: string | null
   anos: YearData[]
   /** Mediana das taxas mensais entre os anos — a linha de base da planilha */
   baseline: Record<OccurrenceType, number | null>
@@ -63,14 +65,17 @@ export function OccurrencesAnalytics() {
         </p>
       </div>
 
-      {data.map(({ produto, anos, baseline, baselineTotal }) => {
+      {data.map(({ produto, produtoId, produtoCodigo, anos, baseline, baselineTotal }) => {
         const allYears = [...anos].sort((a, b) => a.year - b.year)
         const totalGeral = allYears.reduce((s, a) => s + a.total, 0)
 
         return (
-          <Card key={produto} className="border-0 shadow-sm">
+          <Card key={produtoId} className="border-0 shadow-sm">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold">{produto}</CardTitle>
+              <CardTitle className="text-sm font-semibold">
+                {produto}
+                {produtoCodigo && <span className="ml-2 font-mono text-xs font-normal text-muted-foreground">{produtoCodigo}</span>}
+              </CardTitle>
               <p className="text-xs text-muted-foreground">{allYears.length} ano(s) · {totalGeral} ocorrência(s) total</p>
             </CardHeader>
             <CardContent className="space-y-4">

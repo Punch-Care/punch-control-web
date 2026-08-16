@@ -155,7 +155,7 @@ export function generateRfqPdf(params: {
     body: [
       ['Produtos', products.length ? products.map(p => p.name).join(', ') : '—'],
       ['Características do produto', caracteristicas.length ? caracteristicas.join(' · ') : '—'],
-      ['Observações', txt(set.notes)],
+      ['Observações', txt(set.observacoesRfq)],
     ],
     theme: 'grid',
     headStyles: { fillColor: BRAND, fontSize: 8.5, fontStyle: 'bold', textColor: 255 },

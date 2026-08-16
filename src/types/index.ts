@@ -69,6 +69,8 @@ export interface PunchSet {
   telefoneSolicitante: string | null
   // Características do produto (RFQ) — JSON string array
   caracteristicas: string | null
+  /** Campo "Observações" do RFQ, separado das notas gerais do jogo */
+  observacoesRfq: string | null
   // Identificação/procedência do jogo
   fabricante: string | null
   dataFabricacao: string | null
@@ -201,6 +203,8 @@ export interface ComponentInventory {
   id: string
   setId: string
   tipo: ComponentInventoryType
+  /** Dimensão anotada ao lado do componente (ex: "24mm") */
+  dimensao: string | null
   qtdAdquirida: number
   qtdUtilizada: number
   pontoEncomenda: number | null
