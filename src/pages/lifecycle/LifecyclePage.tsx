@@ -315,6 +315,18 @@ export function LifecyclePage() {
                       <p className="text-xs text-muted-foreground">Peso Médio Padrão</p>
                       <p className="font-medium">{lifecycleData.config?.pesoMedioPadrao ? `${lifecycleData.config.pesoMedioPadrao}g` : '—'}</p>
                     </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Total Produzido</p>
+                      <p className="font-medium tabular-nums">{lifecycleData.totalKg.toLocaleString('pt-BR')} kg</p>
+                    </div>
+                    <div className="col-span-2 sm:col-span-3">
+                      <p className="text-xs text-muted-foreground">Quantidade em Milhares de Unidades</p>
+                      <p className="font-medium tabular-nums">
+                        {lifecycleData.unidadesMilhares !== null
+                          ? lifecycleData.unidadesMilhares.toLocaleString('pt-BR')
+                          : '— informe o peso médio para calcular'}
+                      </p>
+                    </div>
                   </div>
                 )}
               </CardContent>

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Building2, User, Factory, Tags, Loader2, Save } from 'lucide-react'
+import { Building2, User, Factory, Tags, Loader2, Save, Unlink, FileDown } from 'lucide-react'
 import { toast } from 'sonner'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/hooks/useAuth'
 import { ToolingSection, CARACTERISTICAS_PRODUTO } from './ToolingSection'
-import type { PunchSet, Company, Machine } from '@/types'
+import { generateRfqPdf } from './rfq-pdf'
+import type { PunchSet, Company, Machine, ToolingComponent, Product } from '@/types'
 
 // Parse do campo caracteristicas (JSON string array) com fallback seguro.
 function parseCaracteristicas(raw: string | null): string[] {
@@ -64,12 +65,33 @@ export function RfqSection({ set, canEdit }: { set: PunchSet; canEdit: boolean }
     onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? 'Erro ao salvar empresa'),
   })
 
-  // ── Máquinas (referência — cadastradas na empresa) ──────────────────────────
+  // ── Máquinas ────────────────────────────────────────────────────────────────
+  // O RFQ do cliente lista as compressoras a que o ferramental serve, não todas
+  // as da empresa — daí o vínculo explícito, com as demais oferecidas para incluir.
   const { data: machines = [] } = useQuery<Machine[]>({
     queryKey: ['machines', set.companyId],
-    queryFn: () => api.get('/machines', { params: { companyId: set.companyId } }).then(r => r.data),
+    queryFn: () => api.get('/occurrences/machines', { params: { companyId: set.companyId } }).then(r => r.data),
     enabled: !!set.companyId,
   })
+
+  const { data: setMachines = [] } = useQuery<Machine[]>({
+    queryKey: ['punch-set-machines', set.id],
+    queryFn: () => api.get(`/punch-sets/${set.id}/machines`).then(r => r.data),
+  })
+
+  const linkMachine = useMutation({
+    mutationFn: (machineId: string) => api.post(`/punch-sets/${set.id}/machines`, { machineId }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['punch-set-machines', set.id] }); toast.success('Compressora vinculada') },
+    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? 'Erro ao vincular'),
+  })
+
+  const unlinkMachine = useMutation({
+    mutationFn: (machineId: string) => api.delete(`/punch-sets/${set.id}/machines/${machineId}`),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['punch-set-machines', set.id] }); toast.success('Compressora desvinculada') },
+    onError: () => toast.error('Erro ao desvincular'),
+  })
+
+  const naoVinculadas = machines.filter(m => !setMachines.some(sm => sm.id === m.id))
 
   // ── Solicitante + Características + Observações (no próprio jogo) ─────────────
   const [solicitante, setSolicitante] = useState(set.solicitante ?? '')
@@ -78,6 +100,25 @@ export function RfqSection({ set, canEdit }: { set: PunchSet; canEdit: boolean }
   const [telefoneSolicitante, setTel] = useState(set.telefoneSolicitante ?? '')
   const [caracteristicas, setCaracteristicas] = useState<string[]>(parseCaracteristicas(set.caracteristicas))
   const [notes, setNotes] = useState(set.notes ?? '')
+
+  // ── Exportação do RFQ ────────────────────────────────────────────────────────
+  const { data: components = [] } = useQuery<ToolingComponent[]>({
+    queryKey: ['tooling-components', set.id],
+    queryFn: () => api.get(`/punch-sets/${set.id}/tooling-components`).then(r => r.data),
+  })
+
+  const { data: linkedProducts = [] } = useQuery<Product[]>({
+    queryKey: ['punch-set-products', set.id],
+    queryFn: () => api.get(`/punch-sets/${set.id}/products`).then(r => r.data),
+  })
+
+  const exportRfq = () => {
+    generateRfqPdf({
+      set, company, machines: setMachines, components,
+      products: linkedProducts, caracteristicas,
+    })
+    toast.success('RFQ exportado')
+  }
 
   const toggleCaracteristica = (c: string) =>
     setCaracteristicas(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c])
@@ -97,6 +138,16 @@ export function RfqSection({ set, canEdit }: { set: PunchSet; canEdit: boolean }
 
   return (
     <div className="space-y-4">
+      {/* Cabeçalho — exportação no formato da planilha de RFQ */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <p className="text-xs text-muted-foreground">
+          Estes dados compõem o documento enviado ao fornecedor.
+        </p>
+        <Button size="sm" variant="outline" onClick={exportRfq}>
+          <FileDown className="h-4 w-4" /> Exportar RFQ em PDF
+        </Button>
+      </div>
+
       {/* ── Dados da empresa ── */}
       <section className="border rounded-xl p-4 bg-background space-y-3">
         <div className="flex items-center justify-between">
@@ -181,10 +232,13 @@ export function RfqSection({ set, canEdit }: { set: PunchSet; canEdit: boolean }
         <div className="flex items-center gap-2">
           <Factory className="h-4 w-4 text-muted-foreground" />
           <h3 className="font-semibold text-base">Informações da máquina</h3>
-          <span className="text-xs text-muted-foreground">Compressoras cadastradas na empresa</span>
+          <span className="text-xs text-muted-foreground">Compressoras a que este jogo serve</span>
         </div>
-        {machines.length === 0 ? (
-          <p className="text-xs text-muted-foreground">Nenhuma máquina cadastrada para esta empresa.</p>
+
+        {setMachines.length === 0 ? (
+          <p className="text-xs text-muted-foreground">
+            Nenhuma compressora vinculada a este jogo ainda.
+          </p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
@@ -195,21 +249,58 @@ export function RfqSection({ set, canEdit }: { set: PunchSet; canEdit: boolean }
                   <th className="py-1.5 pr-3 font-medium">Nº de série</th>
                   <th className="py-1.5 pr-3 font-medium">Ano</th>
                   <th className="py-1.5 pr-3 font-medium">Qtd. estações</th>
+                  {canEdit && <th className="py-1.5 w-10" />}
                 </tr>
               </thead>
               <tbody>
-                {machines.map(m => (
+                {setMachines.map(m => (
                   <tr key={m.id} className="border-b last:border-0">
                     <td className="py-1.5 pr-3">{m.fabricante ?? m.name ?? '—'}</td>
                     <td className="py-1.5 pr-3">{m.modelo ?? '—'}</td>
                     <td className="py-1.5 pr-3">{m.numeroSerie ?? '—'}</td>
                     <td className="py-1.5 pr-3">{m.anoFabricacao ?? '—'}</td>
                     <td className="py-1.5 pr-3">{m.qtdEstacao ?? '—'}</td>
+                    {canEdit && (
+                      <td className="py-1.5">
+                        <Button
+                          type="button" variant="ghost" size="icon"
+                          className="h-6 w-6 text-destructive"
+                          onClick={() => unlinkMachine.mutate(m.id)}
+                        >
+                          <Unlink className="h-3 w-3" />
+                        </Button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+        )}
+
+        {canEdit && naoVinculadas.length > 0 && (
+          <div className="space-y-1.5 border-t pt-3">
+            <Label className="text-xs">Vincular compressora</Label>
+            <div className="flex flex-wrap gap-2">
+              {naoVinculadas.map(m => (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => linkMachine.mutate(m.id)}
+                  disabled={linkMachine.isPending}
+                  className="text-xs px-3 py-1.5 rounded-full border border-border text-muted-foreground hover:border-foreground transition-colors disabled:opacity-50"
+                >
+                  + {m.fabricante ?? m.name}{m.modelo ? ` ${m.modelo}` : ''}{m.numeroSerie ? ` · ${m.numeroSerie}` : ''}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {canEdit && machines.length === 0 && (
+          <p className="text-xs text-muted-foreground border-t pt-3">
+            Nenhuma compressora cadastrada nesta empresa — cadastre em Máquinas para poder vincular.
+          </p>
         )}
       </section>
 

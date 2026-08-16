@@ -29,17 +29,23 @@ type CepRow = {
   occurrences: string[]
 }
 
+type StatBlock = { min: number | null; avg: number | null; max: number | null; median: number | null; amostras: number }
+
 type CepStats = {
   rows: CepRow[]
-  stats: Record<string, { min: number | null; avg: number | null; max: number | null; median: number | null }>
+  stats: Record<string, StatBlock>
+  /** Estatísticas dos parâmetros fixos, indexadas pelo nome do parâmetro */
+  paramStats: Record<string, StatBlock>
+  /** Limiares de alerta da configuração produto+máquina, quando há uma só */
+  limiares: { limiteDifRolo: number; limiteAmplitude: number; limiteCoefVar: number }
 }
 
 const fmt = (v: number | null, decimals = 2) => v !== null ? v.toFixed(decimals) : '—'
 
-const alert = (v: number | null, min: number | null, max: number | null) => {
-  if (v === null || min === null || max === null) return ''
-  if (v < min || v > max) return 'text-red-600 font-semibold'
-  return ''
+/** Destaca a leitura que passou do limiar configurado para aquele produto + máquina */
+const alertAcima = (v: number | null, limite: number | null | undefined) => {
+  if (v === null || limite === null || limite === undefined) return ''
+  return v > limite ? 'text-red-600 font-semibold' : ''
 }
 
 export function CepTab() {
@@ -71,6 +77,8 @@ export function CepTab() {
   })
 
   const stats = cep?.stats ?? {}
+  const paramStats = cep?.paramStats ?? {}
+  const limiares = cep?.limiares ?? { limiteDifRolo: 0.5, limiteAmplitude: 1.0, limiteCoefVar: 10 }
 
   return (
     <div className="space-y-5">
@@ -137,6 +145,46 @@ export function CepTab() {
             ))}
           </div>
 
+          {/* Estatísticas dos parâmetros fixos — a mediana daqui alimenta o sugerido */}
+          {Object.keys(paramStats).length > 0 && (
+            <div className="space-y-2">
+              <div>
+                <p className="text-sm font-medium">Parâmetros fixos ao longo do histórico</p>
+                <p className="text-xs text-muted-foreground">
+                  A mediana desta tabela é o valor sugerido dos parâmetros configurados para usar o histórico.
+                </p>
+              </div>
+              <div className="rounded-xl border overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b bg-muted/50">
+                      <th className="text-left px-3 py-2 font-medium">Parâmetro</th>
+                      <th className="text-center px-3 py-2 font-medium">Mínimo</th>
+                      <th className="text-center px-3 py-2 font-medium">Média</th>
+                      <th className="text-center px-3 py-2 font-medium">Máximo</th>
+                      <th className="text-center px-3 py-2 font-medium text-primary">Mediana</th>
+                      <th className="text-right px-3 py-2 font-medium">Lotes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(paramStats)
+                      .sort(([a], [b]) => a.localeCompare(b))
+                      .map(([nome, s]) => (
+                        <tr key={nome} className="border-b last:border-0 hover:bg-muted/20">
+                          <td className="px-3 py-1.5">{nome}</td>
+                          <td className="px-3 py-1.5 text-center tabular-nums">{fmt(s.min)}</td>
+                          <td className="px-3 py-1.5 text-center tabular-nums">{fmt(s.avg)}</td>
+                          <td className="px-3 py-1.5 text-center tabular-nums">{fmt(s.max)}</td>
+                          <td className="px-3 py-1.5 text-center tabular-nums font-semibold text-primary">{fmt(s.median)}</td>
+                          <td className="px-3 py-1.5 text-right tabular-nums text-muted-foreground">{s.amostras}</td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           {/* Tabela CEP */}
           <div className="rounded-xl border overflow-x-auto">
             <table className="w-full text-xs">
@@ -174,13 +222,23 @@ export function CepTab() {
                     <td className="px-3 py-1.5 font-medium text-muted-foreground" colSpan={2}>
                       {stat === 'min' ? 'MÍNIMO' : stat === 'avg' ? 'MÉDIA' : stat === 'max' ? 'MÁXIMO' : 'MEDIANA'}
                     </td>
-                    <td className="px-3 py-1.5 text-center" colSpan={3}>—</td>
-                    <td className="px-3 py-1.5 text-center">{fmt(stats.difRoloCmpDir?.[stat] ?? null)}</td>
-                    <td className="px-3 py-1.5 text-center" colSpan={3}>—</td>
-                    <td className="px-3 py-1.5 text-center">{fmt(stats.difRoloCmpEsq?.[stat] ?? null)}</td>
-                    <td className="px-3 py-1.5 text-center">{fmt(stats.ampRoloCompressao?.[stat] ?? null)}</td>
-                    <td className="px-3 py-1.5 text-center">{fmt(stats.ampRoloDosagem?.[stat] ?? null)}</td>
-                    <td colSpan={4}></td>
+                    {(['inicio', 'meio', 'fim'] as const).map(ponto => (
+                      <td key={`dir-${ponto}`} className="px-3 py-1.5 text-center tabular-nums">
+                        {fmt(stats[`roloCmpDir.${ponto}`]?.[stat] ?? null)}
+                      </td>
+                    ))}
+                    <td className="px-3 py-1.5 text-center tabular-nums">{fmt(stats.difRoloCmpDir?.[stat] ?? null)}</td>
+                    {(['inicio', 'meio', 'fim'] as const).map(ponto => (
+                      <td key={`esq-${ponto}`} className="px-3 py-1.5 text-center tabular-nums">
+                        {fmt(stats[`roloCmpEsq.${ponto}`]?.[stat] ?? null)}
+                      </td>
+                    ))}
+                    <td className="px-3 py-1.5 text-center tabular-nums">{fmt(stats.difRoloCmpEsq?.[stat] ?? null)}</td>
+                    <td className="px-3 py-1.5 text-center tabular-nums">{fmt(stats.ampRoloCompressao?.[stat] ?? null)}</td>
+                    <td className="px-3 py-1.5 text-center tabular-nums">{fmt(stats.ampRoloDosagem?.[stat] ?? null)}</td>
+                    <td className="px-3 py-1.5 text-center tabular-nums">{fmt(stats.coefVarL1?.[stat] ?? null)}</td>
+                    <td className="px-3 py-1.5 text-center tabular-nums">{fmt(stats.coefVarL2?.[stat] ?? null)}</td>
+                    <td colSpan={2}></td>
                   </tr>
                 ))}
                 {/* Data rows */}
@@ -191,15 +249,15 @@ export function CepTab() {
                     <td className="px-3 py-1.5 text-center">{fmt(row.roloCmpDir.inicio)}</td>
                     <td className="px-3 py-1.5 text-center">{fmt(row.roloCmpDir.meio)}</td>
                     <td className="px-3 py-1.5 text-center">{fmt(row.roloCmpDir.fim)}</td>
-                    <td className={`px-3 py-1.5 text-center ${alert(row.difRoloCmpDir, null, 0.5)}`}>{fmt(row.difRoloCmpDir)}</td>
+                    <td className={`px-3 py-1.5 text-center ${alertAcima(row.difRoloCmpDir, limiares.limiteDifRolo)}`}>{fmt(row.difRoloCmpDir)}</td>
                     <td className="px-3 py-1.5 text-center">{fmt(row.roloCmpEsq.inicio)}</td>
                     <td className="px-3 py-1.5 text-center">{fmt(row.roloCmpEsq.meio)}</td>
                     <td className="px-3 py-1.5 text-center">{fmt(row.roloCmpEsq.fim)}</td>
-                    <td className={`px-3 py-1.5 text-center ${alert(row.difRoloCmpEsq, null, 0.5)}`}>{fmt(row.difRoloCmpEsq)}</td>
-                    <td className={`px-3 py-1.5 text-center ${alert(row.ampRoloCompressao, null, 1.0)}`}>{fmt(row.ampRoloCompressao)}</td>
-                    <td className={`px-3 py-1.5 text-center ${alert(row.ampRoloDosagem, null, 1.0)}`}>{fmt(row.ampRoloDosagem)}</td>
-                    <td className={`px-3 py-1.5 text-center ${alert(row.coefVarL1, null, 10)}`}>{fmt(row.coefVarL1)}</td>
-                    <td className={`px-3 py-1.5 text-center ${alert(row.coefVarL2, null, 10)}`}>{fmt(row.coefVarL2)}</td>
+                    <td className={`px-3 py-1.5 text-center ${alertAcima(row.difRoloCmpEsq, limiares.limiteDifRolo)}`}>{fmt(row.difRoloCmpEsq)}</td>
+                    <td className={`px-3 py-1.5 text-center ${alertAcima(row.ampRoloCompressao, limiares.limiteAmplitude)}`}>{fmt(row.ampRoloCompressao)}</td>
+                    <td className={`px-3 py-1.5 text-center ${alertAcima(row.ampRoloDosagem, limiares.limiteAmplitude)}`}>{fmt(row.ampRoloDosagem)}</td>
+                    <td className={`px-3 py-1.5 text-center ${alertAcima(row.coefVarL1, limiares.limiteCoefVar)}`}>{fmt(row.coefVarL1)}</td>
+                    <td className={`px-3 py-1.5 text-center ${alertAcima(row.coefVarL2, limiares.limiteCoefVar)}`}>{fmt(row.coefVarL2)}</td>
                     <td className="px-3 py-1.5">
                       <div className="flex gap-1 flex-wrap">
                         {row.occurrences.map(o => (

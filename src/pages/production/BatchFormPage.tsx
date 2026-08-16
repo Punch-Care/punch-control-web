@@ -358,9 +358,11 @@ export function BatchFormPage() {
   // Auto-carregar parâmetros da configuração
   useEffect(() => {
     if (!config || fixedParams.length > 0) return
+    // Os limites efetivos vêm do servidor já derivados do histórico de lotes;
+    // os campos crus da configuração são só a regra que os gerou.
     setFixedParams(config.params.map(pr => ({
       ordem: pr.ordem, nome: pr.nome, unidade: pr.unidade,
-      minimo: pr.minimo, maximo: pr.maximo, sugerido: pr.sugerido,
+      minimo: pr.minimoEfetivo, maximo: pr.maximoEfetivo, sugerido: pr.sugeridoEfetivo,
       valorReal: '', isOk: null,
     })))
     setForm(f => ({ ...f, configId: config.id }))

@@ -236,6 +236,10 @@ export interface LifecycleData {
   production: LifecycleProductionRecord[]
   maintenance: LifecycleMaintenanceRecord[]
   percAcumulado: number
+  /** Soma dos kg produzidos pelo jogo */
+  totalKg: number
+  /** totalKg ÷ peso médio — null enquanto o peso médio não estiver informado */
+  unidadesMilhares: number | null
 }
 
 export interface Product {
@@ -299,6 +303,9 @@ export interface CompanyOverview {
 export type BatchOccurrenceType = 'CAPPING' | 'STICKING' | 'TRAVAMENTO' | 'QUEBRA' | 'OXIDACAO' | 'OUTROS'
 export type BatchStatus = 'DRAFT' | 'COMPLETED'
 
+/** De onde sai o valor sugerido — a planilha deriva quase tudo do histórico */
+export type ParamSuggestionSource = 'MANUAL' | 'MEDIANA' | 'MEDIA_CFC'
+
 export interface ProductionConfigParam {
   id: string
   configId: string
@@ -308,6 +315,15 @@ export interface ProductionConfigParam {
   minimo: number | null
   maximo: number | null
   sugerido: number | null
+  toleranciaPerc: number | null
+  origemSugerido: ParamSuggestionSource
+  fatorSugerido: number | null
+  // Resolvidos pelo servidor a cada leitura, a partir do histórico de lotes
+  sugeridoEfetivo: number | null
+  minimoEfetivo: number | null
+  maximoEfetivo: number | null
+  medianaHistorico: number | null
+  amostras: number
 }
 
 export interface ProductionConfig {
@@ -315,6 +331,9 @@ export interface ProductionConfig {
   companyId: string
   productId: string
   machineId: string
+  limiteDifRolo: number
+  limiteAmplitude: number
+  limiteCoefVar: number
   product: { id: string; name: string; code: string | null }
   machine: { id: string; name: string; code: string | null }
   params: ProductionConfigParam[]

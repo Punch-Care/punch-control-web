@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useLocale } from '@/hooks/useLocale'
 import { useAdminCompany } from '@/hooks/useAdminCompany'
-import type { ProductionConfig, Product, Machine } from '@/types'
+import type { ProductionConfig, Product, Machine, ParamSuggestionSource } from '@/types'
 
 interface ParamRow {
   ordem: number
@@ -21,27 +21,54 @@ interface ParamRow {
   minimo: string
   maximo: string
   sugerido: string
+  toleranciaPerc: string
+  origemSugerido: ParamSuggestionSource
+  fatorSugerido: string
 }
 
-// Parâmetros padrão baseados na planilha MK IV (Punch Care)
-// Máquinas sem padrão CEP iniciam com lista vazia — o operador preenche manualmente
+// Parâmetros padrão da planilha MK IV (Punch Care).
+//
+// A planilha não digita mínimo e máximo: puxa a mediana do histórico de lotes
+// como valor sugerido e abre uma faixa percentual em torno dele. É essa regra
+// que fica registrada aqui — o `sugerido` serve só de ponto de partida enquanto
+// não houver lotes concluídos para calcular a mediana.
 const DEFAULT_PARAMS_MK_IV: ParamRow[] = [
-  { ordem: 1,  nome: 'Código do Jogo de Punções',                              unidade: '—',      minimo: '',       maximo: '',       sugerido: '' },
-  { ordem: 2,  nome: 'Came de Enchimento',                                     unidade: '—',      minimo: '',       maximo: '',       sugerido: '11.16' },
-  { ordem: 3,  nome: 'Vel. da Máquina (MK IV UN/MIN)',                         unidade: 'Un/Min', minimo: '3395',   maximo: '3605',   sugerido: '3500' },
-  { ordem: 4,  nome: 'Velocidade do Distribuidor Direito (Em Traços)',          unidade: 'traços', minimo: '29.7',   maximo: '36.3',   sugerido: '33' },
-  { ordem: 5,  nome: 'Velocidade do Distribuidor Esquerdo (Em Traços)',         unidade: 'traços', minimo: '29.7',   maximo: '36.3',   sugerido: '33' },
-  { ordem: 6,  nome: 'Manopla Compressão Princ. Dir. (Em mm)',                  unidade: 'mm',     minimo: '2.1',    maximo: '3.9',    sugerido: '3' },
-  { ordem: 7,  nome: 'Manopla Compressão Princ. Esq. (Em mm)',                  unidade: 'mm',     minimo: '2.1',    maximo: '3.9',    sugerido: '3' },
-  { ordem: 8,  nome: 'Manopla Pré-Compressão Sup. Dir. (Em mm)',               unidade: 'mm',     minimo: '2.1',    maximo: '3.9',    sugerido: '3' },
-  { ordem: 9,  nome: 'Manopla Pré-Compressão Sup. Esq. (Em mm)',               unidade: 'mm',     minimo: '2.1',    maximo: '3.9',    sugerido: '3' },
-  { ordem: 10, nome: 'Rolo Pré-Compressão Inf. Dir. (Em mm)',                  unidade: 'mm',     minimo: '6.48',   maximo: '7.92',   sugerido: '7.2' },
-  { ordem: 11, nome: 'Rolo Pré-Compressão Inf. Esq. (Em mm)',                  unidade: 'mm',     minimo: '6.48',   maximo: '7.92',   sugerido: '7.2' },
-  { ordem: 12, nome: 'Limite de Força de Compressão Principal (Em KN)',        unidade: 'KN',     minimo: '20',     maximo: '31.275', sugerido: '31.275' },
-  { ordem: 13, nome: 'Força Pré-Compressão Dir. — Lado 1 (Em KN)',             unidade: 'KN',     minimo: '0.8',    maximo: '1.2',    sugerido: '1' },
-  { ordem: 14, nome: 'Força Pré-Compressão Esq. — Lado 2 (Em KN)',             unidade: 'KN',     minimo: '0.8',    maximo: '1.2',    sugerido: '1' },
-  { ordem: 15, nome: 'Posição do Funil (± 5%)',                                unidade: '—',      minimo: '3.8',    maximo: '4.2',    sugerido: '4' },
+  { ordem: 1,  nome: 'Código do Jogo de Punções',                       unidade: '—',      sugerido: '',       toleranciaPerc: '',   origemSugerido: 'MANUAL',    fatorSugerido: '',    minimo: '', maximo: '' },
+  { ordem: 2,  nome: 'Came de Enchimento',                              unidade: '—',      sugerido: '11.16',  toleranciaPerc: '',   origemSugerido: 'MEDIANA',   fatorSugerido: '',    minimo: '', maximo: '' },
+  { ordem: 3,  nome: 'Vel. da Máquina (MK IV UN/MIN)',                  unidade: 'Un/Min', sugerido: '3500',   toleranciaPerc: '3',  origemSugerido: 'MEDIANA',   fatorSugerido: '',    minimo: '', maximo: '' },
+  { ordem: 4,  nome: 'Velocidade do Distribuidor Direito (Em Traços)',  unidade: 'traços', sugerido: '33',     toleranciaPerc: '10', origemSugerido: 'MEDIANA',   fatorSugerido: '',    minimo: '', maximo: '' },
+  { ordem: 5,  nome: 'Velocidade do Distribuidor Esquerdo (Em Traços)', unidade: 'traços', sugerido: '33',     toleranciaPerc: '10', origemSugerido: 'MEDIANA',   fatorSugerido: '',    minimo: '', maximo: '' },
+  { ordem: 6,  nome: 'Manopla Compressão Princ. Dir. (Em mm)',          unidade: 'mm',     sugerido: '3',      toleranciaPerc: '30', origemSugerido: 'MEDIANA',   fatorSugerido: '',    minimo: '', maximo: '' },
+  { ordem: 7,  nome: 'Manopla Compressão Princ. Esq. (Em mm)',          unidade: 'mm',     sugerido: '3',      toleranciaPerc: '30', origemSugerido: 'MEDIANA',   fatorSugerido: '',    minimo: '', maximo: '' },
+  { ordem: 8,  nome: 'Manopla Pré-Compressão Sup. Dir. (Em mm)',        unidade: 'mm',     sugerido: '3',      toleranciaPerc: '30', origemSugerido: 'MEDIANA',   fatorSugerido: '',    minimo: '', maximo: '' },
+  { ordem: 9,  nome: 'Manopla Pré-Compressão Sup. Esq. (Em mm)',        unidade: 'mm',     sugerido: '3',      toleranciaPerc: '30', origemSugerido: 'MEDIANA',   fatorSugerido: '',    minimo: '', maximo: '' },
+  { ordem: 10, nome: 'Rolo Pré-Compressão Inf. Dir. (Em mm)',           unidade: 'mm',     sugerido: '7.2',    toleranciaPerc: '10', origemSugerido: 'MEDIANA',   fatorSugerido: '',    minimo: '', maximo: '' },
+  { ordem: 11, nome: 'Rolo Pré-Compressão Inf. Esq. (Em mm)',           unidade: 'mm',     sugerido: '7.2',    toleranciaPerc: '10', origemSugerido: 'MEDIANA',   fatorSugerido: '',    minimo: '', maximo: '' },
+  { ordem: 12, nome: 'Limite de Força de Compressão Principal (Em KN)', unidade: 'KN',     sugerido: '31.275', toleranciaPerc: '',   origemSugerido: 'MEDIA_CFC', fatorSugerido: '1.5', minimo: '', maximo: '' },
+  { ordem: 13, nome: 'Força Pré-Compressão Dir. — Lado 1 (Em KN)',      unidade: 'KN',     sugerido: '1',      toleranciaPerc: '20', origemSugerido: 'MEDIANA',   fatorSugerido: '',    minimo: '', maximo: '' },
+  { ordem: 14, nome: 'Força Pré-Compressão Esq. — Lado 2 (Em KN)',      unidade: 'KN',     sugerido: '1',      toleranciaPerc: '20', origemSugerido: 'MEDIANA',   fatorSugerido: '',    minimo: '', maximo: '' },
+  { ordem: 15, nome: 'Posição do Funil',                               unidade: '—',      sugerido: '4',      toleranciaPerc: '5',  origemSugerido: 'MEDIANA',   fatorSugerido: '',    minimo: '', maximo: '' },
 ]
+
+const ORIGEM_LABEL: Record<ParamSuggestionSource, string> = {
+  MANUAL: 'Fixo',
+  MEDIANA: 'Mediana do histórico',
+  MEDIA_CFC: 'Média do CFC × fator',
+}
+
+/** Reproduz na tela o que o servidor calcula, para o usuário ver a faixa antes de salvar */
+function previewFaixa(row: ParamRow): string {
+  const sugerido = parseNum(row.sugerido)
+  const tol = parseNum(row.toleranciaPerc)
+  if (sugerido === null || tol === null) {
+    const min = parseNum(row.minimo)
+    const max = parseNum(row.maximo)
+    if (min === null && max === null) return '—'
+    return `${min ?? '—'} … ${max ?? '—'}`
+  }
+  const round4 = (v: number) => Math.round(v * 10000) / 10000
+  return `${round4(sugerido * (1 - tol / 100))} … ${round4(sugerido * (1 + tol / 100))}`
+}
 
 // Lista vazia para máquinas sem padrão CEP definido
 const DEFAULT_PARAMS_EMPTY: ParamRow[] = []
@@ -65,6 +92,7 @@ export function ProductionConfigsTab() {
   const [params, setParams] = useState<ParamRow[]>(DEFAULT_PARAMS)
   const [productId, setProductId] = useState('')
   const [machineId, setMachineId] = useState('')
+  const [limiares, setLimiares] = useState({ limiteDifRolo: '0.5', limiteAmplitude: '1.0', limiteCoefVar: '10' })
 
   const { data: configs = [], isLoading } = useQuery<ProductionConfig[]>({
     queryKey: ['production-configs', adminCompanyId],
@@ -86,6 +114,9 @@ export function ProductionConfigsTab() {
   const buildPayload = () => ({
     productId,
     machineId,
+    limiteDifRolo: parseNum(limiares.limiteDifRolo) ?? undefined,
+    limiteAmplitude: parseNum(limiares.limiteAmplitude) ?? undefined,
+    limiteCoefVar: parseNum(limiares.limiteCoefVar) ?? undefined,
     params: params.map(row => ({
       ordem: row.ordem,
       nome: row.nome,
@@ -93,6 +124,9 @@ export function ProductionConfigsTab() {
       minimo: parseNum(row.minimo),
       maximo: parseNum(row.maximo),
       sugerido: parseNum(row.sugerido),
+      toleranciaPerc: parseNum(row.toleranciaPerc),
+      origemSugerido: row.origemSugerido,
+      fatorSugerido: parseNum(row.fatorSugerido),
     })),
   })
 
@@ -118,6 +152,7 @@ export function ProductionConfigsTab() {
     setParams(DEFAULT_PARAMS)
     setProductId('')
     setMachineId('')
+    setLimiares({ limiteDifRolo: '0.5', limiteAmplitude: '1.0', limiteCoefVar: '10' })
     setOpen(true)
   }
 
@@ -130,15 +165,28 @@ export function ProductionConfigsTab() {
       minimo: pr.minimo?.toString() ?? '',
       maximo: pr.maximo?.toString() ?? '',
       sugerido: pr.sugerido?.toString() ?? '',
+      toleranciaPerc: pr.toleranciaPerc?.toString() ?? '',
+      origemSugerido: pr.origemSugerido ?? 'MANUAL',
+      fatorSugerido: pr.fatorSugerido?.toString() ?? '',
     })))
+    setLimiares({
+      limiteDifRolo: config.limiteDifRolo?.toString() ?? '0.5',
+      limiteAmplitude: config.limiteAmplitude?.toString() ?? '1.0',
+      limiteCoefVar: config.limiteCoefVar?.toString() ?? '10',
+    })
   }
 
   const updateParam = (idx: number, field: keyof ParamRow, value: string) => {
     setParams(prev => prev.map((r, i) => i === idx ? { ...r, [field]: value } : r))
   }
 
+  // A origem do sugerido é a única coluna que não é texto livre
+  const updateOrigem = (idx: number, origem: ParamSuggestionSource) => {
+    setParams(prev => prev.map((r, i) => i === idx ? { ...r, origemSugerido: origem } : r))
+  }
+
   const addParam = () => {
-    setParams(prev => [...prev, { ordem: prev.length + 1, nome: '', unidade: '', minimo: '', maximo: '', sugerido: '' }])
+    setParams(prev => [...prev, { ordem: prev.length + 1, nome: '', unidade: '', minimo: '', maximo: '', sugerido: '', toleranciaPerc: '', origemSugerido: 'MANUAL', fatorSugerido: '' }])
   }
 
   const removeParam = (idx: number) => {
@@ -208,33 +256,111 @@ export function ProductionConfigsTab() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="min-w-[200px]">Parâmetro</TableHead>
-                  <TableHead className="w-20">Unid.</TableHead>
-                  <TableHead className="w-20">Mín.</TableHead>
-                  <TableHead className="w-20">Máx.</TableHead>
+                  <TableHead className="min-w-[190px]">Parâmetro</TableHead>
+                  <TableHead className="w-16">Unid.</TableHead>
+                  <TableHead className="w-40">Origem do sugerido</TableHead>
                   <TableHead className="w-20">Sugerido</TableHead>
+                  <TableHead className="w-16">Tol. ±%</TableHead>
+                  <TableHead className="w-32">Faixa resultante</TableHead>
                   <TableHead className="w-10" />
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {params.map((row, idx) => (
-                  <TableRow key={idx}>
-                    <TableCell><Input className="h-7 text-xs" value={row.nome} onChange={e => updateParam(idx, 'nome', e.target.value)} /></TableCell>
-                    <TableCell><Input className="h-7 text-xs" value={row.unidade} onChange={e => updateParam(idx, 'unidade', e.target.value)} /></TableCell>
-                    <TableCell><Input className="h-7 text-xs" value={row.minimo} onChange={e => updateParam(idx, 'minimo', e.target.value)} /></TableCell>
-                    <TableCell><Input className="h-7 text-xs" value={row.maximo} onChange={e => updateParam(idx, 'maximo', e.target.value)} /></TableCell>
-                    <TableCell><Input className="h-7 text-xs" value={row.sugerido} onChange={e => updateParam(idx, 'sugerido', e.target.value)} /></TableCell>
-                    <TableCell>
-                      <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => removeParam(idx)}>
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {params.map((row, idx) => {
+                  // Ao editar, o servidor já devolveu o que o histórico diz
+                  const salvo = editing?.params.find(pr => pr.nome === row.nome)
+                  const usaTolerancia = parseNum(row.toleranciaPerc) !== null
+                  return (
+                    <TableRow key={idx}>
+                      <TableCell>
+                        <Input className="h-7 text-xs" value={row.nome} onChange={e => updateParam(idx, 'nome', e.target.value)} />
+                        {salvo && salvo.amostras > 0 && (
+                          <p className="text-[10px] text-muted-foreground mt-1">
+                            Mediana de {salvo.amostras} lote(s): <span className="font-medium tabular-nums">{salvo.medianaHistorico ?? '—'}</span>
+                          </p>
+                        )}
+                      </TableCell>
+                      <TableCell><Input className="h-7 text-xs" value={row.unidade} onChange={e => updateParam(idx, 'unidade', e.target.value)} /></TableCell>
+                      <TableCell>
+                        <Select value={row.origemSugerido} onValueChange={v => updateOrigem(idx, v as ParamSuggestionSource)}>
+                          <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {(Object.keys(ORIGEM_LABEL) as ParamSuggestionSource[]).map(o => (
+                              <SelectItem key={o} value={o}>{ORIGEM_LABEL[o]}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {row.origemSugerido === 'MEDIA_CFC' && (
+                          <Input
+                            className="h-7 text-xs mt-1"
+                            placeholder="fator (ex: 1.5)"
+                            value={row.fatorSugerido}
+                            onChange={e => updateParam(idx, 'fatorSugerido', e.target.value)}
+                          />
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          className="h-7 text-xs tabular-nums"
+                          value={row.sugerido}
+                          onChange={e => updateParam(idx, 'sugerido', e.target.value)}
+                          placeholder={row.origemSugerido === 'MANUAL' ? '' : 'partida'}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          className="h-7 text-xs tabular-nums"
+                          value={row.toleranciaPerc}
+                          onChange={e => updateParam(idx, 'toleranciaPerc', e.target.value)}
+                          placeholder="—"
+                        />
+                      </TableCell>
+                      <TableCell className="text-xs tabular-nums text-muted-foreground">
+                        {usaTolerancia ? (
+                          previewFaixa(row)
+                        ) : (
+                          <div className="flex gap-1">
+                            <Input className="h-7 text-xs w-16" value={row.minimo} onChange={e => updateParam(idx, 'minimo', e.target.value)} placeholder="mín" />
+                            <Input className="h-7 text-xs w-16" value={row.maximo} onChange={e => updateParam(idx, 'maximo', e.target.value)} placeholder="máx" />
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => removeParam(idx)}>
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
               </TableBody>
             </Table>
           </div>
         )}
+      </div>
+
+      {/* Limiares de alerta usados na aba CEP */}
+      <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+        <div>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Limiares de alerta do CEP</p>
+          <p className="text-[11px] text-muted-foreground mt-0.5">
+            Acima destes valores a leitura aparece destacada na aba CEP.
+          </p>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          <div className="space-y-1">
+            <Label className="text-xs">Dif. no rolo (mm)</Label>
+            <Input className="h-7 text-xs tabular-nums" value={limiares.limiteDifRolo} onChange={e => setLimiares(l => ({ ...l, limiteDifRolo: e.target.value }))} />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Amplitude dir./esq. (mm)</Label>
+            <Input className="h-7 text-xs tabular-nums" value={limiares.limiteAmplitude} onChange={e => setLimiares(l => ({ ...l, limiteAmplitude: e.target.value }))} />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Coef. de variação (%)</Label>
+            <Input className="h-7 text-xs tabular-nums" value={limiares.limiteCoefVar} onChange={e => setLimiares(l => ({ ...l, limiteCoefVar: e.target.value }))} />
+          </div>
+        </div>
       </div>
 
       <Button
