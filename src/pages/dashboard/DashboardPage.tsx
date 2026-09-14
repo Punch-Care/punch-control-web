@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { Package, AlertTriangle, RefreshCw, TrendingDown, Building2, Plus, FlaskConical, Ruler, FileText, ChevronRight } from 'lucide-react'
+import { Package, AlertTriangle, RefreshCw, TrendingDown, Building2, Plus, FlaskConical, Ruler, FileText, ChevronRight, CheckCircle2 } from 'lucide-react'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import { useQuery } from '@tanstack/react-query'
 import { format } from 'date-fns'
@@ -183,6 +183,60 @@ function StatsSection({ companyId, d, TYPE_LABELS }: {
         </Card>
       )}
     </div>
+  )
+}
+
+// ── Saúde do sistema (só ADMIN) ───────────────────────────────────────────────
+
+type SystemHealth = {
+  backup: { ok: boolean; at: string; detail?: string } | null
+  backupAlert: 'missing' | 'failed' | 'stale' | null
+  disk: { freeBytes: number; totalBytes: number } | null
+  diskAlert: 'low' | null
+}
+
+function SystemHealthCard() {
+  const { t, locale } = useLocale()
+  const h = t.systemHealth
+  const { data } = useQuery<SystemHealth>({
+    queryKey: ['system-health'],
+    queryFn: () => api.get('/stats/system-health').then(r => r.data),
+    refetchInterval: 5 * 60 * 1000,
+  })
+  if (!data) return null
+  const quando = data.backup ? new Date(data.backup.at).toLocaleString(locale) : ''
+  const gb = (b: number) => `${(b / 1024 ** 3).toLocaleString(locale, { maximumFractionDigits: 1 })} GB`
+  const backupText = data.backupAlert === 'missing' ? h.backupMissing
+    : data.backupAlert === 'failed' ? h.backupFailed(quando)
+    : data.backupAlert === 'stale' ? h.backupStale(quando)
+    : h.backupOk(quando)
+  const alerta = data.backupAlert || data.diskAlert
+  return (
+    <Card className={`border-0 shadow-sm ${alerta ? 'bg-red-50/70' : ''}`}>
+      <CardContent className="p-4 space-y-2">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{h.title}</p>
+        <div className="grid sm:grid-cols-2 gap-3 text-sm">
+          <div className="flex items-start gap-2">
+            {data.backupAlert ? <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" /> : <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />}
+            <div>
+              <p className="font-medium">{h.backup}</p>
+              <p className={`text-xs ${data.backupAlert ? 'text-red-600' : 'text-muted-foreground'}`}>{backupText}</p>
+            </div>
+          </div>
+          {data.disk && (
+            <div className="flex items-start gap-2">
+              {data.diskAlert ? <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" /> : <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />}
+              <div>
+                <p className="font-medium">{h.disk}</p>
+                <p className={`text-xs ${data.diskAlert ? 'text-red-600' : 'text-muted-foreground'}`}>
+                  {h.diskFree(gb(data.disk.freeBytes), gb(data.disk.totalBytes))}{data.diskAlert ? ` — ${h.diskLow}` : ''}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -371,6 +425,7 @@ export function DashboardPage() {
         {/* ── ADMIN sem empresa selecionada ─────────────────────────── */}
         {isAdmin && !selectedCompany && (
           <div className="space-y-6">
+            {user?.role === 'ADMIN' && <SystemHealthCard />}
             <div>
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">{d.companiesOverview}</p>
               <p className="text-sm text-muted-foreground mb-4">{d.clickCompany}</p>

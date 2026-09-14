@@ -1315,6 +1315,17 @@ const translations = {
       reload: 'Recarregar',
       home: 'Início',
     },
+    systemHealth: {
+      title: 'Saúde do sistema',
+      backup: 'Último backup',
+      backupOk: (quando: string) => `Concluído em ${quando}`,
+      backupFailed: (quando: string) => `Falhou em ${quando} — verifique o servidor`,
+      backupStale: (quando: string) => `Último backup em ${quando} — o diário não rodou`,
+      backupMissing: 'Nenhum backup registrado neste servidor',
+      disk: 'Disco do servidor',
+      diskFree: (livre: string, total: string) => `${livre} livres de ${total}`,
+      diskLow: 'Pouco espaço — anexos e backups podem falhar',
+    },
   },
   en: {
     nav: {
@@ -2630,6 +2641,17 @@ const translations = {
       reload: 'Reload',
       home: 'Home',
     },
+    systemHealth: {
+      title: 'System health',
+      backup: 'Last backup',
+      backupOk: (quando: string) => `Completed on ${quando}`,
+      backupFailed: (quando: string) => `Failed on ${quando} — check the server`,
+      backupStale: (quando: string) => `Last backup on ${quando} — the daily run did not happen`,
+      backupMissing: 'No backup recorded on this server',
+      disk: 'Server disk',
+      diskFree: (livre: string, total: string) => `${livre} free of ${total}`,
+      diskLow: 'Low space — attachments and backups may fail',
+    },
   },
   es: {
     nav: {
@@ -3944,6 +3966,17 @@ const translations = {
       errorDesc: 'Recargue la página. Si el problema continúa, avise al soporte indicando lo que estaba haciendo.',
       reload: 'Recargar',
       home: 'Inicio',
+    },
+    systemHealth: {
+      title: 'Salud del sistema',
+      backup: 'Último respaldo',
+      backupOk: (quando: string) => `Concluido el ${quando}`,
+      backupFailed: (quando: string) => `Falló el ${quando} — revise el servidor`,
+      backupStale: (quando: string) => `Último respaldo el ${quando} — el diario no se ejecutó`,
+      backupMissing: 'Ningún respaldo registrado en este servidor',
+      disk: 'Disco del servidor',
+      diskFree: (livre: string, total: string) => `${livre} libres de ${total}`,
+      diskLow: 'Poco espacio — los adjuntos y respaldos pueden fallar',
     },
   },
 }
