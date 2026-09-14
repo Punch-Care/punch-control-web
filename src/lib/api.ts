@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { useAuthStore } from '@/store/auth.store'
+import { useSettingsStore } from '@/store/settings.store'
 
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -9,6 +10,8 @@ export const api = axios.create({
 api.interceptors.request.use((config) => {
   const token = useAuthStore.getState().token
   if (token) config.headers.Authorization = `Bearer ${token}`
+  // Mensagens de erro da API voltam no idioma escolhido na interface
+  config.headers['Accept-Language'] = useSettingsStore.getState().locale
   return config
 })
 
