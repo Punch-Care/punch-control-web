@@ -21,6 +21,7 @@ import { Breadcrumb } from '@/components/ui/breadcrumb'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useProductsQuery, useMachinesQuery, usePunchSetsQuery } from '@/hooks/queries'
 import { useLocale } from '@/hooks/useLocale'
+import type { Translations } from '@/lib/i18n'
 import { useAdminCompany } from '@/hooks/useAdminCompany'
 import { useAuth } from '@/hooks/useAuth'
 import type {
@@ -35,7 +36,7 @@ const OCCURRENCE_TYPES: BatchOccurrenceType[] = ['CAPPING', 'STICKING', 'TRAVAME
 
 // ── PDF ───────────────────────────────────────────────────────────────────────
 
-function generateBlankPdf(form: BatchData, config: ProductionConfig | null, numHoras: number) {
+function generateBlankPdf(form: BatchData, config: ProductionConfig | null, numHoras: number, bf: Translations['batchForm']) {
   const doc = new jsPDF({ orientation: 'landscape' })
   const W = doc.internal.pageSize.width
 
@@ -44,22 +45,22 @@ function generateBlankPdf(form: BatchData, config: ProductionConfig | null, numH
   doc.setTextColor(255, 255, 255)
   doc.setFontSize(13)
   doc.setFont('helvetica', 'bold')
-  doc.text('CONTROLE DE PARÂMETROS E PROCESSO', 14, 11)
+  doc.text(bf.pdfBlankTitle, 14, 11)
   doc.setFontSize(8)
   doc.setFont('helvetica', 'normal')
-  doc.text('Punch Control · Punch Care · Formulário para preenchimento manual', 14, 17)
+  doc.text(bf.pdfBlankSubtitle, 14, 17)
 
   doc.setTextColor(40, 40, 40)
   doc.setFontSize(9)
   doc.setFont('helvetica', 'normal')
-  const row1 = `Lote: ${form.loteNumero || '_______________'}     Data: ${form.dataProducao || '___/___/______'}     Hora início: ${form.horaInicio || '__:__'}`
+  const row1 = `${bf.pdfLot}: ${form.loteNumero || '_______________'}     ${bf.pdfDate}: ${form.dataProducao || '___/___/______'}     ${bf.pdfStartTime}: ${form.horaInicio || '__:__'}`
   doc.text(row1, 14, 28)
 
   const params = config?.params ?? []
   if (params.length > 0) {
     autoTable(doc, {
       startY: 33,
-      head: [['#', 'Parâmetro', 'Unidade', 'Mínimo', 'Máximo', 'Sugerido', 'Valor Real (preencher)']],
+      head: [['#', bf.pdfParam, bf.pdfUnit, bf.pdfMin, bf.pdfMax, bf.pdfSuggested, bf.pdfRealFill]],
       body: params.map((p, i) => [i + 1, p.nome, p.unidade ?? '—', p.minimo ?? '—', p.maximo ?? '—', p.sugerido ?? '—', '']),
       headStyles: { fillColor: BRAND, fontSize: 7.5, fontStyle: 'bold' },
       bodyStyles: { fontSize: 7.5 },
@@ -76,7 +77,7 @@ function generateBlankPdf(form: BatchData, config: ProductionConfig | null, numH
 
   autoTable(doc, {
     startY: afterFixed + 8,
-    head: [['Hora', 'Rolo Cmp. Dir. (mm)', 'Rolo Cmp. Esq. (mm)', 'Rampa Dos. Esq. (mm)', 'Rampa Dos. Dir. (mm)', 'CFC L1', 'CFC L2', 'CV L1 (%)', 'CV L2 (%)', 'Responsável', 'Obs.']],
+    head: [[bf.hour, bf.roloDirMm, bf.roloEsqMm, bf.rampaEsqMm, bf.rampaDirMm, 'CFC L1', 'CFC L2', 'CV L1 (%)', 'CV L2 (%)', bf.responsible, bf.obsShort]],
     body: hourRows,
     headStyles: { fillColor: [55, 105, 170], fontSize: 7, fontStyle: 'bold', textColor: 255 },
     bodyStyles: { fontSize: 7, minCellHeight: 8 },
@@ -88,25 +89,25 @@ function generateBlankPdf(form: BatchData, config: ProductionConfig | null, numH
   doc.setDrawColor(180, 180, 180)
   doc.setFontSize(8)
   doc.setFont('helvetica', 'bold')
-  doc.text('Ocorrências:', 14, afterHourly + 9)
+  doc.text(bf.pdfOccurrences, 14, afterHourly + 9)
   doc.setFont('helvetica', 'normal')
-  doc.text('□ Capping   □ Sticking   □ Travamento   □ Quebra   □ Oxidação   □ Outros: ______________', 45, afterHourly + 9)
+  doc.text(bf.pdfOccChecklist, 45, afterHourly + 9)
   doc.line(14, afterHourly + 13, W - 14, afterHourly + 13)
-  doc.text(`KG Produzidos: ___________     Separado por: _________________________________`, 14, afterHourly + 19)
+  doc.text(bf.pdfKgSeparated, 14, afterHourly + 19)
   doc.line(14, afterHourly + 23, W - 14, afterHourly + 23)
-  doc.text('Obs. Operador:', 14, afterHourly + 29)
+  doc.text(bf.pdfObsOperator, 14, afterHourly + 29)
   doc.line(50, afterHourly + 29, W - 14, afterHourly + 29)
-  doc.text('Obs. Técnico:', 14, afterHourly + 36)
+  doc.text(bf.pdfObsTech, 14, afterHourly + 36)
   doc.line(47, afterHourly + 36, W - 14, afterHourly + 36)
 
   doc.setFontSize(7)
   doc.setTextColor(160, 160, 160)
-  doc.text(`Gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm")} · Punch Control`, 14, doc.internal.pageSize.height - 6)
+  doc.text(`${bf.pdfGeneratedAt}: ${format(new Date(), 'dd/MM/yyyy HH:mm')} · Punch Control`, 14, doc.internal.pageSize.height - 6)
 
   doc.save(`formulario_${form.loteNumero || 'em_branco'}_${format(new Date(), 'yyyyMMdd')}.pdf`)
 }
 
-function generateCompletedPdf(batch: ProductionBatch) {
+function generateCompletedPdf(batch: ProductionBatch, bf: Translations['batchForm']) {
   const doc = new jsPDF({ orientation: 'landscape' })
   const W = doc.internal.pageSize.width
 
@@ -115,19 +116,19 @@ function generateCompletedPdf(batch: ProductionBatch) {
   doc.setTextColor(255, 255, 255)
   doc.setFontSize(13)
   doc.setFont('helvetica', 'bold')
-  doc.text(`REGISTRO DE LOTE — ${batch.loteNumero}`, 14, 11)
+  doc.text(`${bf.pdfRecordTitle} — ${batch.loteNumero}`, 14, 11)
   doc.setFontSize(8)
   doc.setFont('helvetica', 'normal')
-  doc.text('Punch Control · Punch Care · Documento gerado automaticamente', 14, 17)
+  doc.text(bf.pdfRecordSubtitle, 14, 17)
 
   doc.setTextColor(40, 40, 40)
   doc.setFontSize(8.5)
   doc.setFont('helvetica', 'normal')
   const info = [
-    `Produto: ${batch.product.name}`,
-    `Máquina: ${batch.machine.name}`,
-    `Jogo: ${batch.punchSet.code} — ${batch.punchSet.name}`,
-    `Data: ${format(parseDateOnly(batch.dataProducao), 'dd/MM/yyyy')}  ${batch.horaInicio}`,
+    `${bf.product}: ${batch.product.name}`,
+    `${bf.machine}: ${batch.machine.name}`,
+    `${bf.set}: ${batch.punchSet.code} — ${batch.punchSet.name}`,
+    `${bf.pdfDate}: ${format(parseDateOnly(batch.dataProducao), 'dd/MM/yyyy')}  ${batch.horaInicio}`,
     batch.kgProduzidos ? `KG: ${batch.kgProduzidos}` : '',
   ].filter(Boolean).join('     ')
   doc.text(info, 14, 28)
@@ -136,16 +137,16 @@ function generateCompletedPdf(batch: ProductionBatch) {
   if (fp.length > 0) {
     autoTable(doc, {
       startY: 33,
-      head: [['Parâmetro', 'Un.', 'Mín.', 'Máx.', 'Sugerido', 'Real', 'Status']],
+      head: [[bf.param, bf.unitShort, bf.minShort, bf.maxShort, bf.suggested, bf.real, 'Status']],
       body: fp.map(p => [
         p.nome, p.unidade ?? '—', p.minimo ?? '—', p.maximo ?? '—',
         p.sugerido ?? '—', p.valorReal ?? '—',
-        p.isOk === null ? '—' : p.isOk ? 'OK' : 'DESVIO',
+        p.isOk === null ? '—' : p.isOk ? 'OK' : bf.deviation,
       ]),
       headStyles: { fillColor: BRAND, fontSize: 7.5, fontStyle: 'bold' },
       bodyStyles: { fontSize: 7.5 },
       didParseCell(data) {
-        if (data.section === 'body' && data.column.index === 6 && data.cell.raw === 'DESVIO') {
+        if (data.section === 'body' && data.column.index === 6 && data.cell.raw === bf.deviation) {
           data.cell.styles.textColor = [200, 0, 0]
           data.cell.styles.fontStyle = 'bold'
         }
@@ -160,7 +161,7 @@ function generateCompletedPdf(batch: ProductionBatch) {
   if (hourly.length > 0) {
     autoTable(doc, {
       startY: afterFixed + 8,
-      head: [['Hora', 'Rolo Dir.', 'Rolo Esq.', 'Rampa Esq.', 'Rampa Dir.', 'CFC L1', 'CFC L2', 'CV L1', 'CV L2', 'Responsável', 'Obs.']],
+      head: [[bf.hour, bf.roloDir, bf.roloEsq, bf.rampaEsq, bf.rampaDir, 'CFC L1', 'CFC L2', 'CV L1', 'CV L2', bf.responsible, bf.obsShort]],
       body: hourly.map(m => [
         m.horario,
         m.roloCmpDir ?? '—', m.roloCmpEsq ?? '—',
@@ -179,14 +180,14 @@ function generateCompletedPdf(batch: ProductionBatch) {
   const occs = (batch.batchOccurrences ?? []).map(o => o.type).join(', ')
 
   doc.setFontSize(8)
-  doc.text(`Ocorrências: ${occs || 'Nenhuma'}`, 14, afterHourly + 8)
-  doc.text(`KG Produzidos: ${batch.kgProduzidos ?? '—'}    Separado por: ${batch.separadoPor ?? '—'}`, 14, afterHourly + 15)
-  if (batch.observacoesOperador) doc.text(`Obs. Operador: ${batch.observacoesOperador}`, 14, afterHourly + 22)
-  if (batch.observacoesTecnico) doc.text(`Obs. Técnico: ${batch.observacoesTecnico}`, 14, afterHourly + 29)
+  doc.text(`${bf.pdfOccurrences} ${occs || bf.none}`, 14, afterHourly + 8)
+  doc.text(`${bf.kgProduced}: ${batch.kgProduzidos ?? '—'}    ${bf.separatedBy}: ${batch.separadoPor ?? '—'}`, 14, afterHourly + 15)
+  if (batch.observacoesOperador) doc.text(`${bf.obsOperator}: ${batch.observacoesOperador}`, 14, afterHourly + 22)
+  if (batch.observacoesTecnico) doc.text(`${bf.obsTech}: ${batch.observacoesTecnico}`, 14, afterHourly + 29)
 
   doc.setFontSize(7)
   doc.setTextColor(160, 160, 160)
-  doc.text(`Gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm")} · Punch Control`, 14, doc.internal.pageSize.height - 6)
+  doc.text(`${bf.pdfGeneratedAt}: ${format(new Date(), 'dd/MM/yyyy HH:mm')} · Punch Control`, 14, doc.internal.pageSize.height - 6)
 
   doc.save(`registro_${batch.loteNumero}_${format(new Date(), 'yyyyMMdd')}.pdf`)
 }
@@ -244,8 +245,8 @@ function toRaw(v: number | null | undefined): string {
 
 // ── Componente de seção ───────────────────────────────────────────────────────
 
-function Section({ step, icon: Icon, title, subtitle, children, alert }: {
-  step: number
+function Section({ stepText, icon: Icon, title, subtitle, children, alert }: {
+  stepText: string
   icon: React.ElementType
   title: string
   subtitle?: string
@@ -264,7 +265,7 @@ function Section({ step, icon: Icon, title, subtitle, children, alert }: {
       {/* Content */}
       <div className="flex-1 pb-8">
         <div className="flex items-center gap-2 mb-1">
-          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Etapa {step}</span>
+          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{stepText}</span>
           {alert && (
             <Badge variant="destructive" className="text-xs gap-1">
               <AlertTriangle className="h-3 w-3" />{alert}
@@ -290,6 +291,7 @@ export function BatchFormPage() {
   const { companyId: adminCompanyId } = useAdminCompany()
   const [searchParams] = useSearchParams()
   const p = t.production
+  const bf = t.batchForm
   const isEdit = !!id
   // O técnico é quem preenche o lote e as medições horárias — todos os perfis editam
   const canEdit = true
@@ -518,11 +520,11 @@ export function BatchFormPage() {
 
   // O que falta para o lote poder ser salvo — usado no rodapé e no topo
   const pendencias = [
-    !form.productId && 'Produto',
-    !form.machineId && 'Máquina',
-    !form.punchSetId && 'Jogo de punções',
-    !form.loteNumero && 'Nº do lote',
-    jogoBloqueado && 'Jogo liberado para produção',
+    !form.productId && bf.pendProduct,
+    !form.machineId && bf.pendMachine,
+    !form.punchSetId && bf.pendSet,
+    !form.loteNumero && bf.pendLot,
+    jogoBloqueado && bf.pendSetReleased,
   ].filter((v): v is string => typeof v === 'string')
 
   const canSubmit = pendencias.length === 0
@@ -536,16 +538,15 @@ export function BatchFormPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CheckCircle2 className="h-5 w-5 text-green-500" />
-              Lote concluído!
+              {bf.completedTitle}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Os <strong>{form.kgProduzidos} kg</strong> produzidos já foram lançados no ciclo de vida do jogo{' '}
-              <strong className="text-foreground font-mono">{completedSetCode}</strong>, e a vida útil foi recalculada.
+              {bf.completedMsg(form.kgProduzidos, completedSetCode ?? "")}
             </p>
             <p className="text-xs text-muted-foreground bg-muted rounded-lg p-3">
-              Não é preciso lançar de novo. Se o kg deste lote mudar, edite o lote — o ciclo de vida acompanha.
+              {bf.completedHint}
             </p>
             <div className="flex flex-col gap-2">
               <Button
@@ -556,14 +557,14 @@ export function BatchFormPage() {
                 }}
               >
                 <Activity className="h-4 w-4" />
-                Ver ciclo de vida do jogo
+                {bf.viewLifecycle}
               </Button>
               <Button
                 variant="outline"
                 className="w-full"
                 onClick={() => { setShowLifecyclePrompt(false); navigate('/production') }}
               >
-                Voltar para Produção
+                {bf.backToProduction}
               </Button>
             </div>
           </div>
@@ -578,12 +579,12 @@ export function BatchFormPage() {
             </Button>
             <div className="min-w-0">
               <Breadcrumb items={[
-                { label: 'Produção', href: '/production' },
-                { label: isEdit && form.loteNumero ? `Lote ${form.loteNumero}` : 'Novo Lote' },
+                { label: bf.breadcrumbProduction, href: '/production' },
+                { label: isEdit && form.loteNumero ? bf.lotLabel(form.loteNumero) : bf.newLot },
               ]} />
               <div className="flex items-center gap-2">
                 <h1 className="font-semibold text-sm truncate">
-                  {isEdit ? 'Editar Lote' : 'Novo Lote de Produção'}
+                  {isEdit ? bf.editLot : bf.newProductionLot}
                 </h1>
                 {form.loteNumero && (
                   <span className="font-mono text-primary font-bold text-sm">{form.loteNumero}</span>
@@ -601,12 +602,12 @@ export function BatchFormPage() {
             </div>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
-            <Button variant="outline" size="sm" onClick={() => generateBlankPdf(form, config ?? null, numHoras)}>
+            <Button variant="outline" size="sm" onClick={() => generateBlankPdf(form, config ?? null, numHoras, bf)}>
               <Printer className="h-4 w-4" />
-              <span className="hidden sm:inline ml-1.5">Imprimir</span>
+              <span className="hidden sm:inline ml-1.5">{bf.print}</span>
             </Button>
             {isEdit && existingBatch && (
-              <Button variant="outline" size="sm" onClick={() => generateCompletedPdf(existingBatch)}>
+              <Button variant="outline" size="sm" onClick={() => generateCompletedPdf(existingBatch, bf)}>
                 <Download className="h-4 w-4" />
                 <span className="hidden sm:inline ml-1.5">PDF</span>
               </Button>
@@ -619,7 +620,7 @@ export function BatchFormPage() {
         {canEdit && !canSubmit && (
           <div className="max-w-3xl mx-auto mt-2 flex items-start gap-2 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5">
             <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
-            <span>Para concluir, falta: <strong>{pendencias.join(' · ')}</strong></span>
+            <span>{bf.missingTop} <strong>{pendencias.join(' · ')}</strong></span>
           </div>
         )}
       </div>
@@ -629,18 +630,18 @@ export function BatchFormPage() {
 
         {/* ── Etapa 1: Identificação ─────────────────────────────────────── */}
         <Section
-          step={1}
+          stepText={bf.step(1)}
           icon={Factory}
-          title="Identificação do Lote"
-          subtitle="Selecione o produto, a máquina e o jogo de punções que serão utilizados nesta produção."
+          title={bf.s1Title}
+          subtitle={bf.s1Subtitle}
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-background rounded-xl border p-4">
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Produto *</Label>
+              <Label className="text-xs font-medium">{bf.productReq}</Label>
               <Select value={form.productId || '__none__'} onValueChange={v => setField('productId', v === '__none__' ? '' : v)} disabled={!canEdit}>
-                <SelectTrigger><SelectValue placeholder="Selecione o produto" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={bf.selectProduct} /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__none__" disabled>Selecione o produto</SelectItem>
+                  <SelectItem value="__none__" disabled>{bf.selectProduct}</SelectItem>
                   {/* Inativos não entram em lote novo; o já gravado continua visível */}
                   {products.filter(pr => pr.active || pr.id === form.productId).map(pr => <SelectItem key={pr.id} value={pr.id}>{pr.name}{pr.code ? ` · ${pr.code}` : ''}</SelectItem>)}
                 </SelectContent>
@@ -648,22 +649,22 @@ export function BatchFormPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Máquina *</Label>
+              <Label className="text-xs font-medium">{bf.machineReq}</Label>
               <Select value={form.machineId || '__none__'} onValueChange={v => setField('machineId', v === '__none__' ? '' : v)} disabled={!canEdit}>
-                <SelectTrigger><SelectValue placeholder="Selecione a máquina" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={bf.selectMachine} /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__none__" disabled>Selecione a máquina</SelectItem>
+                  <SelectItem value="__none__" disabled>{bf.selectMachine}</SelectItem>
                   {machines.filter(m => m.active || m.id === form.machineId).map(m => <SelectItem key={m.id} value={m.id}>{m.name}{m.modelo ? ` · ${m.modelo}` : ''}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-1.5 sm:col-span-2">
-              <Label className="text-xs font-medium">Jogo de Punções *</Label>
+              <Label className="text-xs font-medium">{bf.setReq}</Label>
               <Select value={form.punchSetId || '__none__'} onValueChange={v => setField('punchSetId', v === '__none__' ? '' : v)} disabled={!canEdit}>
-                <SelectTrigger><SelectValue placeholder="Selecione o jogo de punções" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={bf.selectSetLong} /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__none__" disabled>Selecione o jogo</SelectItem>
+                  <SelectItem value="__none__" disabled>{bf.selectSet}</SelectItem>
                   {sets.map(s => {
                     // Jogo fora de LIMPO é recusado na gravação para quem não é
                     // gerente; melhor barrar aqui do que ao final do formulário.
@@ -687,8 +688,7 @@ export function BatchFormPage() {
                 <div className="flex items-start gap-2 text-xs text-destructive bg-destructive/5 border border-destructive/20 rounded-lg px-3 py-2">
                   <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
                   <span>
-                    Este jogo está <strong>{t.jogo.statuses[jogoBloqueado.statusJogo]}</strong> e não pode ser usado em
-                    produção. Solicite a liberação ao Gerente ou escolha outro jogo — o lote não será aceito assim.
+                    {bf.setBlocked(t.jogo.statuses[jogoBloqueado.statusJogo])}
                   </span>
                 </div>
               )}
@@ -697,35 +697,34 @@ export function BatchFormPage() {
                 <div className="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
                   <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
                   <span>
-                    Jogo <strong>{t.jogo.statuses[selectedSet.statusJogo]}</strong>. Como gerente, você pode prosseguir,
-                    mas o técnico não conseguiria.
+                    {bf.setManagerOverride(t.jogo.statuses[selectedSet.statusJogo])}
                   </span>
                 </div>
               )}
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Nº do Lote *</Label>
+              <Label className="text-xs font-medium">{bf.lotNumberReq}</Label>
               <Input placeholder="ex: Z0032" value={form.loteNumero} onChange={e => setField('loteNumero', e.target.value)} disabled={!canEdit} />
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Data de Produção *</Label>
+              <Label className="text-xs font-medium">{bf.productionDateReq}</Label>
               <Input type="date" value={form.dataProducao} onChange={e => setField('dataProducao', e.target.value)} disabled={!canEdit} />
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Hora de Início</Label>
+              <Label className="text-xs font-medium">{bf.startTime}</Label>
               <Input type="time" value={form.horaInicio} onChange={e => setField('horaInicio', e.target.value)} disabled={!canEdit} />
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Duração estimada (horas)</Label>
+              <Label className="text-xs font-medium">{bf.estimatedDuration}</Label>
               <div className="relative">
                 <Input type="number" min="1" max="48" placeholder="ex: 8" value={form.duracaoEstimadaHoras} onChange={e => setField('duracaoEstimadaHoras', e.target.value)} disabled={!canEdit} />
                 <span className="absolute right-3 top-2.5 text-xs text-muted-foreground">h</span>
               </div>
-              <p className="text-xs text-muted-foreground">Define quantas linhas o formulário impresso terá</p>
+              <p className="text-xs text-muted-foreground">{bf.durationHint}</p>
             </div>
 
             {/* Config badge */}
@@ -735,18 +734,18 @@ export function BatchFormPage() {
                   config.params.length > 0 ? (
                     <div className="flex items-center gap-2 text-xs text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
                       <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0" />
-                      <span>Configuração encontrada — <strong>{config.params.length} parâmetros fixos</strong> carregados automaticamente</span>
+                      <span>{bf.configFound(config.params.length)}</span>
                     </div>
                   ) : (
                     <div className="flex items-center gap-2 text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
                       <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0" />
-                      <span>Esta máquina não possui parâmetros CEP — o lote será registrado sem validação de limites</span>
+                      <span>{bf.machineNoCep}</span>
                     </div>
                   )
                 ) : (
                   <div className="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
                     <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
-                    <span>Nenhuma configuração para este Produto + Máquina. Você pode <strong>continuar sem parâmetros</strong> ou criar uma configuração na aba <strong>Configurações de Processo</strong>.</span>
+                    <span>{bf.noConfig}</span>
                   </div>
                 )}
               </div>
@@ -756,24 +755,24 @@ export function BatchFormPage() {
 
         {/* ── Etapa 2: Parâmetros Fixos ──────────────────────────────────── */}
         <Section
-          step={2}
+          stepText={bf.step(2)}
           icon={Settings2}
-          title="Parâmetros Fixos do Setup"
-          subtitle="Registre os valores reais de cada parâmetro medidos no início da produção. Valores fora do range serão sinalizados automaticamente."
-          alert={hasAlerts ? `${fixedParams.filter(fp => fp.isOk === false).length} desvio(s)` : undefined}
+          title={bf.s2Title}
+          subtitle={bf.s2Subtitle}
+          alert={hasAlerts ? bf.deviations(fixedParams.filter(fp => fp.isOk === false).length) : undefined}
         >
           {fixedParams.length === 0 ? (
             <div className="bg-background border rounded-xl p-6 text-center space-y-2">
               <Settings2 className="h-8 w-8 text-muted-foreground mx-auto" />
               {!form.productId || !form.machineId ? (
-                <p className="text-sm text-muted-foreground">Selecione o Produto e a Máquina na Etapa 1</p>
+                <p className="text-sm text-muted-foreground">{bf.selectProductMachine}</p>
               ) : config && config.params.length === 0 ? (
                 <>
-                  <p className="text-sm font-medium">Máquina sem parâmetros CEP</p>
-                  <p className="text-xs text-muted-foreground">Esta combinação Produto + Máquina não possui parâmetros fixos configurados.<br/>O lote será registrado normalmente — apenas sem validação de limites.</p>
+                  <p className="text-sm font-medium">{bf.machineNoCepTitle}</p>
+                  <p className="text-xs text-muted-foreground">{bf.machineNoCepDesc}</p>
                 </>
               ) : (
-                <p className="text-sm text-muted-foreground">Nenhuma configuração encontrada para este Produto + Máquina</p>
+                <p className="text-sm text-muted-foreground">{bf.noConfigFound}</p>
               )}
             </div>
           ) : (
@@ -781,13 +780,13 @@ export function BatchFormPage() {
               <table className="w-full text-sm min-w-[480px]">
                 <thead>
                   <tr className="bg-muted/60 border-b">
-                    <th className="text-left px-4 py-2.5 font-medium text-xs">Parâmetro</th>
-                    <th className="text-center px-2 py-2.5 font-medium text-xs w-16">Un.</th>
-                    <th className="text-center px-2 py-2.5 font-medium text-xs w-20">Mín.</th>
-                    <th className="text-center px-2 py-2.5 font-medium text-xs w-20">Máx.</th>
-                    <th className="text-center px-2 py-2.5 font-medium text-xs w-20">Sugerido</th>
-                    <th className="text-center px-2 py-2.5 font-medium text-xs w-32">Valor Real</th>
-                    <th className="text-center px-2 py-2.5 font-medium text-xs w-16">Status</th>
+                    <th className="text-left px-4 py-2.5 font-medium text-xs">{bf.param}</th>
+                    <th className="text-center px-2 py-2.5 font-medium text-xs w-16">{bf.unitShort}</th>
+                    <th className="text-center px-2 py-2.5 font-medium text-xs w-20">{bf.minShort}</th>
+                    <th className="text-center px-2 py-2.5 font-medium text-xs w-20">{bf.maxShort}</th>
+                    <th className="text-center px-2 py-2.5 font-medium text-xs w-20">{bf.suggested}</th>
+                    <th className="text-center px-2 py-2.5 font-medium text-xs w-32">{bf.realValue}</th>
+                    <th className="text-center px-2 py-2.5 font-medium text-xs w-16">{t.common.status}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -825,27 +824,26 @@ export function BatchFormPage() {
 
         {/* ── Etapa 3: Medições Horárias ─────────────────────────────────── */}
         <Section
-          step={3}
+          stepText={bf.step(3)}
           icon={Clock}
-          title="Medições Horárias"
-          subtitle="Digite os valores coletados a cada hora de produção conforme preenchido no formulário impresso."
+          title={bf.s3Title}
+          subtitle={bf.s3Subtitle}
         >
           {measurements.length === 0 ? (
             <div className="bg-background border rounded-xl p-6 text-center">
               <Clock className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-              <p className="text-sm font-medium text-muted-foreground">Nenhuma medição registrada</p>
+              <p className="text-sm font-medium text-muted-foreground">{bf.noMeasurements}</p>
               {canEdit && (
                 <>
                   <p className="text-xs text-muted-foreground mt-1">
-                    A duração estimada é de {numHoras}h — as linhas podem ser criadas de uma vez,
-                    com os horários a partir de {form.horaInicio || '00:00'}.
+                    {bf.durationRows(numHoras, form.horaInicio || '00:00')}
                   </p>
                   <div className="flex flex-wrap gap-2 justify-center mt-3">
                     <Button size="sm" onClick={() => gerarMedicoes(true)}>
-                      <Plus className="h-3.5 w-3.5" /> Gerar {numHoras} linhas
+                      <Plus className="h-3.5 w-3.5" /> {bf.generateRows(numHoras)}
                     </Button>
                     <Button size="sm" variant="outline" onClick={addMeasurement}>
-                      Adicionar só uma
+                      {bf.addOnlyOne}
                     </Button>
                   </div>
                 </>
@@ -859,7 +857,7 @@ export function BatchFormPage() {
                   <div key={idx} className="p-4 space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Medição {idx + 1}</span>
+                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{bf.measurementN(idx + 1)}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Input className="h-7 text-xs text-center w-20" value={m.horario} onChange={e => updateMeasurement(idx, 'horario', e.target.value)} disabled={!canEdit} placeholder="HH:mm" />
@@ -872,10 +870,10 @@ export function BatchFormPage() {
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       {([
-                        ['Rolo Cmp. Dir.', 'roloCmpDir'],
-                        ['Rolo Cmp. Esq.', 'roloCmpEsq'],
-                        ['Rampa Dos. Esq.', 'rampaDosEsq'],
-                        ['Rampa Dos. Dir.', 'rampaDosDir'],
+                        [bf.roloDirLbl, 'roloCmpDir'],
+                        [bf.roloEsqLbl, 'roloCmpEsq'],
+                        [bf.rampaEsqLbl, 'rampaDosEsq'],
+                        [bf.rampaDirLbl, 'rampaDosDir'],
                         ['CFC L1', 'pressaoCFCL1'],
                         ['CFC L2', 'pressaoCFCL2'],
                         ['CV L1 (%)', 'coefVarL1'],
@@ -894,7 +892,7 @@ export function BatchFormPage() {
                             />
                             {ref && (
                               <p className="text-[9px] text-muted-foreground tabular-nums">
-                                usual {ref.min} – {ref.max}
+                                {bf.usual} {ref.min} – {ref.max}
                               </p>
                             )}
                           </div>
@@ -903,11 +901,11 @@ export function BatchFormPage() {
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div className="space-y-1">
-                        <p className="text-[10px] text-muted-foreground font-medium">Responsável</p>
+                        <p className="text-[10px] text-muted-foreground font-medium">{bf.responsible}</p>
                         <Input className="h-7 text-xs" value={m.responsavel ?? ''} onChange={e => updateMeasurement(idx, 'responsavel', e.target.value)} disabled={!canEdit} />
                       </div>
                       <div className="space-y-1">
-                        <p className="text-[10px] text-muted-foreground font-medium">Observações</p>
+                        <p className="text-[10px] text-muted-foreground font-medium">{bf.observations}</p>
                         <Input className="h-7 text-xs" value={m.observacoes ?? ''} onChange={e => updateMeasurement(idx, 'observacoes', e.target.value)} disabled={!canEdit} />
                       </div>
                     </div>
@@ -920,17 +918,17 @@ export function BatchFormPage() {
                 <table className="w-full text-xs min-w-[820px]">
                   <thead>
                     <tr className="bg-muted/60 border-b">
-                      <th className="text-center px-2 py-2 font-medium w-14">Hora</th>
-                      <th className="text-center px-1 py-2 font-medium">R.Dir.</th>
-                      <th className="text-center px-1 py-2 font-medium">R.Esq.</th>
-                      <th className="text-center px-1 py-2 font-medium">Rp.Esq.</th>
-                      <th className="text-center px-1 py-2 font-medium">Rp.Dir.</th>
+                      <th className="text-center px-2 py-2 font-medium w-14">{bf.hour}</th>
+                      <th className="text-center px-1 py-2 font-medium">{bf.colRDir}</th>
+                      <th className="text-center px-1 py-2 font-medium">{bf.colREsq}</th>
+                      <th className="text-center px-1 py-2 font-medium">{bf.colRpEsq}</th>
+                      <th className="text-center px-1 py-2 font-medium">{bf.colRpDir}</th>
                       <th className="text-center px-1 py-2 font-medium">CFC L1</th>
                       <th className="text-center px-1 py-2 font-medium">CFC L2</th>
                       <th className="text-center px-1 py-2 font-medium">CV1%</th>
                       <th className="text-center px-1 py-2 font-medium">CV2%</th>
-                      <th className="text-center px-1 py-2 font-medium">Resp.</th>
-                      <th className="text-center px-1 py-2 font-medium">Obs.</th>
+                      <th className="text-center px-1 py-2 font-medium">{bf.colResp}</th>
+                      <th className="text-center px-1 py-2 font-medium">{bf.obsShort}</th>
                       {canEdit && <th className="w-8" />}
                     </tr>
                   </thead>
@@ -939,7 +937,7 @@ export function BatchFormPage() {
                         valores medianos logo acima da digitação, pelo mesmo motivo. */}
                     {NUMERIC_MEASUREMENT_FIELDS.some(f => referencia(f)) && (
                       <tr className="border-b bg-primary/5 text-[10px]">
-                        <td className="px-1 py-1 text-center font-medium text-muted-foreground">usual</td>
+                        <td className="px-1 py-1 text-center font-medium text-muted-foreground">{bf.usual}</td>
                         {NUMERIC_MEASUREMENT_FIELDS.map(field => {
                           const ref = referencia(field)
                           return (
@@ -949,7 +947,7 @@ export function BatchFormPage() {
                           )
                         })}
                         <td colSpan={canEdit ? 3 : 2} className="px-1 py-1 text-muted-foreground">
-                          mediana e faixa dos lotes anteriores
+                          {bf.medianHint}
                         </td>
                       </tr>
                     )}
@@ -984,15 +982,15 @@ export function BatchFormPage() {
               {canEdit && (
                 <div className="p-3 border-t bg-muted/30 flex flex-wrap items-center gap-2">
                   <Button size="sm" variant="outline" onClick={addMeasurement}>
-                    <Plus className="h-3.5 w-3.5" /> Adicionar medição
+                    <Plus className="h-3.5 w-3.5" /> {bf.addMeasurement}
                   </Button>
                   {measurements.length < numHoras && (
                     <Button size="sm" variant="outline" onClick={() => gerarMedicoes(false)}>
-                      Completar até {numHoras} linhas
+                      {bf.completeRows(numHoras)}
                     </Button>
                   )}
                   <span className="text-xs text-muted-foreground ml-auto">
-                    {measurements.length} de {numHoras} hora(s)
+                    {bf.hoursOf(measurements.length, numHoras)}
                   </span>
                 </div>
               )}
@@ -1002,22 +1000,22 @@ export function BatchFormPage() {
 
         {/* ── Etapa 4: Ocorrências ───────────────────────────────────────── */}
         <Section
-          step={4}
+          stepText={bf.step(4)}
           icon={AlertTriangle}
-          title="Ocorrências do Lote"
-          subtitle="Registre problemas observados durante a produção. Múltiplos tipos podem ser selecionados."
+          title={bf.s4Title}
+          subtitle={bf.s4Subtitle}
         >
           <div className="bg-background border rounded-xl p-4">
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {OCCURRENCE_TYPES.map(type => {
                 const active = occurrences.some(o => o.type === type)
                 const labels: Record<BatchOccurrenceType, { label: string; desc: string }> = {
-                  CAPPING:    { label: 'Capping',     desc: 'Separação de camadas' },
-                  STICKING:   { label: 'Sticking',    desc: 'Aderência ao punção' },
-                  TRAVAMENTO: { label: 'Travamento',  desc: 'Punção travou na máquina' },
-                  QUEBRA:     { label: 'Quebra',      desc: 'Punção quebrado' },
-                  OXIDACAO:   { label: 'Oxidação',    desc: 'Corrosão detectada' },
-                  OUTROS:     { label: 'Outros',      desc: 'Outras ocorrências' },
+                  CAPPING:    { label: p.CAPPING,    desc: bf.occCappingDesc },
+                  STICKING:   { label: p.STICKING,   desc: bf.occStickingDesc },
+                  TRAVAMENTO: { label: p.TRAVAMENTO, desc: bf.occTravamentoDesc },
+                  QUEBRA:     { label: p.QUEBRA,     desc: bf.occQuebraDesc },
+                  OXIDACAO:   { label: p.OXIDACAO,   desc: bf.occOxidacaoDesc },
+                  OUTROS:     { label: p.OUTROS,     desc: bf.occOutrosDesc },
                 }
                 return (
                   <button
@@ -1033,14 +1031,14 @@ export function BatchFormPage() {
                   >
                     <p className="font-medium text-sm">{labels[type].label}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">{labels[type].desc}</p>
-                    {active && <p className="text-xs text-destructive font-medium mt-1">Registrado</p>}
+                    {active && <p className="text-xs text-destructive font-medium mt-1">{bf.registered}</p>}
                   </button>
                 )
               })}
             </div>
             {occurrences.length > 0 && (
               <p className="text-xs text-destructive font-medium mt-3">
-                {occurrences.length} ocorrência(s) registrada(s): {occurrences.map(o => o.type).join(', ')}
+                {bf.occRegistered(occurrences.length)} {occurrences.map(o => p[o.type]).join(', ')}
               </p>
             )}
           </div>
@@ -1048,45 +1046,45 @@ export function BatchFormPage() {
 
         {/* ── Etapa 5: Observações e Finalização ────────────────────────── */}
         <Section
-          step={5}
+          stepText={bf.step(5)}
           icon={MessageSquare}
-          title="Observações e Finalização"
-          subtitle="Registre os KG produzidos, observações do operador e do técnico de punções, e conclua o lote."
+          title={bf.s5Title}
+          subtitle={bf.s5Subtitle}
         >
           <div className="bg-background border rounded-xl p-4 space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium">KG Produzidos</Label>
+                <Label className="text-xs font-medium">{bf.kgProduced}</Label>
                 <div className="relative">
                   <Input inputMode="decimal" value={form.kgProduzidos} onChange={e => setField('kgProduzidos', sanitizeDecimal(e.target.value))} disabled={!canEdit} placeholder="ex: 450,5" />
                   <span className="absolute right-3 top-2.5 text-xs text-muted-foreground">kg</span>
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium">Separado por</Label>
-                <Input value={form.separadoPor} onChange={e => setField('separadoPor', e.target.value)} disabled={!canEdit} placeholder="Nome do responsável" />
+                <Label className="text-xs font-medium">{bf.separatedBy}</Label>
+                <Input value={form.separadoPor} onChange={e => setField('separadoPor', e.target.value)} disabled={!canEdit} placeholder={bf.responsibleName} />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Observações do Operador</Label>
+              <Label className="text-xs font-medium">{bf.operatorNotes}</Label>
               <textarea
                 className="w-full min-h-[72px] rounded-lg border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
                 value={form.observacoesOperador}
                 onChange={e => setField('observacoesOperador', e.target.value)}
                 disabled={!canEdit}
-                placeholder="Condições observadas durante a produção..."
+                placeholder={bf.operatorPlaceholder}
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Observações do Técnico de Punções</Label>
+              <Label className="text-xs font-medium">{bf.techNotes}</Label>
               <textarea
                 className="w-full min-h-[72px] rounded-lg border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
                 value={form.observacoesTecnico}
                 onChange={e => setField('observacoesTecnico', e.target.value)}
                 disabled={!canEdit}
-                placeholder="Avaliação técnica sobre o estado dos punções..."
+                placeholder={bf.techPlaceholder}
               />
             </div>
 
@@ -1100,7 +1098,7 @@ export function BatchFormPage() {
                 >
                   {saveMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
                   <ClipboardList className="h-4 w-4" />
-                  Salvar como Rascunho
+                  {bf.saveDraft}
                 </Button>
                 <Button
                   className="flex-1"
@@ -1108,14 +1106,14 @@ export function BatchFormPage() {
                   onClick={() => saveMutation.mutate('COMPLETED')}
                 >
                   {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                  Concluir Lote
+                  {bf.completeLot}
                 </Button>
               </div>
             )}
 
             {!canSubmit && (
               <p className="text-xs text-muted-foreground text-center">
-                Falta preencher: {pendencias.join(' · ')}
+                {bf.missingBottom} {pendencias.join(' · ')}
               </p>
             )}
           </div>
