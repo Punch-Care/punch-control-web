@@ -121,7 +121,8 @@ function UserForm({
       { value: 'CLIENT', label: t.roles.CLIENT },
     ]
     return [
-      { value: 'ADMIN', label: t.roles.ADMIN },
+      // Gerente não cria nem promove administradores (o backend também recusa)
+      ...(currentRole === 'ADMIN' ? [{ value: 'ADMIN' as UserRole, label: t.roles.ADMIN }] : []),
       { value: 'MANAGER', label: t.roles.MANAGER },
       { value: 'COMPANY', label: t.roles.COMPANY },
       { value: 'CLIENT', label: t.roles.CLIENT },
@@ -232,7 +233,15 @@ export function UsersPage() {
   })
 
   const updateMutation = useMutation({
-    mutationFn: (data: UpdateForm) => api.put(`/users/${editing!.id}`, data),
+    mutationFn: (data: UpdateForm) => {
+      // Senha em branco = manter a atual; empresa vazia não é enviada
+      const { password, companyId, ...rest } = data
+      return api.put(`/users/${editing!.id}`, {
+        ...rest,
+        ...(password ? { password } : {}),
+        ...(companyId ? { companyId } : {}),
+      })
+    },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['users'] }); setEditing(null); toast.success(t.users.updated) },
     onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? t.users.updateError),
   })
