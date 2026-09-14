@@ -13,7 +13,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useLocale } from '@/hooks/useLocale'
 import { useAdminContextStore } from '@/store/admin-context.store'
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard'
-import type { DashboardStats, Occurrence, OccurrenceType, CompanyOverview, ProductionBatch, ComponentInventoryType } from '@/types'
+import type { DashboardStats, Occurrence, OccurrenceType, CompanyOverview, ProductionBatch } from '@/types'
 
 const TYPE_LABELS_PT: Record<OccurrenceType, string> = {
   COMPRESSION: 'Compressão', DIMENSIONAL: 'Dimensional', MAINTENANCE: 'Manutenção', OTHER: 'Outro',
@@ -26,13 +26,6 @@ const TYPE_LABELS_ES: Record<OccurrenceType, string> = {
 }
 
 // ── Card de empresa (admin) ────────────────────────────────────────────────────
-
-const COMPONENT_LABELS: Record<ComponentInventoryType, string> = {
-  P_SUPERIOR: 'Punção Superior',
-  P_INFERIOR: 'Punção Inferior',
-  MATRIZ_1: 'Matriz 1',
-  MATRIZ_2: 'Matriz 2',
-}
 
 function CompanyCard({ company, onClick, d }: {
   company: CompanyOverview
@@ -73,6 +66,7 @@ function StatsSection({ companyId, d, TYPE_LABELS }: {
   d: ReturnType<typeof useLocale>['t']['dashboard']
   TYPE_LABELS: Record<OccurrenceType, string>
 }) {
+  const componentLabels = useLocale().t.componentTypes
   const { data: stats } = useQuery<DashboardStats>({
     queryKey: ['stats-dashboard', companyId],
     queryFn: () => api.get('/stats/dashboard', { params: companyId ? { companyId } : {} }).then(r => r.data),
@@ -172,7 +166,7 @@ function StatsSection({ companyId, d, TYPE_LABELS }: {
                   to={`/lifecycle?setId=${c.setId}`}
                   className="text-xs rounded-full border border-amber-300 bg-background px-3 py-1 hover:border-amber-500"
                 >
-                  <span className="font-mono">{c.setCode}</span> · {COMPONENT_LABELS[c.tipo]} · {d.restockLeft(c.sobra, c.pontoEncomenda)}
+                  <span className="font-mono">{c.setCode}</span> · {componentLabels[c.tipo]} · {d.restockLeft(c.sobra, c.pontoEncomenda)}
                 </Link>
               ))}
             </div>

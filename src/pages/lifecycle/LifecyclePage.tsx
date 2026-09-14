@@ -37,13 +37,6 @@ const STATUS_COLORS: Record<SetStatus, string> = {
   DISCARDED: 'bg-red-500',
 }
 
-const COMPONENT_LABELS: Record<ComponentInventoryType, string> = {
-  P_SUPERIOR: 'Punção Superior',
-  P_INFERIOR: 'Punção Inferior',
-  MATRIZ_1: 'Matriz 1',
-  MATRIZ_2: 'Matriz 2',
-}
-
 const COMPONENT_TYPES: ComponentInventoryType[] = ['P_SUPERIOR', 'P_INFERIOR', 'MATRIZ_1', 'MATRIZ_2']
 
 function StatusFlow({ sets, statusLabels }: { sets: PunchSet[]; statusLabels: Record<SetStatus, string> }) {
@@ -69,12 +62,12 @@ function StatusFlow({ sets, statusLabels }: { sets: PunchSet[]; statusLabels: Re
 
 // ── Barra de vida útil ────────────────────────────────────────────────────────
 
-function LifeBar({ value }: { value: number }) {
+function LifeBar({ value, label }: { value: number; label: string }) {
   const color = value >= 100 ? 'bg-red-500' : value >= 70 ? 'bg-orange-500' : value >= 40 ? 'bg-yellow-500' : 'bg-green-500'
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between text-xs">
-        <span className="text-muted-foreground">% Acumulado</span>
+        <span className="text-muted-foreground">{label}</span>
         <span className={`font-bold ${value >= 100 ? 'text-red-600' : ''}`}>{value.toFixed(1)}%</span>
       </div>
       <div className="h-2 bg-muted rounded-full overflow-hidden">
@@ -103,7 +96,8 @@ export function LifecyclePage() {
     MATRIZ_2: { dimensao: '', qtdAdquirida: '0', qtdUtilizada: '0', pontoEncomenda: '' },
   })
 
-  const { t } = useLocale()
+  const { t, locale } = useLocale()
+  const lp = t.lifecyclePage
   const { companyId: adminCompanyId } = useAdminCompany()
   const qc = useQueryClient()
 
@@ -146,12 +140,12 @@ export function LifecyclePage() {
       const fatorDepreciacao = parseDecimal(configForm.fatorDepreciacao)
       const pesoMedioPadrao = parseDecimal(configForm.pesoMedioPadrao)
       if (fatorDepreciacao === null || Number.isNaN(fatorDepreciacao) || Number.isNaN(pesoMedioPadrao)) {
-        return Promise.reject({ response: { data: { message: 'Fator ou peso médio inválido' } } })
+        return Promise.reject({ response: { data: { message: lp.invalidFactor } } })
       }
       return api.put(`/punch-sets/${selectedSetId}/lifecycle/config`, { fatorDepreciacao, pesoMedioPadrao })
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['lifecycle', selectedSetId] }); setEditConfig(false); toast.success('Configuração salva') },
-    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? 'Erro ao salvar configuração'),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['lifecycle', selectedSetId] }); setEditConfig(false); toast.success(lp.configSaved) },
+    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? lp.configSaveError),
   })
 
   const saveInventoryMutation = useMutation({
@@ -164,8 +158,8 @@ export function LifecyclePage() {
         pontoEncomenda: inventory[tipo].pontoEncomenda ? parseInt(inventory[tipo].pontoEncomenda) : null,
       }))
     ),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['lifecycle', selectedSetId] }); toast.success('Estoque salvo') },
-    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? 'Erro ao salvar estoque'),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['lifecycle', selectedSetId] }); toast.success(lp.stockSaved) },
+    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? lp.stockSaveError),
   })
 
   const addProdMutation = useMutation({
@@ -181,15 +175,15 @@ export function LifecyclePage() {
       qc.invalidateQueries({ queryKey: ['punch-sets', adminCompanyId] })
       setAddProdOpen(false)
       setProdForm({ produto: selectedSet?.name ?? '', data: format(new Date(), 'yyyy-MM-dd'), maquina: '', numLote: '', qtdKg: '' })
-      toast.success('Lote registrado')
+      toast.success(lp.lotRegistered)
     },
-    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? 'Erro ao registrar lote'),
+    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? lp.lotRegisterError),
   })
 
   const deleteProdMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/punch-sets/${selectedSetId}/lifecycle/production/${id}`),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['lifecycle', selectedSetId] }); toast.success('Lote removido') },
-    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? 'Erro ao remover lote'),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['lifecycle', selectedSetId] }); toast.success(lp.lotRemoved) },
+    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? lp.lotRemoveError),
   })
 
   const addMaintMutation = useMutation({
@@ -203,15 +197,15 @@ export function LifecyclePage() {
       qc.invalidateQueries({ queryKey: ['lifecycle', selectedSetId] })
       setAddMaintOpen(false)
       setMaintForm({ data: format(new Date(), 'yyyy-MM-dd'), componente: 'P_SUPERIOR', quantidade: '', notas: '' })
-      toast.success('Manutenção registrada')
+      toast.success(lp.maintRegistered)
     },
-    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? 'Erro ao registrar manutenção'),
+    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? lp.maintRegisterError),
   })
 
   const deleteMaintMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/punch-sets/${selectedSetId}/lifecycle/maintenance/${id}`),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['lifecycle', selectedSetId] }); toast.success('Registro removido') },
-    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? 'Erro ao remover registro'),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['lifecycle', selectedSetId] }); toast.success(lp.recordRemoved) },
+    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? lp.recordRemoveError),
   })
 
   const percAcumulado = lifecycleData?.percAcumulado ?? 0
@@ -236,7 +230,7 @@ export function LifecyclePage() {
         <Select value={selectedSetId || '__none__'} onValueChange={v => setSelectedSetId(v === '__none__' ? '' : v)}>
           <SelectTrigger><SelectValue placeholder={t.lifecycle.selectSetPlaceholder} /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="__none__" disabled>Selecione...</SelectItem>
+            <SelectItem value="__none__" disabled>{lp.selectPlaceholder}</SelectItem>
             {sets.map(s => (
               <SelectItem key={s.id} value={s.id}>
                 <span className="font-mono">{s.code}</span> — {s.name}
@@ -271,10 +265,10 @@ export function LifecyclePage() {
                   <p className="text-muted-foreground text-sm mt-0.5">{selectedSet?.name}</p>
                 </div>
                 <div className="min-w-[200px]">
-                  <LifeBar value={percAcumulado} />
+                  <LifeBar value={percAcumulado} label={lp.accumulated} />
                   {percAcumulado >= 100 && (
                     <p className="text-xs text-red-600 font-medium mt-1 flex items-center gap-1">
-                      <AlertTriangle className="h-3.5 w-3.5" /> Fim de vida atingido
+                      <AlertTriangle className="h-3.5 w-3.5" /> {lp.endOfLife}
                     </p>
                   )}
                 </div>
@@ -287,11 +281,11 @@ export function LifecyclePage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Settings className="h-4 w-4 text-muted-foreground" />
-                <h3 className="font-semibold text-sm">Configuração de Depreciação</h3>
+                <h3 className="font-semibold text-sm">{lp.depreciationConfig}</h3>
               </div>
               {canManage && (
                 <Button size="sm" variant="outline" onClick={() => setEditConfig(!editConfig)}>
-                  {editConfig ? 'Cancelar' : 'Editar'}
+                  {editConfig ? lp.cancel : lp.edit}
                 </Button>
               )}
             </div>
@@ -300,41 +294,41 @@ export function LifecyclePage() {
                 {editConfig ? (
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     <div className="space-y-1">
-                      <Label className="text-xs">Fator de Depreciação (% por kg)</Label>
+                      <Label className="text-xs">{lp.factorPerKg}</Label>
                       <Input className="h-8 text-xs" value={configForm.fatorDepreciacao} onChange={e => setConfigForm(f => ({ ...f, fatorDepreciacao: e.target.value }))} placeholder="0.00015" />
-                      <p className="text-xs text-muted-foreground">Padrão: 0,00015 / kg</p>
+                      <p className="text-xs text-muted-foreground">{lp.factorDefault}</p>
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs">Peso Médio Padrão (g)</Label>
+                      <Label className="text-xs">{lp.avgWeightG}</Label>
                       <Input className="h-8 text-xs" inputMode="decimal" value={configForm.pesoMedioPadrao} onChange={e => setConfigForm(f => ({ ...f, pesoMedioPadrao: e.target.value }))} placeholder="ex: 0.500" />
                     </div>
                     <div className="flex items-end">
                       <Button size="sm" onClick={() => saveConfigMutation.mutate()} disabled={saveConfigMutation.isPending}>
                         {saveConfigMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                        Salvar
+                        {lp.save}
                       </Button>
                     </div>
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
                     <div>
-                      <p className="text-xs text-muted-foreground">Fator de Depreciação</p>
+                      <p className="text-xs text-muted-foreground">{lp.factor}</p>
                       <p className="font-medium">{fator.toFixed(5)} / kg</p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Peso Médio Padrão</p>
+                      <p className="text-xs text-muted-foreground">{lp.avgWeight}</p>
                       <p className="font-medium">{lifecycleData.config?.pesoMedioPadrao ? `${lifecycleData.config.pesoMedioPadrao}g` : '—'}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Total Produzido</p>
-                      <p className="font-medium tabular-nums">{lifecycleData.totalKg.toLocaleString('pt-BR')} kg</p>
+                      <p className="text-xs text-muted-foreground">{lp.totalProduced}</p>
+                      <p className="font-medium tabular-nums">{lifecycleData.totalKg.toLocaleString(locale)} kg</p>
                     </div>
                     <div className="col-span-2 sm:col-span-3">
-                      <p className="text-xs text-muted-foreground">Quantidade em Milhares de Unidades</p>
+                      <p className="text-xs text-muted-foreground">{lp.thousandUnits}</p>
                       <p className="font-medium tabular-nums">
                         {lifecycleData.unidadesMilhares !== null
-                          ? lifecycleData.unidadesMilhares.toLocaleString('pt-BR')
-                          : '— informe o peso médio para calcular'}
+                          ? lifecycleData.unidadesMilhares.toLocaleString(locale)
+                          : lp.fillAvgWeight}
                       </p>
                     </div>
                   </div>
@@ -348,12 +342,12 @@ export function LifecyclePage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Package className="h-4 w-4 text-muted-foreground" />
-                <h3 className="font-semibold text-sm">Estoque de Ferramental</h3>
+                <h3 className="font-semibold text-sm">{lp.toolingStock}</h3>
               </div>
               {canManage && (
                 <Button size="sm" onClick={() => saveInventoryMutation.mutate()} disabled={saveInventoryMutation.isPending}>
                   {saveInventoryMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                  Salvar Estoque
+                  {lp.saveStock}
                 </Button>
               )}
             </div>
@@ -361,14 +355,14 @@ export function LifecyclePage() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/30">
-                    <TableHead>Componente</TableHead>
-                    <TableHead className="text-center">Dimensão</TableHead>
-                    <TableHead className="text-center">Adquirida</TableHead>
-                    <TableHead className="text-center" title="Quantidade já em uso antes dos registros de manutenção">Utilizada (inicial)</TableHead>
-                    <TableHead className="text-center" title="Soma dos registros de manutenção: positivo tira do estoque, negativo devolve">Manutenção</TableHead>
-                    <TableHead className="text-center">Sobra</TableHead>
-                    <TableHead className="text-center">Ponto de Encomenda</TableHead>
-                    <TableHead className="text-center">Status</TableHead>
+                    <TableHead>{lp.component}</TableHead>
+                    <TableHead className="text-center">{lp.dimension}</TableHead>
+                    <TableHead className="text-center">{lp.acquired}</TableHead>
+                    <TableHead className="text-center" title={lp.usedInitialHint}>{lp.usedInitial}</TableHead>
+                    <TableHead className="text-center" title={lp.maintenanceHint}>{lp.maintenance}</TableHead>
+                    <TableHead className="text-center">{lp.left}</TableHead>
+                    <TableHead className="text-center">{lp.reorderPoint}</TableHead>
+                    <TableHead className="text-center">{t.common.status}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -384,7 +378,7 @@ export function LifecyclePage() {
                     const alerta = pe !== null && sobra <= pe
                     return (
                       <TableRow key={tipo} className={alerta ? 'bg-orange-50' : ''}>
-                        <TableCell className="font-medium text-sm">{COMPONENT_LABELS[tipo]}</TableCell>
+                        <TableCell className="font-medium text-sm">{t.componentTypes[tipo]}</TableCell>
                         <TableCell className="text-center">
                           <Input className="h-7 text-xs text-center w-24 mx-auto" placeholder="ex: 24mm" value={inventory[tipo].dimensao} onChange={e => setInventory(prev => ({ ...prev, [tipo]: { ...prev[tipo], dimensao: e.target.value } }))} disabled={!canManage} />
                         </TableCell>
@@ -401,7 +395,7 @@ export function LifecyclePage() {
                         </TableCell>
                         <TableCell className="text-center">
                           {alerta ? (
-                            <Badge variant="destructive" className="text-xs">Repor</Badge>
+                            <Badge variant="destructive" className="text-xs">{lp.restock}</Badge>
                           ) : (
                             <Badge variant="success" className="text-xs">OK</Badge>
                           )}
@@ -419,12 +413,12 @@ export function LifecyclePage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Activity className="h-4 w-4 text-muted-foreground" />
-                <h3 className="font-semibold text-sm">Registro de Produção</h3>
-                <span className="text-xs text-muted-foreground">({lifecycleData.production.length} lotes)</span>
+                <h3 className="font-semibold text-sm">{lp.productionRecord}</h3>
+                <span className="text-xs text-muted-foreground">{lp.lotsCount(lifecycleData.production.length)}</span>
               </div>
               {canManage && (
-                <Button size="sm" variant="outline" title="Para produção anterior ao sistema — lotes do módulo Produção entram sozinhos" onClick={() => { setProdForm(f => ({ ...f, produto: selectedSet?.name ?? '' })); setAddProdOpen(true) }}>
-                  <Plus className="h-3.5 w-3.5" /> Lançamento manual
+                <Button size="sm" variant="outline" title={lp.manualEntryHint} onClick={() => { setProdForm(f => ({ ...f, produto: selectedSet?.name ?? '' })); setAddProdOpen(true) }}>
+                  <Plus className="h-3.5 w-3.5" /> {lp.manualEntry}
                 </Button>
               )}
             </div>
@@ -432,19 +426,19 @@ export function LifecyclePage() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/30">
-                    <TableHead>Produto</TableHead>
-                    <TableHead>Data</TableHead>
-                    <TableHead>Máquina</TableHead>
-                    <TableHead>Nº Lote</TableHead>
-                    <TableHead className="text-right">Qtd. kg</TableHead>
-                    <TableHead className="text-right">% Lote</TableHead>
-                    <TableHead className="text-right">% Acum.</TableHead>
+                    <TableHead>{lp.product}</TableHead>
+                    <TableHead>{lp.date}</TableHead>
+                    <TableHead>{lp.machine}</TableHead>
+                    <TableHead>{lp.lotNo}</TableHead>
+                    <TableHead className="text-right">{lp.qtyKg}</TableHead>
+                    <TableHead className="text-right">{lp.lotPct}</TableHead>
+                    <TableHead className="text-right">{lp.accPct}</TableHead>
                     <TableHead className="w-12" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {lifecycleData.production.length === 0 ? (
-                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground text-sm">Nenhum lote registrado</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground text-sm">{lp.noLots}</TableCell></TableRow>
                   ) : lifecycleData.production.map((r, i) => (
                     <TableRow key={r.id} className={r.percAcumulado >= 100 ? 'bg-red-50' : i % 2 ? 'bg-muted/20' : ''}>
                       <TableCell className="text-sm">{r.produto}</TableCell>
@@ -452,7 +446,7 @@ export function LifecyclePage() {
                       <TableCell className="text-sm text-muted-foreground">{r.maquina ?? '—'}</TableCell>
                       <TableCell className="font-mono text-sm">
                         {r.batchId ? (
-                          <Link to={`/production/${r.batchId}`} className="text-primary hover:underline" title="Lançado automaticamente pelo lote de produção">
+                          <Link to={`/production/${r.batchId}`} className="text-primary hover:underline" title={lp.autoFromBatch}>
                             {r.numLote}
                           </Link>
                         ) : r.numLote}
@@ -482,30 +476,30 @@ export function LifecyclePage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <TrendingDown className="h-4 w-4 text-muted-foreground" />
-                <h3 className="font-semibold text-sm">Manutenção / Substituição de Componentes</h3>
+                <h3 className="font-semibold text-sm">{lp.maintenanceSection}</h3>
               </div>
               <Button size="sm" variant="outline" onClick={() => setAddMaintOpen(true)}>
-                <Plus className="h-3.5 w-3.5" /> Registrar
+                <Plus className="h-3.5 w-3.5" /> {lp.register}
               </Button>
             </div>
             <div className="rounded-xl border overflow-x-auto bg-background shadow-sm">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/30">
-                    <TableHead>Data</TableHead>
-                    <TableHead>Componente</TableHead>
-                    <TableHead className="text-center">Qtd.</TableHead>
-                    <TableHead>Observações</TableHead>
+                    <TableHead>{lp.date}</TableHead>
+                    <TableHead>{lp.component}</TableHead>
+                    <TableHead className="text-center">{lp.qty}</TableHead>
+                    <TableHead>{lp.notes}</TableHead>
                     <TableHead className="w-12" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {lifecycleData.maintenance.length === 0 ? (
-                    <TableRow><TableCell colSpan={5} className="text-center py-6 text-muted-foreground text-sm">Nenhum registro de manutenção</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={5} className="text-center py-6 text-muted-foreground text-sm">{lp.noMaintenance}</TableCell></TableRow>
                   ) : lifecycleData.maintenance.map(r => (
                     <TableRow key={r.id}>
                       <TableCell className="text-sm">{format(parseDateOnly(r.data), 'dd/MM/yyyy')}</TableCell>
-                      <TableCell className="text-sm font-medium">{COMPONENT_LABELS[r.componente]}</TableCell>
+                      <TableCell className="text-sm font-medium">{t.componentTypes[r.componente]}</TableCell>
                       <TableCell className={`text-center font-bold text-sm ${r.quantidade < 0 ? 'text-red-600' : 'text-green-600'}`}>
                         {r.quantidade > 0 ? `+${r.quantidade}` : r.quantidade}
                       </TableCell>
@@ -529,41 +523,41 @@ export function LifecyclePage() {
       {/* Dialog: Adicionar lote de produção */}
       <Dialog open={addProdOpen} onOpenChange={setAddProdOpen}>
         <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle>Registrar Lote de Produção</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{lp.registerLotTitle}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1.5">
-              <Label className="text-xs">Produto</Label>
+              <Label className="text-xs">{lp.product}</Label>
               <Input className="h-8 text-sm" value={prodForm.produto} onChange={e => setProdForm(f => ({ ...f, produto: e.target.value }))} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs">Data</Label>
+                <Label className="text-xs">{lp.date}</Label>
                 <Input type="date" className="h-8 text-sm" value={prodForm.data} onChange={e => setProdForm(f => ({ ...f, data: e.target.value }))} />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Qtd. kg produzidos</Label>
+                <Label className="text-xs">{lp.kgProduced}</Label>
                 <Input inputMode="decimal" className="h-8 text-sm" value={prodForm.qtdKg} onChange={e => setProdForm(f => ({ ...f, qtdKg: e.target.value }))} placeholder="ex: 450" />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs">Máquina</Label>
+                <Label className="text-xs">{lp.machine}</Label>
                 <Input className="h-8 text-sm" value={prodForm.maquina} onChange={e => setProdForm(f => ({ ...f, maquina: e.target.value }))} placeholder="ex: MK IV" />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Nº do Lote</Label>
+                <Label className="text-xs">{lp.lotNumber}</Label>
                 <Input className="h-8 text-sm" value={prodForm.numLote} onChange={e => setProdForm(f => ({ ...f, numLote: e.target.value }))} placeholder="ex: Z0032" />
               </div>
             </div>
             {prodForm.qtdKg && (
               <div className="bg-muted/40 rounded-lg px-3 py-2 text-xs">
-                <span className="text-muted-foreground">% utilização estimada: </span>
+                <span className="text-muted-foreground">{lp.estimatedUsage} </span>
                 <span className="font-semibold">{((parseDecimal(prodForm.qtdKg) || 0) * fator * 100).toFixed(2)}%</span>
               </div>
             )}
             <Button className="w-full" disabled={addProdMutation.isPending || !prodForm.produto || !prodForm.numLote || !prodForm.qtdKg} onClick={() => addProdMutation.mutate()}>
               {addProdMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-              Registrar Lote
+              {lp.registerLot}
             </Button>
           </div>
         </DialogContent>
@@ -572,33 +566,33 @@ export function LifecyclePage() {
       {/* Dialog: Registrar manutenção */}
       <Dialog open={addMaintOpen} onOpenChange={setAddMaintOpen}>
         <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle>Registrar Manutenção</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{lp.registerMaintTitle}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1.5">
-              <Label className="text-xs">Data</Label>
+              <Label className="text-xs">{lp.date}</Label>
               <Input type="date" className="h-8 text-sm" value={maintForm.data} onChange={e => setMaintForm(f => ({ ...f, data: e.target.value }))} />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Componente</Label>
+              <Label className="text-xs">{lp.component}</Label>
               <Select value={maintForm.componente} onValueChange={v => setMaintForm(f => ({ ...f, componente: v as ComponentInventoryType }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {COMPONENT_TYPES.map(c => <SelectItem key={c} value={c}>{COMPONENT_LABELS[c]}</SelectItem>)}
+                  {COMPONENT_TYPES.map(c => <SelectItem key={c} value={c}>{t.componentTypes[c]}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Quantidade</Label>
-              <Input type="number" className="h-8 text-sm" value={maintForm.quantidade} onChange={e => setMaintForm(f => ({ ...f, quantidade: e.target.value }))} placeholder="ex: 5 ou -3" />
-              <p className="text-xs text-muted-foreground">Positivo: componentes tirados do estoque e colocados no jogo. Negativo: devolvidos ao estoque.</p>
+              <Label className="text-xs">{lp.quantity}</Label>
+              <Input type="number" className="h-8 text-sm" value={maintForm.quantidade} onChange={e => setMaintForm(f => ({ ...f, quantidade: e.target.value }))} placeholder={lp.quantityPlaceholder} />
+              <p className="text-xs text-muted-foreground">{lp.quantityHint}</p>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Observações</Label>
+              <Label className="text-xs">{lp.notes}</Label>
               <Input className="h-8 text-sm" value={maintForm.notas} onChange={e => setMaintForm(f => ({ ...f, notas: e.target.value }))} />
             </div>
             <Button className="w-full" disabled={addMaintMutation.isPending || !maintForm.quantidade} onClick={() => addMaintMutation.mutate()}>
               {addMaintMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-              Registrar
+              {lp.register}
             </Button>
           </div>
         </DialogContent>
