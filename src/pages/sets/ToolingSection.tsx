@@ -180,36 +180,39 @@ function acoOptions(type: ToolingComponentType): string[] {
 
 const TOOLING_TYPES: ToolingComponentType[] = ['UPPER_PUNCH', 'LOWER_PUNCH', 'MATRIX', 'SEGMENT']
 
-const TYPE_LABELS: Record<ToolingComponentType, string> = {
-  UPPER_PUNCH: 'Punções Superiores',
-  LOWER_PUNCH: 'Punções Inferiores',
-  MATRIX: 'Matrizes',
-  SEGMENT: 'Segmentos',
-}
+const TYPE_LABEL_KEY = {
+  UPPER_PUNCH: 'upperPunches',
+  LOWER_PUNCH: 'lowerPunches',
+  MATRIX: 'matrices',
+  SEGMENT: 'segments',
+} as const
 
 type LocalComp = Partial<ToolingComponent>
 
-function sel(value: string | null | undefined, onValueChange: (v: string) => void, placeholder: string, options: { value: string; label: string }[], disabled?: boolean) {
+// Rótulo traduzido da opção; o valor gravado continua o original (dados existentes e RFQ)
+type OptionLabels = Record<string, string>
+
+function sel(value: string | null | undefined, onValueChange: (v: string) => void, placeholder: string, options: { value: string; label: string }[], disabled?: boolean, labels?: OptionLabels) {
   return (
     <Select value={value ?? '__none__'} onValueChange={v => onValueChange(v === '__none__' ? '' : v)} disabled={disabled}>
       <SelectTrigger className="h-8 text-xs"><SelectValue placeholder={placeholder} /></SelectTrigger>
       <SelectContent>
         <SelectItem value="__none__">—</SelectItem>
-        {options.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+        {options.map(o => <SelectItem key={o.value} value={o.value}>{labels?.[o.value] ?? o.label}</SelectItem>)}
       </SelectContent>
     </Select>
   )
 }
 
-function boolSel(value: boolean | null | undefined, onValueChange: (v: boolean | null) => void, disabled?: boolean) {
+function boolSel(value: boolean | null | undefined, onValueChange: (v: boolean | null) => void, disabled: boolean | undefined, yes: string, no: string) {
   const strVal = value === true ? 'sim' : value === false ? 'nao' : '__none__'
   return (
     <Select value={strVal} onValueChange={v => onValueChange(v === '__none__' ? null : v === 'sim')} disabled={disabled}>
       <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
       <SelectContent>
         <SelectItem value="__none__">—</SelectItem>
-        <SelectItem value="sim">Sim</SelectItem>
-        <SelectItem value="nao">Não</SelectItem>
+        <SelectItem value="sim">{yes}</SelectItem>
+        <SelectItem value="nao">{no}</SelectItem>
       </SelectContent>
     </Select>
   )
@@ -267,6 +270,11 @@ function ComponentCard({
   const isPunch = type === 'UPPER_PUNCH' || type === 'LOWER_PUNCH'
   const isMatrix = type === 'MATRIX'
   const cargaTf = knToTf(data.cargaRealKN)
+  const { t } = useLocale()
+  const tf = t.toolingForm
+  const opt = t.toolingOptions as OptionLabels
+  // Tabela B usa códigos de uma letra; as chaves traduzidas levam prefixo SCORE_
+  const scoreLabels = Object.fromEntries(BREAKING_SCORES.map(b => [b.value, opt[`SCORE_${b.value}`] ?? b.label]))
 
   return (
     <div className="border rounded-xl overflow-hidden bg-background">
@@ -275,7 +283,7 @@ function ComponentCard({
         className="w-full flex items-center justify-between px-4 py-3 bg-muted/40 hover:bg-muted/60 transition-colors text-left"
         onClick={() => setOpen(!open)}
       >
-        <span className="text-sm font-semibold">{TYPE_LABELS[type]}</span>
+        <span className="text-sm font-semibold">{tf[TYPE_LABEL_KEY[type]]}</span>
         {open ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
       </button>
 
@@ -284,19 +292,19 @@ function ComponentCard({
           {/* Dados básicos */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="space-y-1">
-              <Label className="text-xs">Qtd. Solicitada</Label>
+              <Label className="text-xs">{tf.qtyRequested}</Label>
               {num(data.qtdSolicitada, v => onChange('qtdSolicitada', v), 'ex: 84', !canEdit)}
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">Nº Desenho de Referência</Label>
+              <Label className="text-xs">{tf.drawingNumber}</Label>
               <Input className="h-8 text-xs" value={data.numDesenho ?? ''} onChange={e => onChange('numDesenho', e.target.value || null)} disabled={!canEdit} placeholder="ex: 777_26" />
             </div>
             <div className="space-y-1 sm:col-span-2">
-              <Label className="text-xs">Norma</Label>
-              {sel(data.norma, v => onChange('norma', v || null), 'Selecione', strOpts(NORMAS), !canEdit)}
+              <Label className="text-xs">{tf.standard}</Label>
+              {sel(data.norma, v => onChange('norma', v || null), tf.select, strOpts(NORMAS), !canEdit, opt)}
             </div>
             <div className="space-y-1 sm:col-span-2">
-              <Label className="text-xs">Dimensões (mm)</Label>
+              <Label className="text-xs">{tf.dimensions}</Label>
               <Input className="h-8 text-xs" value={data.dimensoes ?? ''} onChange={e => onChange('dimensoes', e.target.value || null)} disabled={!canEdit} placeholder="ex: 9,0mm" />
             </div>
           </div>
@@ -305,44 +313,44 @@ function ComponentCard({
           {isPunch && (
             <>
               <div className="border-t pt-3">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Especificações do Punção</p>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">{tf.punchSpecs}</p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   <div className="space-y-1">
-                    <Label className="text-xs">Carga real (kN)</Label>
+                    <Label className="text-xs">{tf.realLoad}</Label>
                     {num(data.cargaRealKN, v => onChange('cargaRealKN', v), 'ex: 31.275', !canEdit)}
                     {cargaTf !== null && (data.cargaRealKN ?? 0) > 0 && (
                       <p className="text-[10px] text-muted-foreground">≈ {cargaTf} tf</p>
                     )}
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Qtd. Pontas</Label>
+                    <Label className="text-xs">{tf.tipsQty}</Label>
                     {num(data.qtdPontas, v => onChange('qtdPontas', v ? Math.round(v) : null), '1', !canEdit)}
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Tipo de Fixação das Pontas</Label>
-                    {sel(data.tipoFixacao, v => onChange('tipoFixacao', v || null), 'Selecione', strOpts(OPCOES_FIXACAO), !canEdit)}
+                    <Label className="text-xs">{tf.tipFixing}</Label>
+                    {sel(data.tipoFixacao, v => onChange('tipoFixacao', v || null), tf.select, strOpts(OPCOES_FIXACAO), !canEdit, opt)}
                   </div>
                   <div className="space-y-1 sm:col-span-2">
-                    <Label className="text-xs">Rebaixo para Retentor de Óleo</Label>
-                    {sel(data.rebaixoVedacaoTipo, v => onChange('rebaixoVedacaoTipo', v || null), 'Selecione', strOpts(REBAIXO_TIPOS), !canEdit)}
+                    <Label className="text-xs">{tf.oilSealRecess}</Label>
+                    {sel(data.rebaixoVedacaoTipo, v => onChange('rebaixoVedacaoTipo', v || null), tf.select, strOpts(REBAIXO_TIPOS), !canEdit, opt)}
                   </div>
                 </div>
               </div>
 
               <div className="border-t pt-3">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Formato do Comprimido (Tabela A)</p>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">{tf.tabletShape}</p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   <div className="space-y-1 sm:col-span-2">
-                    <Label className="text-xs">Formato</Label>
-                    {sel(data.formatoComprimido, v => onChange('formatoComprimido', v || null), 'Selecione o formato', TABLET_FORMATS, !canEdit)}
+                    <Label className="text-xs">{tf.shape}</Label>
+                    {sel(data.formatoComprimido, v => onChange('formatoComprimido', v || null), tf.selectShape, TABLET_FORMATS, !canEdit, opt)}
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Prof. Cavidade (mm)</Label>
+                    <Label className="text-xs">{tf.cavityDepth}</Label>
                     {num(data.profundidadeCavMm, v => onChange('profundidadeCavMm', v), 'ex: 0.88', !canEdit)}
                   </div>
                   {Array.from({ length: radiiCount(data.formatoComprimido, data) }, (_, i) => i + 1).map(n => (
                     <div className="space-y-1" key={n}>
-                      <Label className="text-xs">Raio da Cavidade R{n} (mm)</Label>
+                      <Label className="text-xs">{tf.cavityRadius(n)}</Label>
                       {num(
                         data[`raioR${n}` as keyof ToolingComponent] as number | null | undefined,
                         v => onChange(`raioR${n}` as keyof ToolingComponent, v),
@@ -352,39 +360,39 @@ function ComponentCard({
                     </div>
                   ))}
                   <div className="space-y-1">
-                    <Label className="text-xs">Espessura Borda / Land (mm)</Label>
+                    <Label className="text-xs">{tf.landThickness}</Label>
                     {num(data.espessuraBorda, v => onChange('espessuraBorda', v), 'ex: 0.1', !canEdit)}
                   </div>
                   <div className="space-y-1 sm:col-span-3">
-                    <Label className="text-xs">Descrição do Formato Especial</Label>
-                    {txt(data.descricaoFormatoEspecial, v => onChange('descricaoFormatoEspecial', v), 'Texto livre', !canEdit)}
+                    <Label className="text-xs">{tf.specialShapeDesc}</Label>
+                    {txt(data.descricaoFormatoEspecial, v => onChange('descricaoFormatoEspecial', v), tf.freeText, !canEdit)}
                   </div>
                 </div>
               </div>
 
               <div className="border-t pt-3">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Chaveta</p>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">{tf.key}</p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   <div className="space-y-1">
-                    <Label className="text-xs">Contém Chaveta</Label>
-                    {boolSel(data.contemChaveta, v => onChange('contemChaveta', v), !canEdit)}
+                    <Label className="text-xs">{tf.hasKey}</Label>
+                    {boolSel(data.contemChaveta, v => onChange('contemChaveta', v), !canEdit, tf.yes, tf.no)}
                   </div>
                   {data.contemChaveta === true && (
                     <>
                       <div className="space-y-1">
-                        <Label className="text-xs">Ângulo (graus)</Label>
+                        <Label className="text-xs">{tf.angle}</Label>
                         {num(data.chavetaAnguloGraus, v => onChange('chavetaAnguloGraus', v), 'ex: 30', !canEdit)}
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-xs">Altura (mm)</Label>
+                        <Label className="text-xs">{tf.height}</Label>
                         {num(data.chavetaAlturaMm, v => onChange('chavetaAlturaMm', v), '—', !canEdit)}
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-xs">Espessura (mm)</Label>
+                        <Label className="text-xs">{tf.thickness}</Label>
                         {num(data.chavetaEspessuraMm, v => onChange('chavetaEspessuraMm', v), '—', !canEdit)}
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-xs">Comprimento (mm)</Label>
+                        <Label className="text-xs">{tf.length}</Label>
                         {num(data.chavetaComprimentoMm, v => onChange('chavetaComprimentoMm', v), '—', !canEdit)}
                       </div>
                     </>
@@ -393,19 +401,19 @@ function ComponentCard({
               </div>
 
               <div className="border-t pt-3">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Vinco (Tabela B) e Gravação</p>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">{tf.scoreEmbossing}</p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="space-y-1">
-                    <Label className="text-xs">Tipo de Vinco</Label>
-                    {sel(data.tipoVinco, v => onChange('tipoVinco', v || null), 'Selecione o tipo', BREAKING_SCORES, !canEdit)}
+                    <Label className="text-xs">{tf.scoreType}</Label>
+                    {sel(data.tipoVinco, v => onChange('tipoVinco', v || null), tf.selectType, BREAKING_SCORES, !canEdit, scoreLabels)}
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Configuração do Vinco</Label>
-                    {sel(data.configuracaoVinco, v => onChange('configuracaoVinco', v || null), 'Selecione', strOpts(CONFIG_VINCO), !canEdit)}
+                    <Label className="text-xs">{tf.scoreConfig}</Label>
+                    {sel(data.configuracaoVinco, v => onChange('configuracaoVinco', v || null), tf.select, strOpts(CONFIG_VINCO), !canEdit, opt)}
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Gravação da Ponta</Label>
-                    {txt(data.gravacaoPonta, v => onChange('gravacaoPonta', v), 'Texto livre', !canEdit)}
+                    <Label className="text-xs">{tf.tipEmbossing}</Label>
+                    {txt(data.gravacaoPonta, v => onChange('gravacaoPonta', v), tf.freeText, !canEdit)}
                   </div>
                 </div>
               </div>
@@ -415,11 +423,11 @@ function ComponentCard({
           {/* Campos de matrizes */}
           {isMatrix && (
             <div className="border-t pt-3">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Especificações da Matriz</p>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">{tf.matrixSpecs}</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <div className="space-y-1">
-                  <Label className="text-xs">Cônico / Paralelo</Label>
-                  {sel(data.conicoOuParalelo, v => onChange('conicoOuParalelo', v || null), 'Selecione', strOpts(CONICO_MATRIZ), !canEdit)}
+                  <Label className="text-xs">{tf.taperParallel}</Label>
+                  {sel(data.conicoOuParalelo, v => onChange('conicoOuParalelo', v || null), tf.select, strOpts(CONICO_MATRIZ), !canEdit, opt)}
                 </div>
               </div>
             </div>
@@ -427,19 +435,19 @@ function ComponentCard({
 
           {/* Materiais — comum a todos */}
           <div className="border-t pt-3">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Material e Acabamento</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">{tf.materialFinish}</p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-1">
-                <Label className="text-xs">Opção de Aço</Label>
-                {sel(data.opcaoAco, v => onChange('opcaoAco', v || null), 'Selecione', strOpts(acoOptions(type)), !canEdit)}
+                <Label className="text-xs">{tf.steel}</Label>
+                {sel(data.opcaoAco, v => onChange('opcaoAco', v || null), tf.select, strOpts(acoOptions(type)), !canEdit, opt)}
               </div>
               <div className="space-y-1">
-                <Label className="text-xs">Revestimento</Label>
-                {sel(data.opcaoRevestimento, v => onChange('opcaoRevestimento', v || null), 'Selecione', strOpts(OPCOES_REVESTIMENTO), !canEdit)}
+                <Label className="text-xs">{tf.coating}</Label>
+                {sel(data.opcaoRevestimento, v => onChange('opcaoRevestimento', v || null), tf.select, strOpts(OPCOES_REVESTIMENTO), !canEdit, opt)}
               </div>
               <div className="space-y-1">
-                <Label className="text-xs">Tratamento</Label>
-                {sel(data.opcaoTratamento, v => onChange('opcaoTratamento', v || null), 'Selecione', strOpts(OPCOES_TRATAMENTO), !canEdit)}
+                <Label className="text-xs">{tf.treatment}</Label>
+                {sel(data.opcaoTratamento, v => onChange('opcaoTratamento', v || null), tf.select, strOpts(OPCOES_TRATAMENTO), !canEdit, opt)}
               </div>
             </div>
           </div>
@@ -497,7 +505,7 @@ export function ToolingSection({ setId, canEdit }: { setId: string; canEdit: boo
         <div className="flex items-center gap-2">
           <Wrench className="h-4 w-4 text-muted-foreground" />
           <h3 className="font-semibold text-base">{t.tooling.title}</h3>
-          <span className="text-xs text-muted-foreground">Especificações do Ferramental</span>
+          <span className="text-xs text-muted-foreground">{t.toolingForm.subtitle}</span>
         </div>
         {canEdit && (
           <Button size="sm" onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
