@@ -100,3 +100,16 @@ export function parseDecimal(raw: string | null | undefined): number | null {
   const n = Number(t)
   return Number.isFinite(n) ? n : NaN
 }
+
+/** Texto para busca: minúsculas e sem acentos ("Punção" casa com "puncao"). */
+export function normalizeSearch(v: string | null | undefined): string {
+  return (v ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
+}
+
+/** Todos os termos digitados precisam aparecer em algum dos campos. */
+export function matchesSearch(query: string, fields: (string | number | null | undefined)[]): boolean {
+  const termos = normalizeSearch(query).split(/\s+/).filter(Boolean)
+  if (termos.length === 0) return true
+  const alvo = normalizeSearch(fields.filter((f) => f != null).join(' '))
+  return termos.every((t) => alvo.includes(t))
+}

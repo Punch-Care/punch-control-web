@@ -10,8 +10,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { format } from 'date-fns'
 
 import { api } from '@/lib/api'
-import { parseDateOnly } from '@/lib/utils'
+import { parseDateOnly, matchesSearch } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { SearchInput } from '@/components/ui/search-input'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -138,6 +139,8 @@ export function ProductionPage() {
   ]
 
   const hasData = !isLoading && batches.length > 0
+  const [busca, setBusca] = useState('')
+  const lotesVisiveis = batches.filter((b) => matchesSearch(busca, [b.loteNumero, b.product.name, b.machine.name, b.punchSet.code, b.punchSet.name]))
 
   return (
     <div className="flex flex-col min-h-screen bg-muted/20">
@@ -215,6 +218,8 @@ export function ProductionPage() {
                   ))}
                 </div>
 
+                <SearchInput value={busca} onChange={setBusca} placeholder={t.search.batches} />
+
                 {/* Tabela */}
                 <div className="rounded-xl border bg-background shadow-sm overflow-x-auto">
                   <Table>
@@ -231,7 +236,10 @@ export function ProductionPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {batches.map((b) => (
+                      {lotesVisiveis.length === 0 && (
+                        <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">{t.search.noResults}</TableCell></TableRow>
+                      )}
+                      {lotesVisiveis.map((b) => (
                         <TableRow
                           key={b.id}
                           className="cursor-pointer hover:bg-muted/30 transition-colors"

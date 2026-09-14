@@ -10,6 +10,7 @@ import autoTable from 'jspdf-autotable'
 
 import { api } from '@/lib/api'
 import { Button } from '@/components/ui/button'
+import { SearchInput } from '@/components/ui/search-input'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
@@ -20,7 +21,7 @@ import { useLocale } from '@/hooks/useLocale'
 import { useAuth } from '@/hooks/useAuth'
 import { usePermissions } from '@/hooks/usePermissions'
 import { useAdminCompany } from '@/hooks/useAdminCompany'
-import { knToTf } from '@/lib/utils'
+import { knToTf, matchesSearch } from '@/lib/utils'
 import type { Machine, Company } from '@/types'
 
 const NORMAS = [
@@ -468,11 +469,14 @@ export function MachinesPage() {
   const [duplicateSource, setDuplicateSource] = useState<Machine | null>(null)
 
   const closeCreate = () => { setOpen(false); setDuplicateSource(null) }
+  const [busca, setBusca] = useState('')
 
   const { data: machines = [], isLoading } = useQuery<Machine[]>({
     queryKey: ['machines', adminCompanyId],
     queryFn: () => api.get('/occurrences/machines', { params: { companyId: adminCompanyId } }).then((r) => r.data),
   })
+
+  const visiveis = machines.filter((m) => matchesSearch(busca, [m.name, m.code, m.fabricante, m.modelo, m.numeroSerie, m.norma]))
 
   const createMutation = useMutation({
     mutationFn: (data: FormData) => {
@@ -531,6 +535,8 @@ export function MachinesPage() {
         </Dialog>
       </div>
 
+      <SearchInput value={busca} onChange={setBusca} placeholder={t.search.machines} />
+
       <div className="rounded-xl border overflow-x-auto">
         <Table>
           <TableHeader>
@@ -548,9 +554,9 @@ export function MachinesPage() {
           <TableBody>
             {isLoading ? (
               <TableRow><TableCell colSpan={isAdmin && !selectedCompany ? 8 : 7} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>
-            ) : machines.length === 0 ? (
-              <TableRow><TableCell colSpan={isAdmin && !selectedCompany ? 8 : 7} className="text-center text-muted-foreground py-8">{t.machines.noMachines}</TableCell></TableRow>
-            ) : machines.map((m) => (
+            ) : visiveis.length === 0 ? (
+              <TableRow><TableCell colSpan={isAdmin && !selectedCompany ? 8 : 7} className="text-center text-muted-foreground py-8">{machines.length === 0 ? t.machines.noMachines : t.search.noResults}</TableCell></TableRow>
+            ) : visiveis.map((m) => (
               <TableRow key={m.id}>
                 <TableCell className="font-medium">
                   <div>

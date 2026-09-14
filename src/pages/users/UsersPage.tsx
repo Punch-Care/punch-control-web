@@ -8,11 +8,13 @@ import { toast } from 'sonner'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
 import { api } from '@/lib/api'
+import { matchesSearch } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { useLocale } from '@/hooks/useLocale'
 import { useAdminCompany } from '@/hooks/useAdminCompany'
 import type { UserRole } from '@/types'
 import { Button } from '@/components/ui/button'
+import { SearchInput } from '@/components/ui/search-input'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
@@ -208,6 +210,7 @@ export function UsersPage() {
   // contextCompanyId: empresa do contexto (admin selecionou empresa, ou usuário COMPANY/CLIENT tem empresa fixa)
   const contextCompanyId = selectedCompany?.id ?? me?.company?.id
 
+  const [busca, setBusca] = useState('')
   const { data: users = [], isLoading } = useQuery<UserItem[]>({
     queryKey: ['users', adminCompanyId],
     queryFn: () => api.get('/users', { params: { companyId: adminCompanyId } }).then((r) => r.data),
@@ -257,6 +260,8 @@ export function UsersPage() {
     onError: (e: { response?: { data?: { message?: string } } }) =>
       toast.error(e.response?.data?.message ?? t.users.updateError),
   })
+
+  const visiveis = users.filter((u) => matchesSearch(busca, [u.name, u.email]))
 
   // Técnico não gerencia usuários (a API também recusa)
   if (me?.role === 'CLIENT') return <Navigate to="/dashboard" replace />
@@ -321,6 +326,8 @@ export function UsersPage() {
         ))}
       </div>
 
+      <SearchInput value={busca} onChange={setBusca} placeholder={t.search.users} />
+
       {/* Tabela */}
       <div className="rounded-xl border overflow-x-auto bg-background shadow-sm">
         <Table>
@@ -336,17 +343,19 @@ export function UsersPage() {
           <TableBody>
             {isLoading ? (
               <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-10">{t.common.loading}</TableCell></TableRow>
+            ) : users.length > 0 && visiveis.length === 0 ? (
+              <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-10">{t.search.noResults}</TableCell></TableRow>
             ) : users.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="py-12">
                   <div className="flex flex-col items-center gap-2 text-muted-foreground">
                     <Users className="h-8 w-8" />
                     <p className="text-sm font-medium">{t.users.noUsers}</p>
-                    <p className="text-xs">Clique em "{t.users.newUser}" para adicionar o primeiro usuário</p>
+                    <p className="text-xs">{t.search.firstUserHint(t.users.newUser)}</p>
                   </div>
                 </TableCell>
               </TableRow>
-            ) : users.map((u) => (
+            ) : visiveis.map((u) => (
               <TableRow key={u.id} className="hover:bg-muted/30">
                 <TableCell>
                   <div className="flex items-center gap-2.5">

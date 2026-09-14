@@ -9,8 +9,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { format } from 'date-fns'
 
 import { api } from '@/lib/api'
-import { parseDateOnly } from '@/lib/utils'
+import { parseDateOnly, matchesSearch } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { SearchInput } from '@/components/ui/search-input'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
@@ -98,6 +99,7 @@ export function OccurrencesPage() {
   type MachineData = z.infer<typeof machineSchema>
   type ProductData = z.infer<typeof productSchema>
 
+  const [busca, setBusca] = useState('')
   const { data: occurrences = [], isLoading } = useQuery<Occurrence[]>({
     queryKey: ['occurrences', statusFilter, adminCompanyId],
     queryFn: () => api.get('/occurrences', {
@@ -192,6 +194,9 @@ export function OccurrencesPage() {
       toast.error(e.response?.data?.message ?? t.occurrences.productCreateError),
   })
 
+  const visiveis = occurrences.filter((o) => matchesSearch(busca, [o.set.code, o.set.name, o.description, o.resolution, o.machine?.name, o.product?.name, t.occurrenceType[o.type]]))
+  const ocorrenciasLoteVisiveis = batchOccurrences.filter((o) => matchesSearch(busca, [o.batch.punchSet.code, o.batch.punchSet.name, o.batch.loteNumero, o.batch.machine.name, o.batch.product.name, o.notas, t.production[o.type]]))
+
   return (
     <div className="p-4 sm:p-6 space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -220,6 +225,7 @@ export function OccurrencesPage() {
       </div>
 
       <div className="flex items-center gap-2 flex-wrap">
+        <SearchInput value={busca} onChange={setBusca} placeholder={t.search.occurrences} />
         {(['all', 'OPEN', 'MONITORING', 'CLOSED'] as const).map((s) => (
           <button
             key={s}
@@ -249,9 +255,9 @@ export function OccurrencesPage() {
           <TableBody>
             {isLoading ? (
               <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">{t.common.loading}</TableCell></TableRow>
-            ) : occurrences.length === 0 ? (
-              <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">{t.occurrences.noOccurrencesFound}</TableCell></TableRow>
-            ) : occurrences.map((o) => (
+            ) : visiveis.length === 0 ? (
+              <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">{occurrences.length === 0 ? t.occurrences.noOccurrencesFound : t.search.noResults}</TableCell></TableRow>
+            ) : visiveis.map((o) => (
               <TableRow key={o.id}>
                 <TableCell>
                   <p className="font-medium font-mono text-xs">{o.set.code}</p>
@@ -298,9 +304,9 @@ export function OccurrencesPage() {
             <TableBody>
               {loadingBatchOcc ? (
                 <TableRow><TableCell colSpan={7} className="text-center py-6 text-muted-foreground">{t.common.loading}</TableCell></TableRow>
-              ) : batchOccurrences.length === 0 ? (
+              ) : ocorrenciasLoteVisiveis.length === 0 ? (
                 <TableRow><TableCell colSpan={7} className="text-center py-6 text-muted-foreground">{t.occurrences.noBatchOccurrences}</TableCell></TableRow>
-              ) : batchOccurrences.map((o) => (
+              ) : ocorrenciasLoteVisiveis.map((o) => (
                 <TableRow key={o.id}>
                   <TableCell>
                     <p className="font-medium font-mono text-xs">{o.batch.punchSet.code}</p>

@@ -7,7 +7,9 @@ import { toast } from 'sonner'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
 import { api } from '@/lib/api'
+import { matchesSearch } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { SearchInput } from '@/components/ui/search-input'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
@@ -54,6 +56,7 @@ export function ProductsPage() {
   type CreateData = z.infer<typeof createSchema>
   type UpdateData = z.infer<typeof updateSchema>
 
+  const [busca, setBusca] = useState('')
   const { data: products = [], isLoading } = useQuery<Product[]>({
     queryKey: ['products', adminCompanyId],
     queryFn: () => api.get('/products', { params: { companyId: adminCompanyId } }).then((r) => r.data),
@@ -114,6 +117,8 @@ export function ProductsPage() {
     }
   }
 
+  const visiveis = products.filter((p) => matchesSearch(busca, [p.name, p.code, p.company?.name]))
+
   return (
     <div className="p-4 sm:p-6 space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -127,6 +132,8 @@ export function ProductsPage() {
           </Button>
         )}
       </div>
+
+      <SearchInput value={busca} onChange={setBusca} placeholder={t.search.products} />
 
       <div className="rounded-xl border overflow-x-auto">
         <Table>
@@ -147,13 +154,13 @@ export function ProductsPage() {
                   {t.common.loading}
                 </TableCell>
               </TableRow>
-            ) : products.length === 0 ? (
+            ) : visiveis.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                  {t.products.noProducts}
+                  {products.length === 0 ? t.products.noProducts : t.search.noResults}
                 </TableCell>
               </TableRow>
-            ) : products.map((p) => (
+            ) : visiveis.map((p) => (
               <TableRow key={p.id}>
                 <TableCell className="font-medium">{p.name}</TableCell>
                 <TableCell className="font-mono text-muted-foreground text-sm">{p.code ?? '—'}</TableCell>

@@ -5,7 +5,9 @@ import { toast } from 'sonner'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
 import { api } from '@/lib/api'
+import { matchesSearch } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { SearchInput } from '@/components/ui/search-input'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -37,6 +39,7 @@ export function CompaniesPage() {
     navigate('/users')
   }
 
+  const [busca, setBusca] = useState('')
   const { data: companies = [], isLoading } = useQuery<Company[]>({
     queryKey: ['companies'],
     queryFn: () => api.get('/companies').then((r) => r.data),
@@ -63,6 +66,8 @@ export function CompaniesPage() {
     onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? t.companies.toggleError),
   })
 
+  const visiveis = companies.filter((c) => matchesSearch(busca, [c.name, c.razaoSocial, c.cnpj, c.cidade]))
+
   return (
     <div className="p-6 space-y-5">
       <div className="flex items-center justify-between">
@@ -85,6 +90,8 @@ export function CompaniesPage() {
         </Dialog>
       </div>
 
+      <SearchInput value={busca} onChange={setBusca} placeholder={t.search.companies} />
+
       <div className="rounded-xl border overflow-x-auto">
         <Table>
           <TableHeader>
@@ -101,9 +108,9 @@ export function CompaniesPage() {
           <TableBody>
             {isLoading ? (
               <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>
-            ) : companies.length === 0 ? (
-              <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">{t.companies.noCompanies}</TableCell></TableRow>
-            ) : companies.map((c) => (
+            ) : visiveis.length === 0 ? (
+              <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">{companies.length === 0 ? t.companies.noCompanies : t.search.noResults}</TableCell></TableRow>
+            ) : visiveis.map((c) => (
               <TableRow key={c.id}>
                 <TableCell className="font-medium">{c.name}</TableCell>
                 <TableCell className="text-muted-foreground">{c.razaoSocial ?? '—'}</TableCell>

@@ -8,7 +8,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 
 import { api } from '@/lib/api'
+import { matchesSearch } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { SearchInput } from '@/components/ui/search-input'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
@@ -132,7 +134,9 @@ export function SetsPage() {
       toast.error(e.response?.data?.message ?? t.sets.deleteError),
   })
 
-  const filtered = statusFilter === 'all' ? sets : sets.filter((s) => s.status === statusFilter)
+  const [busca, setBusca] = useState('')
+  const filtered = (statusFilter === 'all' ? sets : sets.filter((s) => s.status === statusFilter))
+    .filter((s) => matchesSearch(busca, [s.code, s.name, s.company?.name]))
 
   return (
     <div className="p-4 sm:p-6 space-y-5">
@@ -149,6 +153,7 @@ export function SetsPage() {
       </div>
 
       <div className="flex items-center gap-3 flex-wrap">
+        <SearchInput value={busca} onChange={setBusca} placeholder={t.search.sets} />
         {(['all', 'ACTIVE', 'IN_REPAIR', 'INACTIVE', 'DISCARDED'] as const).map((s) => (
           <button
             key={s}
