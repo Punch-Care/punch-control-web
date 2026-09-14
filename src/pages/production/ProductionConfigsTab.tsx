@@ -51,11 +51,7 @@ const DEFAULT_PARAMS_MK_IV: ParamRow[] = [
   { ordem: 15, nome: 'Posição do Funil',                               unidade: '—',      sugerido: '4',      toleranciaPerc: '5',  origemSugerido: 'MEDIANA',   fatorSugerido: '',    minimo: '', maximo: '' },
 ]
 
-const ORIGEM_LABEL: Record<ParamSuggestionSource, string> = {
-  MANUAL: 'Fixo',
-  MEDIANA: 'Mediana do histórico',
-  MEDIA_CFC: 'Média do CFC × fator',
-}
+const ORIGENS: ParamSuggestionSource[] = ['MANUAL', 'MEDIANA', 'MEDIA_CFC']
 
 /**
  * Aplica as tolerâncias do padrão MK IV às linhas cujo nome bate com o template.
@@ -114,6 +110,7 @@ export function ProductionConfigsTab() {
   const qc = useQueryClient()
   const { t } = useLocale()
   const p = t.production
+  const pc = t.productionConfigs
   const { companyId: adminCompanyId } = useAdminCompany()
   const { canManage } = usePermissions()
 
@@ -229,16 +226,16 @@ export function ProductionConfigsTab() {
         <>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>Produto *</Label>
+              <Label>{pc.productReq}</Label>
               <Select value={productId} onValueChange={setProductId}>
-                <SelectTrigger><SelectValue placeholder="Selecione o produto" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={pc.selectProduct} /></SelectTrigger>
                 <SelectContent>{products.filter(pr => pr.active).map(pr => <SelectItem key={pr.id} value={pr.id}>{pr.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>Máquina *</Label>
+              <Label>{pc.machineReq}</Label>
               <Select value={machineId} onValueChange={setMachineId}>
-                <SelectTrigger><SelectValue placeholder="Selecione a máquina" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={pc.selectMachine} /></SelectTrigger>
                 <SelectContent>{machines.filter(m => m.active).map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
@@ -246,23 +243,23 @@ export function ProductionConfigsTab() {
 
           {/* Seleção de template */}
           <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Template de parâmetros</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{pc.template}</p>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => setParams(DEFAULT_PARAMS_MK_IV)}
                 className={`text-left p-3 rounded-lg border-2 text-sm transition-colors ${params.length > 0 ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
               >
-                <p className="font-medium">Padrão MK IV</p>
-                <p className="text-xs text-muted-foreground mt-0.5">15 parâmetros da planilha CEP</p>
+                <p className="font-medium">{pc.templateMk4}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{pc.templateMk4Desc}</p>
               </button>
               <button
                 type="button"
                 onClick={() => setParams(DEFAULT_PARAMS_EMPTY)}
                 className={`text-left p-3 rounded-lg border-2 text-sm transition-colors ${params.length === 0 ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
               >
-                <p className="font-medium">Sem parâmetros</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Máquina sem padrão CEP</p>
+                <p className="font-medium">{pc.templateEmpty}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{pc.templateEmptyDesc}</p>
               </button>
             </div>
           </div>
@@ -274,7 +271,7 @@ export function ProductionConfigsTab() {
           <div>
             <p className="text-sm font-medium">{p.paramsFixos}</p>
             {params.length === 0 && (
-              <p className="text-xs text-muted-foreground mt-0.5">Nenhum parâmetro — lotes serão registrados sem validação de limites</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{pc.noParams}</p>
             )}
           </div>
           <div className="flex gap-2">
@@ -284,10 +281,10 @@ export function ProductionConfigsTab() {
                 onClick={() => {
                   const { params: novos, aplicados } = aplicarToleranciasPadrao(params)
                   setParams(novos)
-                  toast.success(`Tolerância padrão aplicada a ${aplicados} parâmetro(s). Confira e salve.`)
+                  toast.success(pc.tolApplied(aplicados))
                 }}
               >
-                Aplicar tolerâncias padrão
+                {pc.applyTolerances}
               </Button>
             )}
             <Button type="button" size="sm" variant="outline" onClick={addParam}>
@@ -300,12 +297,12 @@ export function ProductionConfigsTab() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="min-w-[190px]">Parâmetro</TableHead>
-                  <TableHead className="w-16">Unid.</TableHead>
-                  <TableHead className="w-40">Origem do sugerido</TableHead>
-                  <TableHead className="w-20">Sugerido</TableHead>
-                  <TableHead className="w-16">Tol. ±%</TableHead>
-                  <TableHead className="w-32">Faixa resultante</TableHead>
+                  <TableHead className="min-w-[190px]">{pc.colParam}</TableHead>
+                  <TableHead className="w-16">{pc.colUnit}</TableHead>
+                  <TableHead className="w-40">{pc.colOrigin}</TableHead>
+                  <TableHead className="w-20">{pc.colSuggested}</TableHead>
+                  <TableHead className="w-16">{pc.colTol}</TableHead>
+                  <TableHead className="w-32">{pc.colRange}</TableHead>
                   <TableHead className="w-10" />
                 </TableRow>
               </TableHeader>
@@ -320,7 +317,7 @@ export function ProductionConfigsTab() {
                         <Input className="h-7 text-xs" value={row.nome} onChange={e => updateParam(idx, 'nome', e.target.value)} />
                         {salvo && salvo.amostras > 0 && (
                           <p className="text-[10px] text-muted-foreground mt-1">
-                            Mediana de {salvo.amostras} lote(s): <span className="font-medium tabular-nums">{salvo.medianaHistorico ?? '—'}</span>
+                            {pc.historyMedian(salvo.amostras)} <span className="font-medium tabular-nums">{salvo.medianaHistorico ?? '—'}</span>
                           </p>
                         )}
                       </TableCell>
@@ -329,15 +326,15 @@ export function ProductionConfigsTab() {
                         <Select value={row.origemSugerido} onValueChange={v => updateOrigem(idx, v as ParamSuggestionSource)}>
                           <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            {(Object.keys(ORIGEM_LABEL) as ParamSuggestionSource[]).map(o => (
-                              <SelectItem key={o} value={o}>{ORIGEM_LABEL[o]}</SelectItem>
+                            {ORIGENS.map(o => (
+                              <SelectItem key={o} value={o}>{pc[`origin${o}`]}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
                         {row.origemSugerido === 'MEDIA_CFC' && (
                           <Input
                             className="h-7 text-xs mt-1"
-                            placeholder="fator (ex: 1.5)"
+                            placeholder={pc.factorPlaceholder}
                             value={row.fatorSugerido}
                             onChange={e => updateParam(idx, 'fatorSugerido', e.target.value)}
                           />
@@ -348,7 +345,7 @@ export function ProductionConfigsTab() {
                           className="h-7 text-xs tabular-nums"
                           value={row.sugerido}
                           onChange={e => updateParam(idx, 'sugerido', e.target.value)}
-                          placeholder={row.origemSugerido === 'MANUAL' ? '' : 'partida'}
+                          placeholder={row.origemSugerido === 'MANUAL' ? '' : pc.startValue}
                         />
                       </TableCell>
                       <TableCell>
@@ -364,8 +361,8 @@ export function ProductionConfigsTab() {
                           previewFaixa(row)
                         ) : (
                           <div className="flex gap-1">
-                            <Input className="h-7 text-xs w-16" value={row.minimo} onChange={e => updateParam(idx, 'minimo', e.target.value)} placeholder="mín" />
-                            <Input className="h-7 text-xs w-16" value={row.maximo} onChange={e => updateParam(idx, 'maximo', e.target.value)} placeholder="máx" />
+                            <Input className="h-7 text-xs w-16" value={row.minimo} onChange={e => updateParam(idx, 'minimo', e.target.value)} placeholder={pc.min} />
+                            <Input className="h-7 text-xs w-16" value={row.maximo} onChange={e => updateParam(idx, 'maximo', e.target.value)} placeholder={pc.max} />
                           </div>
                         )}
                       </TableCell>
@@ -386,22 +383,22 @@ export function ProductionConfigsTab() {
       {/* Limiares de alerta usados na aba CEP */}
       <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
         <div>
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Limiares de alerta do CEP</p>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{pc.thresholds}</p>
           <p className="text-[11px] text-muted-foreground mt-0.5">
-            Acima destes valores a leitura aparece destacada na aba CEP.
+            {pc.thresholdsHint}
           </p>
         </div>
         <div className="grid grid-cols-3 gap-2">
           <div className="space-y-1">
-            <Label className="text-xs">Dif. no rolo (mm)</Label>
+            <Label className="text-xs">{pc.rollerDiff}</Label>
             <Input className="h-7 text-xs tabular-nums" value={limiares.limiteDifRolo} onChange={e => setLimiares(l => ({ ...l, limiteDifRolo: e.target.value }))} />
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">Amplitude dir./esq. (mm)</Label>
+            <Label className="text-xs">{pc.amplitude}</Label>
             <Input className="h-7 text-xs tabular-nums" value={limiares.limiteAmplitude} onChange={e => setLimiares(l => ({ ...l, limiteAmplitude: e.target.value }))} />
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">Coef. de variação (%)</Label>
+            <Label className="text-xs">{pc.cv}</Label>
             <Input className="h-7 text-xs tabular-nums" value={limiares.limiteCoefVar} onChange={e => setLimiares(l => ({ ...l, limiteCoefVar: e.target.value }))} />
           </div>
         </div>
@@ -429,10 +426,10 @@ export function ProductionConfigsTab() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Produto</TableHead>
-              <TableHead>Máquina</TableHead>
-              <TableHead>Parâmetros</TableHead>
-              <TableHead>Lotes</TableHead>
+              <TableHead>{pc.colProduct}</TableHead>
+              <TableHead>{pc.colMachine}</TableHead>
+              <TableHead>{pc.colParams}</TableHead>
+              <TableHead>{pc.colLots}</TableHead>
               <TableHead className="w-20">{t.common.actions}</TableHead>
             </TableRow>
           </TableHeader>
@@ -445,7 +442,7 @@ export function ProductionConfigsTab() {
               <TableRow key={cfg.id}>
                 <TableCell className="font-medium">{cfg.product.name}</TableCell>
                 <TableCell>{cfg.machine.name}</TableCell>
-                <TableCell className="text-muted-foreground">{cfg.params.length} parâmetros</TableCell>
+                <TableCell className="text-muted-foreground">{pc.paramsCount(cfg.params.length)}</TableCell>
                 <TableCell className="text-muted-foreground">{cfg._count?.batches ?? 0}</TableCell>
                 <TableCell>
                   {canManage && <div className="flex gap-1">
@@ -453,7 +450,7 @@ export function ProductionConfigsTab() {
                     <Button
                       variant="ghost" size="icon" className="text-destructive hover:text-destructive"
                       disabled={deleteMutation.isPending}
-                      onClick={() => { if (confirm('Remover configuração?')) deleteMutation.mutate(cfg.id) }}
+                      onClick={() => { if (confirm(pc.deleteConfirm)) deleteMutation.mutate(cfg.id) }}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
