@@ -297,7 +297,7 @@ const features = [
   {
     icon: Package,
     title: 'Cadastro de Jogos',
-    desc: 'Registre punções, matrizes e jogos com código, parâmetros e limites operacionais L30% e L60%.',
+    desc: 'Registre punções, matrizes e jogos com código, parâmetros e limites de vida útil configuráveis por jogo (ex.: 30%, 60%).',
   },
   {
     icon: Ruler,
