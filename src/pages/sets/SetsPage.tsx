@@ -24,7 +24,7 @@ import {
   LimitsEditor, UsefulValueBar, DEFAULT_LIMIT_DRAFTS, limitsToPayload, validateLimits,
   type LimitDraft,
 } from './LimitsEditor'
-import type { PunchSet, Product, SetStatus } from '@/types'
+import type { PunchSet, Product, SetStatus, JogoStatus } from '@/types'
 
 const STATUS_VARIANTS: Record<SetStatus, 'success' | 'warning' | 'secondary' | 'destructive'> = {
   ACTIVE: 'success',
@@ -57,6 +57,7 @@ export function SetsPage() {
           ? z.string().uuid(t.sets.selectCompanyRequired)
           : z.string().optional(),
         notes: z.string().optional(),
+        statusJogo: z.enum(['LIMPO', 'NAO_LIMPO', 'EM_MANUTENCAO', 'EM_POLIMENTO', 'EXCLUIDO', 'AGUARDANDO_DECISAO']),
       }),
     [t],
   )
@@ -89,7 +90,8 @@ export function SetsPage() {
       prev.includes(productId) ? prev.filter((id) => id !== productId) : [...prev, productId],
     )
 
-  const createForm = useForm<CreateData>({ resolver: zodResolver(createSchema) })
+  // Ferramental novo normalmente chega limpo — já libera o primeiro lote
+  const createForm = useForm<CreateData>({ resolver: zodResolver(createSchema), defaultValues: { statusJogo: 'LIMPO' } })
 
   const createMutation = useMutation({
     mutationFn: async (data: CreateData) => {
@@ -258,6 +260,20 @@ export function SetsPage() {
                 <Input placeholder={t.sets.namePlaceholder} {...createForm.register('name')} />
                 {createForm.formState.errors.name && <p className="text-xs text-destructive">{createForm.formState.errors.name.message}</p>}
               </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t.jogo.statusLabel}</Label>
+              <Select
+                value={createForm.watch('statusJogo')}
+                onValueChange={(v) => createForm.setValue('statusJogo', v as JogoStatus)}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(t.jogo.statuses) as JogoStatus[]).map((st) => (
+                    <SelectItem key={st} value={st}>{t.jogo.statuses[st]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <LimitsEditor limits={limitDrafts} onChange={setLimitDrafts} />
             <div className="space-y-1.5">
