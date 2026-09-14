@@ -267,6 +267,16 @@ export interface LifecycleData {
   totalKg: number
   /** totalKg ÷ peso médio — null enquanto o peso médio não estiver informado */
   unidadesMilhares: number | null
+  /** Previsão pelo ritmo dos últimos 180 dias; null sem produção recente */
+  forecast: UsefulLifeForecast | null
+}
+
+export interface UsefulLifeForecast {
+  usefulValue: number
+  kgPerDay: number
+  percPerDay: number
+  endOfLife: { daysLeft: number; date: string } | null
+  limits: { percentual: number; label: string | null; reached: boolean; daysLeft: number | null; date: string | null }[]
 }
 
 export interface Product {
@@ -478,6 +488,8 @@ export interface DashboardStats {
   openOccurrences: number
   lowUsefulValue: number
   /** Componentes de ferramental com sobra no ponto de encomenda */
+  /** Jogos que chegam ao limite crítico em até 60 dias no ritmo atual */
+  upcomingCritical: { setId: string; setCode: string; setName: string; usefulValue: number; limit: number; daysLeft: number; date: string }[]
   componentsToRestock: {
     setId: string; setCode: string; setName: string
     tipo: ComponentInventoryType; sobra: number; pontoEncomenda: number

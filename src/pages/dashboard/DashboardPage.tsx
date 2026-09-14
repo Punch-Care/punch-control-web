@@ -66,7 +66,9 @@ function StatsSection({ companyId, d, TYPE_LABELS }: {
   d: ReturnType<typeof useLocale>['t']['dashboard']
   TYPE_LABELS: Record<OccurrenceType, string>
 }) {
-  const componentLabels = useLocale().t.componentTypes
+  const { t: tt } = useLocale()
+  const componentLabels = tt.componentTypes
+  const f = tt.forecast
   const { data: stats } = useQuery<DashboardStats>({
     queryKey: ['stats-dashboard', companyId],
     queryFn: () => api.get('/stats/dashboard', { params: companyId ? { companyId } : {} }).then(r => r.data),
@@ -151,6 +153,29 @@ function StatsSection({ companyId, d, TYPE_LABELS }: {
           </CardContent>
         </Card>
       </div>
+
+      {stats && stats.upcomingCritical?.length > 0 && (
+        <Card className="border-orange-200 bg-orange-50/60 border-0 shadow-sm">
+          <CardContent className="p-4 space-y-2">
+            <div className="flex items-center gap-2">
+              <TrendingDown className="h-5 w-5 text-orange-500 flex-shrink-0" />
+              <p className="text-sm font-medium">{f.upcomingTitle(stats.upcomingCritical.length)}</p>
+            </div>
+            <p className="text-xs text-muted-foreground">{f.upcomingHint}</p>
+            <div className="flex flex-wrap gap-2">
+              {stats.upcomingCritical.map((u) => (
+                <Link
+                  key={u.setId}
+                  to={`/lifecycle?setId=${u.setId}`}
+                  className="text-xs rounded-full border border-orange-300 bg-background px-3 py-1 hover:border-orange-500"
+                >
+                  <span className="font-mono">{u.setCode}</span> · {u.limit}% {f.upcomingItem(u.daysLeft, format(parseDateOnly(u.date), 'dd/MM'))}
+                </Link>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {stats && stats.componentsToRestock?.length > 0 && (
         <Card className="border-amber-200 bg-amber-50/60 border-0 shadow-sm">

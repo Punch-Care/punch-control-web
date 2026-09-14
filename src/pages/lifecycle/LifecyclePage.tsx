@@ -276,6 +276,37 @@ export function LifecyclePage() {
             </CardContent>
           </Card>
 
+          {/* Previsão pelo ritmo recente de produção */}
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <TrendingDown className="h-4 w-4 text-muted-foreground" />
+                <h3 className="font-semibold text-sm">{t.forecast.title}</h3>
+              </div>
+              {!lifecycleData.forecast ? (
+                <p className="text-sm text-muted-foreground">{t.forecast.noData}</p>
+              ) : (
+                <>
+                  <p className="text-xs text-muted-foreground">
+                    {t.forecast.rhythm(lifecycleData.forecast.kgPerDay.toLocaleString(locale), lifecycleData.forecast.percPerDay.toLocaleString(locale))}
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {[...lifecycleData.forecast.limits.map(l => ({ key: `l${l.percentual}`, label: t.forecast.limit(l.label ?? `${l.percentual}%`), reached: l.reached, daysLeft: l.daysLeft, date: l.date })),
+                      ...(lifecycleData.forecast.endOfLife ? [{ key: 'eol', label: t.forecast.endOfLife, reached: lifecycleData.forecast.usefulValue <= 0, daysLeft: lifecycleData.forecast.endOfLife.daysLeft, date: lifecycleData.forecast.endOfLife.date }] : []),
+                    ].map(item => (
+                      <div key={item.key} className={`rounded-lg border px-3 py-2 ${item.reached ? 'bg-red-50 border-red-200' : item.daysLeft !== null && item.daysLeft <= 60 ? 'bg-amber-50 border-amber-200' : ''}`}>
+                        <p className="text-xs text-muted-foreground">{item.label}</p>
+                        <p className="text-sm font-semibold">
+                          {item.reached ? t.forecast.reached : item.date ? t.forecast.inDays(item.daysLeft ?? 0, format(parseDateOnly(item.date), 'dd/MM/yyyy')) : '—'}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Configuração de depreciação */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">

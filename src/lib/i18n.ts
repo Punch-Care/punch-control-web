@@ -1326,6 +1326,18 @@ const translations = {
       diskFree: (livre: string, total: string) => `${livre} livres de ${total}`,
       diskLow: 'Pouco espaço — anexos e backups podem falhar',
     },
+    forecast: {
+      title: 'Previsão de vida útil',
+      noData: 'Sem produção nos últimos 180 dias — não há ritmo para prever.',
+      rhythm: (kg: string, pct: string) => `Ritmo atual: ${kg} kg/dia (${pct}% de vida útil por dia), com base nos últimos 180 dias.`,
+      limit: (label: string) => `Limite ${label}`,
+      endOfLife: 'Fim de vida',
+      reached: 'Já atingido',
+      inDays: (dias: number, data: string) => `em ${dias} dia(s) · ${data}`,
+      upcomingTitle: (n: number) => `${n} jogo(s) atingem o limite crítico nos próximos 60 dias`,
+      upcomingItem: (dias: number, data: string) => `em ${dias} dia(s) (${data})`,
+      upcomingHint: 'No ritmo atual de produção. Considere abrir o RFQ de reposição.',
+    },
   },
   en: {
     nav: {
@@ -2652,6 +2664,18 @@ const translations = {
       diskFree: (livre: string, total: string) => `${livre} free of ${total}`,
       diskLow: 'Low space — attachments and backups may fail',
     },
+    forecast: {
+      title: 'Useful life forecast',
+      noData: 'No production in the last 180 days — no pace to forecast from.',
+      rhythm: (kg: string, pct: string) => `Current pace: ${kg} kg/day (${pct}% of useful life per day), based on the last 180 days.`,
+      limit: (label: string) => `Limit ${label}`,
+      endOfLife: 'End of life',
+      reached: 'Already reached',
+      inDays: (dias: number, data: string) => `in ${dias} day(s) · ${data}`,
+      upcomingTitle: (n: number) => `${n} set(s) reach the critical limit in the next 60 days`,
+      upcomingItem: (dias: number, data: string) => `in ${dias} day(s) (${data})`,
+      upcomingHint: 'At the current production pace. Consider opening the replacement RFQ.',
+    },
   },
   es: {
     nav: {
@@ -3977,6 +4001,18 @@ const translations = {
       disk: 'Disco del servidor',
       diskFree: (livre: string, total: string) => `${livre} libres de ${total}`,
       diskLow: 'Poco espacio — los adjuntos y respaldos pueden fallar',
+    },
+    forecast: {
+      title: 'Previsión de vida útil',
+      noData: 'Sin producción en los últimos 180 días — no hay ritmo para prever.',
+      rhythm: (kg: string, pct: string) => `Ritmo actual: ${kg} kg/día (${pct}% de vida útil por día), según los últimos 180 días.`,
+      limit: (label: string) => `Límite ${label}`,
+      endOfLife: 'Fin de vida',
+      reached: 'Ya alcanzado',
+      inDays: (dias: number, data: string) => `en ${dias} día(s) · ${data}`,
+      upcomingTitle: (n: number) => `${n} juego(s) alcanzan el límite crítico en los próximos 60 días`,
+      upcomingItem: (dias: number, data: string) => `en ${dias} día(s) (${data})`,
+      upcomingHint: 'Al ritmo actual de producción. Considere abrir el RFQ de reposición.',
     },
   },
 }
