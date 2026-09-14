@@ -541,11 +541,11 @@ export function BatchFormPage() {
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Deseja registrar os <strong>{form.kgProduzidos} kg</strong> produzidos no ciclo de vida do jogo{' '}
-              <strong className="text-foreground font-mono">{completedSetCode}</strong>?
+              Os <strong>{form.kgProduzidos} kg</strong> produzidos já foram lançados no ciclo de vida do jogo{' '}
+              <strong className="text-foreground font-mono">{completedSetCode}</strong>, e a vida útil foi recalculada.
             </p>
             <p className="text-xs text-muted-foreground bg-muted rounded-lg p-3">
-              Isso mantém o controle de depreciação do ferramental atualizado e evita que o ciclo de vida fique desatualizado.
+              Não é preciso lançar de novo. Se o kg deste lote mudar, edite o lote — o ciclo de vida acompanha.
             </p>
             <div className="flex flex-col gap-2">
               <Button
@@ -556,14 +556,14 @@ export function BatchFormPage() {
                 }}
               >
                 <Activity className="h-4 w-4" />
-                Sim, atualizar ciclo de vida
+                Ver ciclo de vida do jogo
               </Button>
               <Button
                 variant="outline"
                 className="w-full"
                 onClick={() => { setShowLifecyclePrompt(false); navigate('/production') }}
               >
-                Não, obrigado
+                Voltar para Produção
               </Button>
             </div>
           </div>
