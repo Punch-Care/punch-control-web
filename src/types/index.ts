@@ -391,6 +391,24 @@ export interface BatchHourlyMeasurement {
   observacoes: string | null
 }
 
+/** Ocorrência de lote com o contexto do lote — usada na lista de Ocorrências */
+export interface BatchOccurrenceWithBatch {
+  id: string
+  batchId: string
+  type: BatchOccurrenceType
+  notas: string | null
+  createdAt: string
+  batch: {
+    id: string
+    loteNumero: string
+    dataProducao: string
+    status: BatchStatus
+    punchSet: { id: string; code: string; name: string }
+    machine: { id: string; name: string; code: string | null }
+    product: { id: string; name: string; code: string | null }
+  }
+}
+
 export interface BatchOccurrence {
   id: string
   batchId: string

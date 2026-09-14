@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -22,7 +22,7 @@ import { useLocale } from '@/hooks/useLocale'
 import { usePermissions } from '@/hooks/usePermissions'
 import { useAdminCompany } from '@/hooks/useAdminCompany'
 import { OccurrencesAnalytics } from './OccurrencesAnalytics'
-import type { Occurrence, OccurrenceStatus, OccurrenceType, PunchSet, Machine, Product } from '@/types'
+import type { Occurrence, OccurrenceStatus, OccurrenceType, PunchSet, Machine, Product, BatchOccurrenceWithBatch } from '@/types'
 
 const STATUS_VARIANTS: Record<OccurrenceStatus, 'destructive' | 'warning' | 'success'> = {
   OPEN: 'destructive',
@@ -102,6 +102,11 @@ export function OccurrencesPage() {
     queryFn: () => api.get('/occurrences', {
       params: { ...(statusFilter !== 'all' ? { status: statusFilter } : {}), companyId: adminCompanyId },
     }).then((r) => r.data),
+  })
+
+  const { data: batchOccurrences = [], isLoading: loadingBatchOcc } = useQuery<BatchOccurrenceWithBatch[]>({
+    queryKey: ['occurrences', 'from-batches', adminCompanyId],
+    queryFn: () => api.get('/occurrences/from-batches', { params: { companyId: adminCompanyId } }).then((r) => r.data),
   })
 
   const { data: sets = [] } = useQuery<PunchSet[]>({
@@ -268,6 +273,51 @@ export function OccurrencesPage() {
             ))}
           </TableBody>
         </Table>
+      </div>
+
+      {/* Ocorrências anotadas nos lotes de produção */}
+      <div className="space-y-2">
+        <div>
+          <h3 className="font-semibold text-sm">{t.occurrences.fromBatchesTitle}</h3>
+          <p className="text-xs text-muted-foreground">{t.occurrences.fromBatchesSubtitle}</p>
+        </div>
+        <div className="rounded-xl border overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t.occurrences.set}</TableHead>
+                <TableHead>{t.common.type}</TableHead>
+                <TableHead>{t.occurrences.batch}</TableHead>
+                <TableHead>{t.occurrences.machine}</TableHead>
+                <TableHead>{t.occurrences.product}</TableHead>
+                <TableHead>{t.occurrences.productionDate}</TableHead>
+                <TableHead>{t.common.notes}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loadingBatchOcc ? (
+                <TableRow><TableCell colSpan={7} className="text-center py-6 text-muted-foreground">{t.common.loading}</TableCell></TableRow>
+              ) : batchOccurrences.length === 0 ? (
+                <TableRow><TableCell colSpan={7} className="text-center py-6 text-muted-foreground">{t.occurrences.noBatchOccurrences}</TableCell></TableRow>
+              ) : batchOccurrences.map((o) => (
+                <TableRow key={o.id}>
+                  <TableCell>
+                    <p className="font-medium font-mono text-xs">{o.batch.punchSet.code}</p>
+                    <p className="text-xs text-muted-foreground">{o.batch.punchSet.name}</p>
+                  </TableCell>
+                  <TableCell><Badge variant="warning">{t.production[o.type]}</Badge></TableCell>
+                  <TableCell>
+                    <Link to={`/production/${o.batch.id}`} className="font-mono text-xs text-primary hover:underline">{o.batch.loteNumero}</Link>
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{o.batch.machine.name}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{o.batch.product.name}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{format(new Date(o.batch.dataProducao), 'dd/MM/yyyy')}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground max-w-[220px] truncate">{o.notas ?? '—'}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       {/* Create occurrence dialog */}
