@@ -19,7 +19,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useLocale } from '@/hooks/useLocale'
 import { useAdminCompany } from '@/hooks/useAdminCompany'
-import type { PunchSet, DimensionRecord } from '@/types'
+import { usePermissions } from '@/hooks/usePermissions'
+import type { PunchSet, DimensionRecord, DimensionSpecsResponse } from '@/types'
 
 function RecordRow({ record, t }: { record: DimensionRecord; t: ReturnType<typeof useLocale>['t'] }) {
   const [open, setOpen] = useState(false)
@@ -82,22 +83,160 @@ function RecordRow({ record, t }: { record: DimensionRecord; t: ReturnType<typeo
   )
 }
 
+type SpecDraft = { parameter: string; unit: string; nominal: string; lowerLimit: string; upperLimit: string }
+
+// Aceita vírgula ou ponto; '' vira null
+const toNumber = (raw: string): number | null => {
+  const t = raw.trim().replace(',', '.')
+  if (t === '') return null
+  const n = Number(t)
+  return Number.isFinite(n) ? n : NaN
+}
+const toRaw = (v: number | null | undefined) => (v == null ? '' : String(v))
+
+function SpecEditor({
+  open, onOpenChange, setId, data, t,
+}: {
+  open: boolean
+  onOpenChange: (o: boolean) => void
+  setId: string
+  data: DimensionSpecsResponse | undefined
+  t: ReturnType<typeof useLocale>['t']
+}) {
+  const qc = useQueryClient()
+  const d = t.dimensioning
+  const [rows, setRows] = useState<SpecDraft[]>([])
+
+  // Recarrega o rascunho sempre que o diálogo abre
+  const [lastOpen, setLastOpen] = useState(false)
+  if (open !== lastOpen) {
+    setLastOpen(open)
+    if (open) {
+      setRows((data?.specs ?? []).map((sp) => ({
+        parameter: sp.parameter, unit: sp.unit, nominal: toRaw(sp.nominal),
+        lowerLimit: toRaw(sp.lowerLimit), upperLimit: toRaw(sp.upperLimit),
+      })))
+    }
+  }
+
+  const update = (i: number, field: keyof SpecDraft, value: string) =>
+    setRows((r) => r.map((row, idx) => (idx === i ? { ...row, [field]: value } : row)))
+
+  const importFromTooling = () => {
+    const existentes = new Set(rows.map((r) => r.parameter.trim().toLowerCase()))
+    const novos = (data?.sugestoesFerramental ?? [])
+      .filter((sg) => !existentes.has(sg.parameter.toLowerCase()))
+      .map((sg) => ({ parameter: sg.parameter, unit: sg.unit, nominal: String(sg.nominal), lowerLimit: '', upperLimit: '' }))
+    if (novos.length === 0) { toast.info(d.specImportNone); return }
+    setRows((r) => [...r, ...novos])
+    toast.success(`${novos.length} ${d.specImported}`)
+  }
+
+  const saveMutation = useMutation({
+    mutationFn: () => {
+      const payload = rows
+        .filter((r) => r.parameter.trim())
+        .map((r) => ({
+          parameter: r.parameter.trim(),
+          unit: r.unit.trim() || 'mm',
+          nominal: toNumber(r.nominal),
+          lowerLimit: toNumber(r.lowerLimit),
+          upperLimit: toNumber(r.upperLimit),
+        }))
+      if (payload.some((p) => [p.nominal, p.lowerLimit, p.upperLimit].some((v) => Number.isNaN(v)))) {
+        return Promise.reject({ response: { data: { message: d.invalidNumber } } })
+      }
+      return api.put(`/punch-sets/${setId}/dimension-records/specs`, payload)
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['dimension-specs', setId] })
+      onOpenChange(false)
+      toast.success(d.specSaved)
+    },
+    onError: (e: { response?: { data?: { message?: string } } }) =>
+      toast.error(e.response?.data?.message ?? d.specSaveError),
+  })
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader><DialogTitle>{d.specTitle}</DialogTitle></DialogHeader>
+        <p className="text-xs text-muted-foreground -mt-2">{d.specSubtitle}</p>
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" size="sm" variant="outline" onClick={() => setRows((r) => [...r, { parameter: '', unit: 'mm', nominal: '', lowerLimit: '', upperLimit: '' }])}>
+            <Plus className="h-3 w-3" /> {t.common.add}
+          </Button>
+          <Button type="button" size="sm" variant="outline" onClick={importFromTooling}>
+            {d.specImport}
+          </Button>
+        </div>
+        <div className="space-y-2">
+          {rows.map((row, i) => (
+            <div key={i} className="grid grid-cols-12 gap-2 items-end">
+              <div className="col-span-4 space-y-1">
+                {i === 0 && <Label className="text-xs">{d.parameter}</Label>}
+                <Input value={row.parameter} onChange={(e) => update(i, 'parameter', e.target.value)} />
+              </div>
+              <div className="col-span-2 space-y-1">
+                {i === 0 && <Label className="text-xs">{d.nominal}</Label>}
+                <Input inputMode="decimal" value={row.nominal} onChange={(e) => update(i, 'nominal', e.target.value)} />
+              </div>
+              <div className="col-span-2 space-y-1">
+                {i === 0 && <Label className="text-xs">{d.lowerLimit}</Label>}
+                <Input inputMode="decimal" value={row.lowerLimit} onChange={(e) => update(i, 'lowerLimit', e.target.value)} />
+              </div>
+              <div className="col-span-2 space-y-1">
+                {i === 0 && <Label className="text-xs">{d.upperLimit}</Label>}
+                <Input inputMode="decimal" value={row.upperLimit} onChange={(e) => update(i, 'upperLimit', e.target.value)} />
+              </div>
+              <div className="col-span-1 space-y-1">
+                {i === 0 && <Label className="text-xs">{d.unit}</Label>}
+                <Input value={row.unit} onChange={(e) => update(i, 'unit', e.target.value)} />
+              </div>
+              <div className="col-span-1">
+                <Button type="button" variant="ghost" size="icon" className="text-destructive" onClick={() => setRows((r) => r.filter((_, idx) => idx !== i))}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          ))}
+          {rows.length === 0 && <p className="text-sm text-muted-foreground py-4 text-center">{d.specEmpty}</p>}
+        </div>
+        <Button className="w-full" disabled={saveMutation.isPending} onClick={() => saveMutation.mutate()}>
+          {saveMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+          {t.common.save}
+        </Button>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 export function DimensioningPage() {
   const qc = useQueryClient()
   const { t } = useLocale()
+  const d = t.dimensioning
+  const { canManage } = usePermissions()
   const { companyId: adminCompanyId } = useAdminCompany()
   const [searchParams] = useSearchParams()
   const [selectedSetId, setSelectedSetId] = useState<string>(() => searchParams.get('setId') ?? '')
   const [createOpen, setCreateOpen] = useState(false)
+  const [specOpen, setSpecOpen] = useState(false)
+
+  // Campos como texto enquanto digita (vírgula decimal); converte na validação
+  const decimal = (required: boolean) =>
+    z.string().trim()
+      .refine((v) => !required || v !== '', d.valueRequired)
+      .refine((v) => v === '' || Number.isFinite(Number(v.replace(',', '.'))), d.invalidNumber)
 
   const valueSchema = useMemo(
     () =>
       z.object({
-        parameter: z.string().min(1, t.dimensioning.parameterRequired),
-        value: z.coerce.number(),
+        parameter: z.string().min(1, d.parameterRequired),
+        value: decimal(true),
         unit: z.string().default('mm'),
-        lowerLimit: z.coerce.number().optional(),
-        upperLimit: z.coerce.number().optional(),
+        lowerLimit: decimal(false),
+        upperLimit: decimal(false),
+        fromSpec: z.boolean().optional(),
       }),
     [t],
   )
@@ -106,12 +245,13 @@ export function DimensioningPage() {
     () =>
       z.object({
         notes: z.string().optional(),
-        values: z.array(valueSchema).min(1, t.dimensioning.addAtLeastOne),
+        values: z.array(valueSchema).min(1, d.addAtLeastOne),
       }),
-    [t, valueSchema],
+    [d, valueSchema],
   )
 
   type FormData = z.infer<typeof createSchema>
+  const emptyRow = { parameter: '', value: '', unit: 'mm', lowerLimit: '', upperLimit: '', fromSpec: false }
 
   const { data: sets = [] } = useQuery<PunchSet[]>({
     queryKey: ['punch-sets', adminCompanyId],
@@ -124,23 +264,54 @@ export function DimensioningPage() {
     enabled: !!selectedSetId,
   })
 
+  const { data: specData } = useQuery<DimensionSpecsResponse>({
+    queryKey: ['dimension-specs', selectedSetId],
+    queryFn: () => api.get(`/punch-sets/${selectedSetId}/dimension-records/specs`).then((r) => r.data),
+    enabled: !!selectedSetId,
+  })
+  const specs = specData?.specs ?? []
+
   const { register, control, handleSubmit, reset, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(createSchema),
-    defaultValues: { values: [{ parameter: '', value: 0, unit: 'mm' }] },
+    defaultValues: { values: [emptyRow] },
   })
 
   const { fields, append, remove } = useFieldArray({ control, name: 'values' })
 
+  // Nova medição já vem com os parâmetros da especificação — só falta o valor medido
+  const openCreate = () => {
+    reset({
+      notes: '',
+      values: specs.length
+        ? specs.map((sp) => ({
+            parameter: sp.parameter, value: '', unit: sp.unit,
+            lowerLimit: toRaw(sp.lowerLimit), upperLimit: toRaw(sp.upperLimit), fromSpec: true,
+          }))
+        : [emptyRow],
+    })
+    setCreateOpen(true)
+  }
+
   const createMutation = useMutation({
-    mutationFn: (data: FormData) => api.post(`/punch-sets/${selectedSetId}/dimension-records`, data),
-    onSuccess: () => {
+    mutationFn: (data: FormData) => {
+      const num = (v: string) => (v.trim() === '' ? undefined : Number(v.replace(',', '.')))
+      return api.post<{ occurrenceId: string | null }>(`/punch-sets/${selectedSetId}/dimension-records`, {
+        notes: data.notes,
+        values: data.values.map((v) => ({
+          parameter: v.parameter, unit: v.unit, value: num(v.value),
+          lowerLimit: num(v.lowerLimit), upperLimit: num(v.upperLimit),
+        })),
+      }).then((r) => r.data)
+    },
+    onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ['dimension-records', selectedSetId] })
+      qc.invalidateQueries({ queryKey: ['occurrences'] })
       setCreateOpen(false)
-      reset({ values: [{ parameter: '', value: 0, unit: 'mm' }] })
-      toast.success(t.dimensioning.created)
+      if (res.occurrenceId) toast.warning(d.nokOccurrenceOpened)
+      else toast.success(d.created)
     },
     onError: (e: { response?: { data?: { message?: string } } }) =>
-      toast.error(e.response?.data?.message ?? t.dimensioning.createError),
+      toast.error(e.response?.data?.message ?? d.createError),
   })
 
   const selectedSet = sets.find((s) => s.id === selectedSetId)
@@ -150,20 +321,20 @@ export function DimensioningPage() {
     <div className="p-4 sm:p-6 space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold tracking-tight">{t.dimensioning.title}</h2>
-          <p className="text-muted-foreground text-sm mt-0.5">{t.dimensioning.subtitle}</p>
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight">{d.title}</h2>
+          <p className="text-muted-foreground text-sm mt-0.5">{d.subtitle}</p>
         </div>
         {selectedSetId && (
-          <Button size="sm" onClick={() => setCreateOpen(true)}>
-            <Plus className="h-4 w-4" /> {t.dimensioning.newMeasurement}
+          <Button size="sm" onClick={openCreate}>
+            <Plus className="h-4 w-4" /> {d.newMeasurement}
           </Button>
         )}
       </div>
 
       <div className="space-y-1.5 max-w-sm">
-        <Label>{t.dimensioning.selectSet}</Label>
+        <Label>{d.selectSet}</Label>
         <Select value={selectedSetId} onValueChange={setSelectedSetId}>
-          <SelectTrigger><SelectValue placeholder={t.dimensioning.selectSetPlaceholder} /></SelectTrigger>
+          <SelectTrigger><SelectValue placeholder={d.selectSetPlaceholder} /></SelectTrigger>
           <SelectContent>
             {sets.map((s) => (
               <SelectItem key={s.id} value={s.id}>{s.code} — {s.name}</SelectItem>
@@ -174,10 +345,54 @@ export function DimensioningPage() {
 
       {selectedSet && (
         <div className="grid grid-cols-3 gap-3">
-          <Card><CardContent className="p-3"><p className="text-xs text-muted-foreground">{t.dimensioning.totalRecords}</p><p className="text-2xl font-bold">{records.length}</p></CardContent></Card>
-          <Card><CardContent className="p-3"><p className="text-xs text-muted-foreground">{t.dimensioning.deviationsFound}</p><p className={`text-2xl font-bold ${nokTotal > 0 ? 'text-red-500' : 'text-green-500'}`}>{nokTotal}</p></CardContent></Card>
-          <Card><CardContent className="p-3"><p className="text-xs text-muted-foreground">{t.dimensioning.usefulLife}</p><p className="text-2xl font-bold">{selectedSet.usefulValue.toFixed(0)}%</p></CardContent></Card>
+          <Card><CardContent className="p-3"><p className="text-xs text-muted-foreground">{d.totalRecords}</p><p className="text-2xl font-bold">{records.length}</p></CardContent></Card>
+          <Card><CardContent className="p-3"><p className="text-xs text-muted-foreground">{d.deviationsFound}</p><p className={`text-2xl font-bold ${nokTotal > 0 ? 'text-red-500' : 'text-green-500'}`}>{nokTotal}</p></CardContent></Card>
+          <Card><CardContent className="p-3"><p className="text-xs text-muted-foreground">{d.usefulLife}</p><p className="text-2xl font-bold">{selectedSet.usefulValue.toFixed(0)}%</p></CardContent></Card>
         </div>
+      )}
+
+      {selectedSet && (
+        <Card>
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-start justify-between gap-3 flex-wrap">
+              <div>
+                <p className="font-semibold text-sm">{d.specTitle}</p>
+                <p className="text-xs text-muted-foreground">{d.specSubtitle}</p>
+              </div>
+              {canManage && (
+                <Button size="sm" variant="outline" onClick={() => setSpecOpen(true)}>{d.specEdit}</Button>
+              )}
+            </div>
+            {specs.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{d.specEmpty}</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-xs text-muted-foreground border-b">
+                      <th className="text-left pb-2 font-medium">{d.parameter}</th>
+                      <th className="text-right pb-2 font-medium">{d.nominal}</th>
+                      <th className="text-right pb-2 font-medium">{d.lowerLimit}</th>
+                      <th className="text-right pb-2 font-medium">{d.upperLimit}</th>
+                      <th className="text-right pb-2 font-medium">{d.unit}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {specs.map((sp) => (
+                      <tr key={sp.id} className="border-b last:border-0">
+                        <td className="py-1">{sp.parameter}</td>
+                        <td className="text-right py-1 tabular-nums">{sp.nominal ?? '—'}</td>
+                        <td className="text-right py-1 tabular-nums">{sp.lowerLimit ?? '—'}</td>
+                        <td className="text-right py-1 tabular-nums">{sp.upperLimit ?? '—'}</td>
+                        <td className="text-right py-1 text-muted-foreground">{sp.unit}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       {selectedSetId ? (
@@ -185,9 +400,9 @@ export function DimensioningPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>{t.dimensioning.dateTime}</TableHead>
-                <TableHead>{t.dimensioning.result}</TableHead>
-                <TableHead>{t.dimensioning.parameters}</TableHead>
+                <TableHead>{d.dateTime}</TableHead>
+                <TableHead>{d.result}</TableHead>
+                <TableHead>{d.parameters}</TableHead>
                 <TableHead>{t.common.notes}</TableHead>
                 <TableHead className="w-8"></TableHead>
               </TableRow>
@@ -196,7 +411,7 @@ export function DimensioningPage() {
               {isLoading ? (
                 <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">{t.common.loading}</TableCell></TableRow>
               ) : records.length === 0 ? (
-                <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">{t.dimensioning.noRecords}</TableCell></TableRow>
+                <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">{d.noRecords}</TableCell></TableRow>
               ) : records.map((r) => <RecordRow key={r.id} record={r} t={t} />)}
             </TableBody>
           </Table>
@@ -204,15 +419,19 @@ export function DimensioningPage() {
       ) : (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
-            {t.dimensioning.selectSetToView}
+            {d.selectSetToView}
           </CardContent>
         </Card>
       )}
 
+      {selectedSetId && (
+        <SpecEditor open={specOpen} onOpenChange={setSpecOpen} setId={selectedSetId} data={specData} t={t} />
+      )}
+
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{t.dimensioning.newDimensionalMeasurement}</DialogTitle></DialogHeader>
-          <form onSubmit={handleSubmit((d) => createMutation.mutate(d))} className="space-y-4">
+          <DialogHeader><DialogTitle>{d.newDimensionalMeasurement}</DialogTitle></DialogHeader>
+          <form onSubmit={handleSubmit((data) => createMutation.mutate(data))} className="space-y-4">
             <div className="space-y-1.5">
               <Label>{t.common.notes}</Label>
               <Input placeholder={t.common.optional} {...register('notes')} />
@@ -220,50 +439,55 @@ export function DimensioningPage() {
 
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <Label>{t.dimensioning.measuredParameters}</Label>
-                <Button type="button" size="sm" variant="outline" onClick={() => append({ parameter: '', value: 0, unit: 'mm' })}>
+                <Label>{d.measuredParameters}</Label>
+                <Button type="button" size="sm" variant="outline" onClick={() => append(emptyRow)}>
                   <Plus className="h-3 w-3" /> {t.common.add}
                 </Button>
               </div>
+              {specs.length > 0 && <p className="text-xs text-muted-foreground">{d.fromSpec}</p>}
               {errors.values && <p className="text-xs text-destructive">{errors.values.message}</p>}
               <div className="space-y-2">
-                {fields.map((field, i) => (
-                  <div key={field.id} className="grid grid-cols-12 gap-2 items-end">
-                    <div className="col-span-4 space-y-1">
-                      {i === 0 && <Label className="text-xs">{t.dimensioning.parameter}</Label>}
-                      <Input placeholder="ex: comprimento_sup" {...register(`values.${i}.parameter`)} />
+                {fields.map((field, i) => {
+                  const locked = !!field.fromSpec
+                  const rowErr = errors.values?.[i]
+                  return (
+                    <div key={field.id} className="grid grid-cols-12 gap-2 items-end">
+                      <div className="col-span-3 space-y-1">
+                        {i === 0 && <Label className="text-xs">{d.parameter}</Label>}
+                        <Input placeholder="ex: altura_total" readOnly={locked} {...register(`values.${i}.parameter`)} />
+                      </div>
+                      <div className="col-span-2 space-y-1">
+                        {i === 0 && <Label className="text-xs">{d.value}</Label>}
+                        <Input inputMode="decimal" className={rowErr?.value ? 'border-destructive' : ''} {...register(`values.${i}.value`)} />
+                      </div>
+                      <div className="col-span-2 space-y-1">
+                        {i === 0 && <Label className="text-xs">{d.unit}</Label>}
+                        <Input placeholder="mm" readOnly={locked} {...register(`values.${i}.unit`)} />
+                      </div>
+                      <div className="col-span-2 space-y-1">
+                        {i === 0 && <Label className="text-xs">{d.lowerLimit}</Label>}
+                        <Input inputMode="decimal" placeholder="—" readOnly={locked} className={locked ? 'bg-muted' : ''} {...register(`values.${i}.lowerLimit`)} />
+                      </div>
+                      <div className="col-span-2 space-y-1">
+                        {i === 0 && <Label className="text-xs">{d.upperLimit}</Label>}
+                        <Input inputMode="decimal" placeholder="—" readOnly={locked} className={locked ? 'bg-muted' : ''} {...register(`values.${i}.upperLimit`)} />
+                      </div>
+                      <div className="col-span-1">
+                        {fields.length > 1 && (
+                          <Button type="button" variant="ghost" size="icon" className="text-destructive" onClick={() => remove(i)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
-                    <div className="col-span-2 space-y-1">
-                      {i === 0 && <Label className="text-xs">{t.dimensioning.value}</Label>}
-                      <Input type="number" step="0.001" {...register(`values.${i}.value`)} />
-                    </div>
-                    <div className="col-span-2 space-y-1">
-                      {i === 0 && <Label className="text-xs">{t.dimensioning.unit}</Label>}
-                      <Input placeholder="mm" {...register(`values.${i}.unit`)} />
-                    </div>
-                    <div className="col-span-2 space-y-1">
-                      {i === 0 && <Label className="text-xs">{t.dimensioning.lowerLimit}</Label>}
-                      <Input type="number" step="0.001" placeholder="—" {...register(`values.${i}.lowerLimit`)} />
-                    </div>
-                    <div className="col-span-1 space-y-1">
-                      {i === 0 && <Label className="text-xs">{t.dimensioning.upperLimit}</Label>}
-                      <Input type="number" step="0.001" placeholder="—" {...register(`values.${i}.upperLimit`)} />
-                    </div>
-                    <div className="col-span-1">
-                      {fields.length > 1 && (
-                        <Button type="button" variant="ghost" size="icon" className="text-destructive" onClick={() => remove(i)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
 
             <Button type="submit" className="w-full" disabled={createMutation.isPending}>
               {createMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-              {t.dimensioning.saveMeasurement}
+              {d.saveMeasurement}
             </Button>
           </form>
         </DialogContent>

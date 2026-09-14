@@ -112,6 +112,23 @@ export interface DimensionValue {
   isOk: boolean
 }
 
+export interface DimensionSpec {
+  id: string
+  setId: string
+  ordem: number
+  parameter: string
+  unit: string
+  nominal: number | null
+  lowerLimit: number | null
+  upperLimit: number | null
+}
+
+export interface DimensionSpecsResponse {
+  specs: DimensionSpec[]
+  /** Medidas nominais do cadastro de ferramental, para montar a especificação */
+  sugestoesFerramental: { parameter: string; unit: string; nominal: number }[]
+}
+
 export interface DimensionRecord {
   id: string
   setId: string
