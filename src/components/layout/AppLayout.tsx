@@ -267,7 +267,7 @@ export function AppLayout() {
             type="button"
             className="p-1.5 rounded-md text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
             onClick={() => setMobileOpen(false)}
-            aria-label="Fechar menu"
+            aria-label={t.ui.closeMenu}
           >
             <X className="h-5 w-5" />
           </button>
@@ -294,7 +294,7 @@ export function AppLayout() {
             type="button"
             className="p-2 rounded-md border border-border text-foreground hover:bg-muted"
             onClick={() => setMobileOpen(true)}
-            aria-label="Abrir menu"
+            aria-label={t.ui.openMenu}
           >
             <Menu className="h-4 w-4" />
           </button>

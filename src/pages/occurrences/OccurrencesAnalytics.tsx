@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { BarChart3 } from 'lucide-react'
+import { useLocale } from '@/hooks/useLocale'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts'
@@ -31,14 +32,6 @@ interface ProductData {
 }
 
 const OCC_TYPES: OccurrenceType[] = ['CAPPING', 'STICKING', 'TRAVAMENTO', 'QUEBRA', 'OXIDACAO', 'OUTROS']
-const OCC_LABELS: Record<OccurrenceType, string> = {
-  CAPPING: 'Capping',
-  STICKING: 'Sticking',
-  TRAVAMENTO: 'Travamento',
-  QUEBRA: 'Quebra',
-  OXIDACAO: 'Oxidação',
-  OUTROS: 'Outros',
-}
 
 // Cores distintas por tipo — a planilha tem uma aba de gráfico por ano; aqui a
 // evolução dos seis tipos cabe num gráfico só.
@@ -52,6 +45,9 @@ const OCC_COLORS: Record<OccurrenceType, string> = {
 }
 
 export function OccurrencesAnalytics() {
+  const { t } = useLocale()
+  const u = t.ui
+  const OCC_LABELS: Record<OccurrenceType, string> = t.production
   const { companyId: adminCompanyId } = useAdminCompany()
 
   const { data = [], isLoading } = useQuery<ProductData[]>({
@@ -59,23 +55,22 @@ export function OccurrencesAnalytics() {
     queryFn: () => api.get('/stats/occurrences-analytics', { params: { companyId: adminCompanyId } }).then(r => r.data),
   })
 
-  if (isLoading) return <p className="text-sm text-muted-foreground text-center py-12">Carregando...</p>
+  if (isLoading) return <p className="text-sm text-muted-foreground text-center py-12">{u.loading}</p>
 
   if (data.length === 0) return (
     <div className="text-center py-12">
       <BarChart3 className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-      <p className="text-sm font-medium text-muted-foreground">Nenhum dado de ocorrências registrado</p>
-      <p className="text-xs text-muted-foreground mt-1">Os dados aparecem após registrar lotes de produção com ocorrências</p>
+      <p className="text-sm font-medium text-muted-foreground">{u.noAnalytics}</p>
+      <p className="text-xs text-muted-foreground mt-1">{u.noAnalyticsDesc}</p>
     </div>
   )
 
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-1">Análise Histórica de Ocorrências</h3>
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-1">{u.analyticsTitle}</h3>
         <p className="text-xs text-muted-foreground">
-          Por produto e ano. A comparação entre anos usa a taxa mensal — o total dividido pelos meses de
-          produção — para que o ano em curso não pareça melhor só por estar incompleto.
+          {u.analyticsDesc}
         </p>
       </div>
 
@@ -90,7 +85,7 @@ export function OccurrencesAnalytics() {
                 {produto}
                 {produtoCodigo && <span className="ml-2 font-mono text-xs font-normal text-muted-foreground">{produtoCodigo}</span>}
               </CardTitle>
-              <p className="text-xs text-muted-foreground">{allYears.length} ano(s) · {totalGeral} ocorrência(s) total</p>
+              <p className="text-xs text-muted-foreground">{u.yearsSummary(allYears.length, totalGeral)}</p>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Contagem absoluta por ano */}
@@ -98,12 +93,12 @@ export function OccurrencesAnalytics() {
                 <table className="w-full text-xs min-w-[560px]">
                   <thead>
                     <tr className="border-b bg-muted/40">
-                      <th className="text-left px-3 py-2 font-medium">Ano</th>
-                      <th className="text-center px-2 py-2 font-medium">Meses</th>
+                      <th className="text-left px-3 py-2 font-medium">{u.year}</th>
+                      <th className="text-center px-2 py-2 font-medium">{u.months}</th>
                       {OCC_TYPES.map(t => (
                         <th key={t} className="text-center px-2 py-2 font-medium">{OCC_LABELS[t]}</th>
                       ))}
-                      <th className="text-center px-2 py-2 font-bold">Total</th>
+                      <th className="text-center px-2 py-2 font-bold">{u.total}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -120,7 +115,7 @@ export function OccurrencesAnalytics() {
                       </tr>
                     ))}
                     <tr className="bg-muted/30 font-semibold">
-                      <td className="px-3 py-2" colSpan={2}>TOTAL</td>
+                      <td className="px-3 py-2" colSpan={2}>{u.totalUpper}</td>
                       {OCC_TYPES.map(t => {
                         const sum = allYears.reduce((s, a) => s + a[t], 0)
                         return <td key={t} className="text-center px-2 py-2 tabular-nums">{sum > 0 ? sum : '—'}</td>
@@ -134,17 +129,17 @@ export function OccurrencesAnalytics() {
               {/* Taxa mensal e linha de base — o comparativo da planilha */}
               <div className="space-y-1.5">
                 <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  Taxa mensal por ano
+                  {u.monthlyRate}
                 </p>
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs min-w-[560px]">
                     <thead>
                       <tr className="border-b bg-muted/40">
-                        <th className="text-left px-3 py-2 font-medium">Ano</th>
+                        <th className="text-left px-3 py-2 font-medium">{u.year}</th>
                         {OCC_TYPES.map(t => (
                           <th key={t} className="text-center px-2 py-2 font-medium">{OCC_LABELS[t]}</th>
                         ))}
-                        <th className="text-center px-2 py-2 font-bold">Total</th>
+                        <th className="text-center px-2 py-2 font-bold">{u.total}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -167,7 +162,7 @@ export function OccurrencesAnalytics() {
                         </tr>
                       ))}
                       <tr className="bg-primary/5 font-semibold border-t">
-                        <td className="px-3 py-1.5">MEDIANA</td>
+                        <td className="px-3 py-1.5">{u.medianUpper}</td>
                         {OCC_TYPES.map(t => (
                           <td key={t} className="text-center px-2 py-1.5 tabular-nums">
                             {baseline[t] !== null ? baseline[t]!.toFixed(1) : '—'}
@@ -181,7 +176,7 @@ export function OccurrencesAnalytics() {
                   </table>
                 </div>
                 <p className="text-[10px] text-muted-foreground">
-                  Em vermelho, os anos acima da mediana histórica daquele tipo de ocorrência.
+                  {u.aboveMedian}
                 </p>
               </div>
 
@@ -189,7 +184,7 @@ export function OccurrencesAnalytics() {
               {allYears.length > 1 && (
                 <div className="space-y-1.5">
                   <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                    Evolução da taxa mensal
+                    {u.rateEvolution}
                   </p>
                   <ResponsiveContainer width="100%" height={240}>
                     <LineChart
@@ -204,7 +199,7 @@ export function OccurrencesAnalytics() {
                       <YAxis tick={{ fontSize: 11 }} />
                       <Tooltip
                         contentStyle={{ borderRadius: '8px', fontSize: '12px' }}
-                        formatter={(v, n) => [`${Number(v).toFixed(1)} / mês`, String(n)]}
+                        formatter={(v, n) => [`${Number(v).toFixed(1)} ${u.perMonth}`, String(n)]}
                       />
                       <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }} />
                       {OCC_TYPES.map(t => (

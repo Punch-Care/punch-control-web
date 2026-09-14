@@ -328,7 +328,7 @@ function MachineForm({
           {normaValue === 'OTHER' && (
             <Input
               className="mt-1.5"
-              placeholder="Digite a norma..."
+              placeholder={t.ui.typeStandard}
               {...register('normaCustom')}
               defaultValue={
                 defaultValues?.norma && !NORMAS.includes(defaultValues.norma as typeof NORMAS[number])

@@ -1,6 +1,7 @@
 import { isRouteErrorResponse, useNavigate, useRouteError } from 'react-router-dom'
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useLocale } from '@/hooks/useLocale'
 
 /**
  * Tela exibida quando uma página quebra ao renderizar. Sem ela, qualquer erro
@@ -9,6 +10,7 @@ import { Button } from '@/components/ui/button'
 export function RouteError() {
   const error = useRouteError()
   const navigate = useNavigate()
+  const u = useLocale().t.ui
 
   const detalhe = isRouteErrorResponse(error)
     ? `${error.status} ${error.statusText}`
@@ -25,18 +27,18 @@ export function RouteError() {
           <AlertTriangle className="h-6 w-6 text-destructive" />
         </div>
         <div className="space-y-1">
-          <h2 className="text-lg font-semibold">Algo deu errado nesta tela</h2>
+          <h2 className="text-lg font-semibold">{u.errorTitle}</h2>
           <p className="text-sm text-muted-foreground">
-            Recarregue a página. Se o problema continuar, avise o suporte informando o que estava fazendo.
+            {u.errorDesc}
           </p>
           {detalhe && <p className="text-xs text-muted-foreground font-mono break-words pt-1">{detalhe}</p>}
         </div>
         <div className="flex gap-2 justify-center">
           <Button size="sm" onClick={() => window.location.reload()}>
-            <RefreshCw className="h-4 w-4" /> Recarregar
+            <RefreshCw className="h-4 w-4" /> {u.reload}
           </Button>
           <Button size="sm" variant="outline" onClick={() => navigate('/dashboard')}>
-            <Home className="h-4 w-4" /> Início
+            <Home className="h-4 w-4" /> {u.home}
           </Button>
         </div>
       </div>

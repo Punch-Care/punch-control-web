@@ -201,7 +201,7 @@ export function OccurrencesPage() {
         </div>
         <div className="flex gap-2">
           <Button size="sm" variant={showAnalytics ? 'default' : 'outline'} onClick={() => setShowAnalytics(!showAnalytics)}>
-            <BarChart3 className="h-4 w-4" /> Análise Histórica
+            <BarChart3 className="h-4 w-4" /> {t.ui.historicalAnalysis}
           </Button>
           {!showAnalytics && (
             <Button size="sm" onClick={() => setCreateOpen(true)}>

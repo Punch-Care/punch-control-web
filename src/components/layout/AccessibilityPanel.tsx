@@ -131,6 +131,7 @@ export function AccessibilityPanel({ open, onOpenChange }: Props) {
 export function AccessibilityButton() {
   const [open, setOpen] = useState(false)
   const { libras } = useSettingsStore()
+  const { t } = useLocale()
 
   return (
     <>
@@ -140,10 +141,10 @@ export function AccessibilityButton() {
         size="sm"
         onClick={() => setOpen(true)}
         className="w-full justify-start text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-        aria-label="Acessibilidade"
+        aria-label={t.ui.accessibility}
       >
         <Accessibility className="h-4 w-4 mr-2 flex-shrink-0" />
-        Acessibilidade
+        {t.ui.accessibility}
       </Button>
       <AccessibilityPanel open={open} onOpenChange={setOpen} />
     </>

@@ -275,7 +275,7 @@ export function UsersPage() {
               {selectedCompany
                 ? selectedCompany.name
                 : me?.company?.name
-                  ?? (isAdminLevel ? 'Equipe interna Punch Care' : t.users.subtitle)}
+                  ?? (isAdminLevel ? t.ui.internalTeam : t.users.subtitle)}
             </p>
           </div>
         </div>
@@ -307,10 +307,10 @@ export function UsersPage() {
       {/* Cards de resumo */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Total', value: counts.total, color: 'text-foreground' },
-          { label: 'Ativos', value: counts.active, color: 'text-green-600' },
-          { label: 'Gestores', value: counts.admins, color: 'text-primary' },
-          { label: 'Clientes', value: counts.clients, color: 'text-muted-foreground' },
+          { label: t.ui.statTotal, value: counts.total, color: 'text-foreground' },
+          { label: t.ui.statActive, value: counts.active, color: 'text-green-600' },
+          { label: t.ui.statManagers, value: counts.admins, color: 'text-primary' },
+          { label: t.ui.statClients, value: counts.clients, color: 'text-muted-foreground' },
         ].map(s => (
           <Card key={s.label} className="border-0 shadow-sm">
             <CardContent className="p-3">

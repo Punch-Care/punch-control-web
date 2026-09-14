@@ -193,11 +193,12 @@ function QuickActions({ navigate, canEdit, lastBatches }: {
   canEdit: boolean
   lastBatches: ProductionBatch[]
 }) {
+  const u = useLocale().t.ui
   const actions = [
     {
       icon: FlaskConical,
-      label: 'Novo Lote de Produção',
-      desc: 'Registrar um novo lote CEP para acompanhamento',
+      label: u.qaNewLot,
+      desc: u.qaNewLotDesc,
       color: 'bg-primary text-primary-foreground',
       onClick: () => navigate('/production/new'),
       primary: true,
@@ -205,8 +206,8 @@ function QuickActions({ navigate, canEdit, lastBatches }: {
     },
     {
       icon: AlertTriangle,
-      label: 'Registrar Ocorrência',
-      desc: 'Abrir uma ocorrência em um jogo de punções',
+      label: u.qaOccurrence,
+      desc: u.qaOccurrenceDesc,
       color: 'bg-red-50 text-red-700 border border-red-200',
       onClick: () => navigate('/occurrences'),
       primary: false,
@@ -214,8 +215,8 @@ function QuickActions({ navigate, canEdit, lastBatches }: {
     },
     {
       icon: Ruler,
-      label: 'Novo Dimensionamento',
-      desc: 'Registrar medições dimensionais de um jogo',
+      label: u.qaDimension,
+      desc: u.qaDimensionDesc,
       color: 'bg-blue-50 text-blue-700 border border-blue-200',
       onClick: () => navigate('/dimensioning'),
       primary: false,
@@ -223,8 +224,8 @@ function QuickActions({ navigate, canEdit, lastBatches }: {
     },
     {
       icon: FileText,
-      label: 'Ver Relatórios',
-      desc: 'Exportar dados em CSV ou PDF',
+      label: u.qaReports,
+      desc: u.qaReportsDesc,
       color: 'bg-muted text-foreground border border-border',
       onClick: () => navigate('/reports'),
       primary: false,
@@ -235,7 +236,7 @@ function QuickActions({ navigate, canEdit, lastBatches }: {
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Ações rápidas</h3>
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">{u.quickActions}</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {actions.map(a => (
             <button
@@ -260,8 +261,8 @@ function QuickActions({ navigate, canEdit, lastBatches }: {
       {lastBatches.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Lotes recentes</h3>
-            <button onClick={() => navigate('/production')} className="text-xs text-primary hover:underline">Ver todos</button>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{u.recentLots}</h3>
+            <button onClick={() => navigate('/production')} className="text-xs text-primary hover:underline">{u.viewAll}</button>
           </div>
           <Card className="border-0 shadow-sm">
             <CardContent className="p-0">
@@ -280,7 +281,7 @@ function QuickActions({ navigate, canEdit, lastBatches }: {
                   </div>
                   <div className="text-right flex-shrink-0">
                     <Badge variant={b.status === 'COMPLETED' ? 'success' : 'secondary'} className="text-xs mb-0.5">
-                      {b.status === 'COMPLETED' ? 'Concluído' : 'Rascunho'}
+                      {b.status === 'COMPLETED' ? u.completed : u.draft}
                     </Badge>
                     <p className="text-xs text-muted-foreground">{format(parseDateOnly(b.dataProducao), 'dd/MM')}</p>
                   </div>
@@ -297,11 +298,11 @@ function QuickActions({ navigate, canEdit, lastBatches }: {
             <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
               <FlaskConical className="h-6 w-6 text-primary" />
             </div>
-            <p className="font-medium text-sm">Nenhum lote registrado ainda</p>
-            <p className="text-xs text-muted-foreground mt-1 mb-4">Crie o primeiro lote de produção para começar a usar o CEP</p>
+            <p className="font-medium text-sm">{u.noLotsYet}</p>
+            <p className="text-xs text-muted-foreground mt-1 mb-4">{u.noLotsYetDesc}</p>
             {canEdit && (
               <Button size="sm" onClick={() => navigate('/production/new')}>
-                <Plus className="h-3.5 w-3.5" /> Criar primeiro lote
+                <Plus className="h-3.5 w-3.5" /> {u.createFirstLot}
               </Button>
             )}
           </CardContent>
@@ -340,7 +341,7 @@ export function DashboardPage() {
   })
 
   const hour = new Date().getHours()
-  const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite'
+  const greeting = hour < 12 ? t.ui.goodMorning : hour < 18 ? t.ui.goodAfternoon : t.ui.goodEvening
 
   return (
     <div className="min-h-screen bg-muted/20">
@@ -351,7 +352,7 @@ export function DashboardPage() {
             {greeting}, {user?.name?.split(' ')[0]}
           </p>
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
-            {isAdmin && !selectedCompany ? 'Visão Geral — Punch Control' : (selectedCompany?.name ?? user?.company?.name ?? 'Dashboard')}
+            {isAdmin && !selectedCompany ? t.ui.overviewTitle : (selectedCompany?.name ?? user?.company?.name ?? 'Dashboard')}
           </h1>
           {!isAdmin && user?.company && (
             <p className="text-sm text-muted-foreground mt-0.5">{user.company.name}</p>
@@ -384,7 +385,7 @@ export function DashboardPage() {
               )}
             </div>
             <div className="border-t pt-6">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">Consolidado geral</p>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">{t.ui.consolidated}</p>
               <StatsSection d={d} TYPE_LABELS={TYPE_LABELS} />
             </div>
           </div>
