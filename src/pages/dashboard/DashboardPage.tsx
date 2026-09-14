@@ -166,7 +166,8 @@ function StatsSection({ companyId, d, TYPE_LABELS }: {
               {stats.upcomingCritical.map((u) => (
                 <Link
                   key={u.setId}
-                  to={`/lifecycle?setId=${u.setId}`}
+                  to={`/sets/${u.setId}?tab=rfq`}
+                  title={tt.replacement.openRfq}
                   className="text-xs rounded-full border border-orange-300 bg-background px-3 py-1 hover:border-orange-500"
                 >
                   <span className="font-mono">{u.setCode}</span> · {u.limit}% {f.upcomingItem(u.daysLeft, format(parseDateOnly(u.date), 'dd/MM'))}

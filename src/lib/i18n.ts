@@ -1351,6 +1351,13 @@ const translations = {
       companies: 'Buscar por nome, razão social, CNPJ ou cidade',
       firstUserHint: (botao: string) => `Clique em "${botao}" para adicionar o primeiro usuário`,
     },
+    replacement: {
+      openRfq: 'Abrir RFQ',
+      viewLifecycle: 'Ver ciclo de vida',
+      nextLimit: (label: string, dias: number, data: string) => `${label} em ${dias} dia(s) (${data}) no ritmo atual`,
+      limitReached: (label: string) => `${label} já atingido — hora de programar a reposição`,
+      noPace: 'Sem produção nos últimos 180 dias para prever os limites',
+    },
   },
   en: {
     nav: {
@@ -2702,6 +2709,13 @@ const translations = {
       companies: 'Search by name, legal name, tax ID or city',
       firstUserHint: (botao: string) => `Click "${botao}" to add the first user`,
     },
+    replacement: {
+      openRfq: 'Open RFQ',
+      viewLifecycle: 'View lifecycle',
+      nextLimit: (label: string, dias: number, data: string) => `${label} in ${dias} day(s) (${data}) at the current pace`,
+      limitReached: (label: string) => `${label} already reached — time to plan the replacement`,
+      noPace: 'No production in the last 180 days to forecast the limits',
+    },
   },
   es: {
     nav: {
@@ -4052,6 +4066,13 @@ const translations = {
       users: 'Buscar por nombre o correo',
       companies: 'Buscar por nombre, razón social, CNPJ o ciudad',
       firstUserHint: (botao: string) => `Haga clic en "${botao}" para agregar el primer usuario`,
+    },
+    replacement: {
+      openRfq: 'Abrir RFQ',
+      viewLifecycle: 'Ver ciclo de vida',
+      nextLimit: (label: string, dias: number, data: string) => `${label} en ${dias} día(s) (${data}) al ritmo actual`,
+      limitReached: (label: string) => `${label} ya alcanzado — es hora de programar la reposición`,
+      noPace: 'Sin producción en los últimos 180 días para prever los límites',
     },
   },
 }

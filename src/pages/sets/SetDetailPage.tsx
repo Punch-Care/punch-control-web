@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -7,7 +7,9 @@ import { ArrowLeft, Plus, Trash2, Loader2, Link2, Unlink, FlaskConical, AlertTri
 import { toast } from 'sonner'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
+import { format } from 'date-fns'
 import { api } from '@/lib/api'
+import { parseDateOnly } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -24,7 +26,7 @@ import { Breadcrumb } from '@/components/ui/breadcrumb'
 import { JogoSection } from './JogoSection'
 import { RfqSection } from './RfqSection'
 import { LimitsEditor, UsefulValueBar, limitsToPayload, validateLimits, type LimitDraft } from './LimitsEditor'
-import type { PunchSet, Punch, Product, SetStatus } from '@/types'
+import type { PunchSet, Punch, Product, SetStatus, LifecycleData } from '@/types'
 
 /** ISO → valor de <input type="date"> */
 const toDateInput = (iso: string | null | undefined) => (iso ? iso.slice(0, 10) : '')
@@ -38,6 +40,36 @@ const STATUS_VARIANTS: Record<SetStatus, 'success' | 'warning' | 'secondary' | '
   DISCARDED: 'destructive',
 }
 
+/** Próximo limite de vida útil previsto e atalho para o RFQ de reposição */
+function ReplacementHint({ setId, onOpenRfq }: { setId: string; onOpenRfq: () => void }) {
+  const { t } = useLocale()
+  const r = t.replacement
+  const { data } = useQuery<LifecycleData>({
+    queryKey: ['lifecycle', setId],
+    queryFn: () => api.get(`/punch-sets/${setId}/lifecycle`).then(res => res.data),
+  })
+  if (!data) return null
+  const f = data.forecast
+  const atingido = f?.limits.filter(l => l.reached).at(-1)
+  const proximo = f?.limits.find(l => !l.reached && l.daysLeft !== null)
+  const rotulo = (l: { label: string | null; percentual: number }) => l.label ?? `${l.percentual}%`
+  const texto = !f ? r.noPace
+    : atingido ? r.limitReached(rotulo(atingido))
+    : proximo?.date ? r.nextLimit(rotulo(proximo), proximo.daysLeft ?? 0, format(parseDateOnly(proximo.date), 'dd/MM/yyyy'))
+    : null
+  if (!texto) return null
+  const urgente = !!atingido || (proximo?.daysLeft ?? 999) <= 60
+  return (
+    <div className={`mt-3 flex items-center justify-between gap-3 flex-wrap rounded-lg px-3 py-2 text-xs ${urgente ? 'bg-orange-50 text-orange-800' : 'bg-muted/50 text-muted-foreground'}`}>
+      <span>{texto}</span>
+      <div className="flex gap-2">
+        <Link to={`/lifecycle?setId=${setId}`} className="underline hover:no-underline">{r.viewLifecycle}</Link>
+        {urgente && <button type="button" onClick={onOpenRfq} className="font-medium underline hover:no-underline">{r.openRfq}</button>}
+      </div>
+    </div>
+  )
+}
+
 export function SetDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -49,7 +81,12 @@ export function SetDetailPage() {
   const [addOpen, setAddOpen] = useState(false)
   const [linkOpen, setLinkOpen] = useState(false)
   const [selectedProductId, setSelectedProductId] = useState('')
-  const [tab, setTab] = useState<'overview' | 'rfq' | 'anexos'>('overview')
+  // ?tab=rfq abre direto na aba (usado pelos alertas de reposição)
+  const [searchParams] = useSearchParams()
+  const [tab, setTab] = useState<'overview' | 'rfq' | 'anexos'>(() => {
+    const inicial = searchParams.get('tab')
+    return inicial === 'rfq' || inicial === 'anexos' ? inicial : 'overview'
+  })
   const [basicsDraft, setBasicsDraft] = useState<Partial<{
     code: string; name: string; status: SetStatus; notes: string
     fabricante: string; dataFabricacao: string; dataAquisicao: string
@@ -349,6 +386,7 @@ export function SetDetailPage() {
       <Card className="border-0 shadow-sm">
         <CardContent className="p-4">
           <UsefulValueBar value={set.usefulValue ?? 100} limits={set.limits ?? []} detailed />
+          <ReplacementHint setId={set.id} onOpenRfq={() => setTab('rfq')} />
         </CardContent>
       </Card>
 
