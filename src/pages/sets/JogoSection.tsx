@@ -1,7 +1,7 @@
-import { useState } from 'react'
-import { Layers, Loader2, Save, Image, FileText, Upload } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Layers, Loader2, Save, Image, FileText, Upload, X } from 'lucide-react'
 import { toast } from 'sonner'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { api } from '@/lib/api'
 import { Button } from '@/components/ui/button'
@@ -34,6 +34,28 @@ function toDateInput(iso: string | null): string {
 function fromDateInput(v: string): string | null {
   if (!v) return null
   return new Date(`${v}T00:00:00.000Z`).toISOString()
+}
+
+const URL_FIELDS = [
+  'fotoSuperiorUrl', 'fotoFrontalUrl', 'fotoLateralUrl',
+  'desenhoPuncaoUrl', 'desenhoPontaUrl', 'desenhoMatrizUrl', 'desenhoGravacaoUrl',
+] as const
+
+type AttachmentMeta = { id: string; field: string; originalName: string; mimeType: string; size: number }
+
+/** Miniatura de imagem anexada — o arquivo exige login, então vem como blob */
+function AttachmentThumb({ id }: { id: string }) {
+  const [src, setSrc] = useState<string | null>(null)
+  useEffect(() => {
+    let url: string | null = null
+    api.get(`/attachments/${id}`, { responseType: 'blob' })
+      .then(r => { url = URL.createObjectURL(r.data); setSrc(url) })
+      .catch(() => setSrc(null))
+    return () => { if (url) URL.revokeObjectURL(url) }
+  }, [id])
+  return src
+    ? <img src={src} alt="" className="h-8 w-8 rounded object-cover border flex-shrink-0" />
+    : <div className="h-8 w-8 rounded bg-muted flex-shrink-0" />
 }
 
 type JogoDraft = {
@@ -69,13 +91,60 @@ export function JogoSection({ set, canEdit }: { set: PunchSet; canEdit: boolean 
 
   const upd = (field: keyof JogoDraft, v: string) => setDraft(p => ({ ...p, [field]: v }))
 
-  // ⚠️ MOCK de upload — substituir por integração AWS S3 no futuro.
-  // No fluxo real: enviar o File para a API (ex: POST /uploads → S3), receber a URL
-  // pública/assinada e gravar essa URL no campo correspondente.
-  const mockUpload = (field: keyof JogoDraft, file: File) => {
-    const fakeUrl = `mock://aws-s3/${set.id}/${encodeURIComponent(file.name)}`
-    upd(field, fakeUrl)
-    toast.info(j.uploadMock)
+  const { data: anexos = [] } = useQuery<AttachmentMeta[]>({
+    queryKey: ['set-attachments', set.id],
+    queryFn: () => api.get(`/punch-sets/${set.id}/attachments`).then(r => r.data),
+  })
+  const [enviando, setEnviando] = useState<keyof JogoDraft | null>(null)
+
+  // Envia o arquivo e já grava o anexo no jogo — não depende de clicar em Salvar
+  const enviarArquivo = async (field: keyof JogoDraft, file: File) => {
+    if (file.size > 10 * 1024 * 1024) { toast.error(j.fileLimits); return }
+    setEnviando(field)
+    try {
+      const fd = new FormData()
+      fd.append('field', field)
+      fd.append('file', file)
+      const { data } = await api.post<{ url: string }>(`/punch-sets/${set.id}/attachments`, fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      await api.put(`/punch-sets/${set.id}`, { [field]: data.url })
+      upd(field, data.url)
+      qc.invalidateQueries({ queryKey: ['set-attachments', set.id] })
+      qc.invalidateQueries({ queryKey: ['punch-set', set.id] })
+      toast.success(j.uploaded)
+    } catch (e) {
+      toast.error((e as { response?: { data?: { message?: string } } }).response?.data?.message ?? j.uploadError)
+    } finally {
+      setEnviando(null)
+    }
+  }
+
+  const removerArquivo = async (field: keyof JogoDraft) => {
+    try {
+      await api.put(`/punch-sets/${set.id}`, { [field]: null })
+      upd(field, '')
+      qc.invalidateQueries({ queryKey: ['set-attachments', set.id] })
+      qc.invalidateQueries({ queryKey: ['punch-set', set.id] })
+      toast.success(j.fileRemoved)
+    } catch (e) {
+      toast.error((e as { response?: { data?: { message?: string } } }).response?.data?.message ?? j.saveError)
+    }
+  }
+
+  // O arquivo exige login: baixa com o token e abre a cópia local numa aba nova
+  const abrirArquivo = async (id: string) => {
+    const aba = window.open('', '_blank')
+    try {
+      const { data, headers } = await api.get(`/attachments/${id}`, { responseType: 'blob' })
+      const url = URL.createObjectURL(new Blob([data], { type: String(headers['content-type'] ?? '') }))
+      if (aba) aba.location.href = url
+      else window.open(url, '_blank')
+      setTimeout(() => URL.revokeObjectURL(url), 60_000)
+    } catch {
+      aba?.close()
+      toast.error(j.openError)
+    }
   }
 
   const saveMutation = useMutation({
@@ -84,13 +153,7 @@ export function JogoSection({ set, canEdit }: { set: PunchSet; canEdit: boolean 
         statusJogo: draft.statusJogo,
         dataUltimaLimpeza: fromDateInput(draft.dataUltimaLimpeza),
         dataUltimoPolimento: fromDateInput(draft.dataUltimoPolimento),
-        fotoSuperiorUrl: draft.fotoSuperiorUrl || null,
-        fotoFrontalUrl: draft.fotoFrontalUrl || null,
-        fotoLateralUrl: draft.fotoLateralUrl || null,
-        desenhoPuncaoUrl: draft.desenhoPuncaoUrl || null,
-        desenhoPontaUrl: draft.desenhoPontaUrl || null,
-        desenhoMatrizUrl: draft.desenhoMatrizUrl || null,
-        desenhoGravacaoUrl: draft.desenhoGravacaoUrl || null,
+        ...Object.fromEntries(URL_FIELDS.map(f => [f, draft[f] && !draft[f].startsWith('mock://') ? draft[f] : null])),
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['punch-set', set.id] })
@@ -102,39 +165,54 @@ export function JogoSection({ set, canEdit }: { set: PunchSet; canEdit: boolean 
 
   const urlField = (label: string, field: keyof JogoDraft, icon: React.ReactNode) => {
     const val = draft[field]
-    const isMock = val.startsWith('mock://')
+    const isLegacyMock = val.startsWith('mock://')
+    const attachmentId = val.startsWith('attachment://') ? val.slice('attachment://'.length) : null
+    const meta = attachmentId ? anexos.find(a => a.id === attachmentId) : undefined
     return (
       <div className="space-y-1">
         <Label className="text-xs flex items-center gap-1.5">{icon}{label}</Label>
-        <div className="flex gap-1.5">
-          <Input
-            className="h-8 text-xs"
-            placeholder="https://..."
-            value={val}
-            onChange={e => upd(field, e.target.value)}
-            disabled={!canEdit}
-          />
-          {/* MOCK: botão de upload — futura integração AWS S3 */}
-          {canEdit && (
-            <label className="inline-flex">
-              <input
-                type="file"
-                accept="image/*,application/pdf"
-                className="hidden"
-                onChange={e => { const f = e.target.files?.[0]; if (f) mockUpload(field, f); e.target.value = '' }}
-              />
-              <span className="inline-flex items-center justify-center h-8 px-2 rounded-md border text-xs cursor-pointer hover:bg-muted" title={j.uploadMock}>
-                <Upload className="h-3.5 w-3.5" />
-              </span>
-            </label>
-          )}
-          {val && !isMock && (
-            <a href={val} target="_blank" rel="noreferrer">
-              <Button type="button" variant="outline" size="sm" className="h-8">{j.open}</Button>
-            </a>
-          )}
-        </div>
-        {isMock && <p className="text-[10px] text-amber-600">{j.uploadMockBadge}</p>}
+        {attachmentId ? (
+          <div className="flex items-center gap-2 rounded-md border px-2 py-1.5">
+            {meta?.mimeType.startsWith('image/') && <AttachmentThumb id={attachmentId} />}
+            <span className="text-xs truncate flex-1" title={meta?.originalName}>{meta?.originalName ?? '…'}</span>
+            <Button type="button" variant="outline" size="sm" className="h-7" onClick={() => abrirArquivo(attachmentId)}>{j.open}</Button>
+            {canEdit && (
+              <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive" title={j.removeFile} onClick={() => removerArquivo(field)}>
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className="flex gap-1.5">
+            <Input
+              className="h-8 text-xs"
+              placeholder="https://..."
+              value={isLegacyMock ? '' : val}
+              onChange={e => upd(field, e.target.value)}
+              disabled={!canEdit}
+            />
+            {canEdit && (
+              <label className="inline-flex" title={`${j.upload} · ${j.fileLimits}`}>
+                <input
+                  type="file"
+                  accept="image/*,application/pdf,.dwg,.dxf"
+                  className="hidden"
+                  disabled={enviando !== null}
+                  onChange={e => { const f = e.target.files?.[0]; if (f) enviarArquivo(field, f); e.target.value = '' }}
+                />
+                <span className="inline-flex items-center justify-center h-8 px-2 rounded-md border text-xs cursor-pointer hover:bg-muted">
+                  {enviando === field ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                </span>
+              </label>
+            )}
+            {val && !isLegacyMock && (
+              <a href={val} target="_blank" rel="noreferrer">
+                <Button type="button" variant="outline" size="sm" className="h-8">{j.open}</Button>
+              </a>
+            )}
+          </div>
+        )}
+        {isLegacyMock && <p className="text-[10px] text-amber-600">{j.legacyMock}</p>}
       </div>
     )
   }
