@@ -16,48 +16,53 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import { useAuth } from '@/hooks/useAuth'
+import { useLocale } from '@/hooks/useLocale'
+import type { Translations } from '@/lib/i18n'
 import { useAdminCompany } from '@/hooks/useAdminCompany'
 
 const DISMISS_KEY = 'punch-onboarding-dismissed'
 
 // ── Schemas ────────────────────────────────────────────────────────────────────
 
-const productSchema = z.object({
-  name: z.string().min(2, 'Nome deve ter ao menos 2 caracteres'),
+type W = Translations['onboarding']
+
+const productSchema = (w: W) => z.object({
+  name: z.string().min(2, w.nameMin),
   code: z.string().optional(),
 })
 
-const machineSchema = z.object({
-  name: z.string().min(2, 'Nome deve ter ao menos 2 caracteres'),
+const machineSchema = (w: W) => z.object({
+  name: z.string().min(2, w.nameMin),
   fabricante: z.string().optional(),
   modelo: z.string().optional(),
   code: z.string().optional(),
 })
 
-const punchSetSchema = z.object({
-  code: z.string().min(1, 'Código é obrigatório'),
-  name: z.string().min(2, 'Nome deve ter ao menos 2 caracteres'),
+const punchSetSchema = (w: W) => z.object({
+  code: z.string().min(1, w.codeRequired),
+  name: z.string().min(2, w.nameMin),
 })
 
-type ProductFormData = z.infer<typeof productSchema>
-type MachineFormData = z.infer<typeof machineSchema>
-type PunchSetFormData = z.infer<typeof punchSetSchema>
+type ProductFormData = z.infer<ReturnType<typeof productSchema>>
+type MachineFormData = z.infer<ReturnType<typeof machineSchema>>
+type PunchSetFormData = z.infer<ReturnType<typeof punchSetSchema>>
 
 // ── Inline forms ───────────────────────────────────────────────────────────────
 
 function ProductStepForm({ companyId, onSuccess }: { companyId: string; onSuccess: () => void }) {
   const qc = useQueryClient()
-  const form = useForm<ProductFormData>({ resolver: zodResolver(productSchema) })
+  const w = useLocale().t.onboarding
+  const form = useForm<ProductFormData>({ resolver: zodResolver(productSchema(w)) })
 
   const mutation = useMutation({
     mutationFn: (data: ProductFormData) => api.post('/products', { ...data, companyId }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['products'] })
-      toast.success('Produto cadastrado com sucesso!')
+      toast.success(w.productCreated)
       form.reset()
       onSuccess()
     },
-    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? 'Erro ao cadastrar produto. Tente novamente.'),
+    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? w.productError),
   })
 
   return (
@@ -67,9 +72,9 @@ function ProductStepForm({ companyId, onSuccess }: { companyId: string; onSucces
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="space-y-1">
-          <Label className="text-xs font-medium">Nome do produto *</Label>
+          <Label className="text-xs font-medium">{w.productName}</Label>
           <Input
-            placeholder="ex: Paracetamol 500mg"
+            placeholder={w.productNamePh}
             className="h-8 text-sm"
             {...form.register('name')}
           />
@@ -79,7 +84,7 @@ function ProductStepForm({ companyId, onSuccess }: { companyId: string; onSucces
         </div>
         <div className="space-y-1">
           <Label className="text-xs font-medium">
-            Código <span className="text-muted-foreground font-normal">(opcional)</span>
+            {w.code} <span className="text-muted-foreground font-normal">{w.optional}</span>
           </Label>
           <Input
             placeholder="ex: PCT-500"
@@ -91,7 +96,7 @@ function ProductStepForm({ companyId, onSuccess }: { companyId: string; onSucces
       <div className="flex justify-end pt-1">
         <Button type="submit" size="sm" disabled={mutation.isPending}>
           {mutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-          Cadastrar produto
+          {w.createProduct}
         </Button>
       </div>
     </form>
@@ -100,17 +105,18 @@ function ProductStepForm({ companyId, onSuccess }: { companyId: string; onSucces
 
 function MachineStepForm({ companyId, onSuccess }: { companyId: string; onSuccess: () => void }) {
   const qc = useQueryClient()
-  const form = useForm<MachineFormData>({ resolver: zodResolver(machineSchema) })
+  const w = useLocale().t.onboarding
+  const form = useForm<MachineFormData>({ resolver: zodResolver(machineSchema(w)) })
 
   const mutation = useMutation({
     mutationFn: (data: MachineFormData) => api.post('/occurrences/machines', { ...data, companyId }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['machines'] })
-      toast.success('Máquina cadastrada com sucesso!')
+      toast.success(w.machineCreated)
       form.reset()
       onSuccess()
     },
-    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? 'Erro ao cadastrar máquina. Tente novamente.'),
+    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? w.machineError),
   })
 
   return (
@@ -120,9 +126,9 @@ function MachineStepForm({ companyId, onSuccess }: { companyId: string; onSucces
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="space-y-1">
-          <Label className="text-xs font-medium">Nome da máquina *</Label>
+          <Label className="text-xs font-medium">{w.machineName}</Label>
           <Input
-            placeholder="ex: Compressora 01"
+            placeholder={w.machineNamePh}
             className="h-8 text-sm"
             {...form.register('name')}
           />
@@ -131,7 +137,7 @@ function MachineStepForm({ companyId, onSuccess }: { companyId: string; onSucces
           )}
         </div>
         <div className="space-y-1">
-          <Label className="text-xs font-medium">Fabricante</Label>
+          <Label className="text-xs font-medium">{w.manufacturer}</Label>
           <Input
             placeholder="ex: Fette"
             className="h-8 text-sm"
@@ -139,7 +145,7 @@ function MachineStepForm({ companyId, onSuccess }: { companyId: string; onSucces
           />
         </div>
         <div className="space-y-1">
-          <Label className="text-xs font-medium">Modelo</Label>
+          <Label className="text-xs font-medium">{w.model}</Label>
           <Input
             placeholder="ex: 1200i"
             className="h-8 text-sm"
@@ -148,7 +154,7 @@ function MachineStepForm({ companyId, onSuccess }: { companyId: string; onSucces
         </div>
         <div className="space-y-1">
           <Label className="text-xs font-medium">
-            Código <span className="text-muted-foreground font-normal">(opcional)</span>
+            {w.code} <span className="text-muted-foreground font-normal">{w.optional}</span>
           </Label>
           <Input
             placeholder="ex: FETTE-01"
@@ -160,7 +166,7 @@ function MachineStepForm({ companyId, onSuccess }: { companyId: string; onSucces
       <div className="flex justify-end pt-1">
         <Button type="submit" size="sm" disabled={mutation.isPending}>
           {mutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-          Cadastrar máquina
+          {w.createMachine}
         </Button>
       </div>
     </form>
@@ -169,17 +175,18 @@ function MachineStepForm({ companyId, onSuccess }: { companyId: string; onSucces
 
 function PunchSetStepForm({ companyId, onSuccess }: { companyId: string; onSuccess: () => void }) {
   const qc = useQueryClient()
-  const form = useForm<PunchSetFormData>({ resolver: zodResolver(punchSetSchema) })
+  const w = useLocale().t.onboarding
+  const form = useForm<PunchSetFormData>({ resolver: zodResolver(punchSetSchema(w)) })
 
   const mutation = useMutation({
     mutationFn: (data: PunchSetFormData) => api.post('/punch-sets', { ...data, companyId }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['punch-sets'] })
-      toast.success('Jogo cadastrado com sucesso!')
+      toast.success(w.setCreated)
       form.reset()
       onSuccess()
     },
-    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? 'Erro ao cadastrar jogo. Tente novamente.'),
+    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? w.setError),
   })
 
   return (
@@ -189,7 +196,7 @@ function PunchSetStepForm({ companyId, onSuccess }: { companyId: string; onSucce
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="space-y-1">
-          <Label className="text-xs font-medium">Código do jogo *</Label>
+          <Label className="text-xs font-medium">{w.setCode}</Label>
           <Input
             placeholder="ex: PC-001"
             className="h-8 text-sm"
@@ -200,9 +207,9 @@ function PunchSetStepForm({ companyId, onSuccess }: { companyId: string; onSucce
           )}
         </div>
         <div className="space-y-1">
-          <Label className="text-xs font-medium">Nome *</Label>
+          <Label className="text-xs font-medium">{w.name}</Label>
           <Input
-            placeholder="ex: Punção Redonda 8mm"
+            placeholder={w.setNamePh}
             className="h-8 text-sm"
             {...form.register('name')}
           />
@@ -214,7 +221,7 @@ function PunchSetStepForm({ companyId, onSuccess }: { companyId: string; onSucce
       <div className="flex justify-end pt-1">
         <Button type="submit" size="sm" disabled={mutation.isPending}>
           {mutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-          Cadastrar jogo
+          {w.createSet}
         </Button>
       </div>
     </form>
@@ -222,22 +229,21 @@ function PunchSetStepForm({ companyId, onSuccess }: { companyId: string; onSucce
 }
 
 function ConfigStepContent({ navigate }: { navigate: ReturnType<typeof useNavigate> }) {
+  const w = useLocale().t.onboarding
   return (
     <div className="pt-2 pb-1 space-y-3">
       <p className="text-xs text-muted-foreground">
-        Configure os parâmetros fixos de processo para cada combinação de{' '}
-        <strong>Produto + Máquina</strong>. Isso define os limites usados no controle estatístico
-        (CEP) durante a produção.
+        {w.configIntro}
       </p>
       <div className="bg-muted/50 rounded-lg p-3 text-xs text-muted-foreground space-y-1">
-        <p className="font-medium text-foreground">O que você vai definir:</p>
-        <p>• Parâmetros de setup (pressão, velocidade, peso médio...)</p>
-        <p>• Valores mínimo, máximo e sugerido de cada parâmetro</p>
-        <p>• Medições horárias do turno de produção</p>
+        <p className="font-medium text-foreground">{w.whatYouDefine}</p>
+        <p>{w.define1}</p>
+        <p>{w.define2}</p>
+        <p>{w.define3}</p>
       </div>
       <div className="flex justify-end pt-1">
         <Button size="sm" onClick={() => navigate('/production?tab=configs')}>
-          Ir para Configurações <ArrowRight className="h-3.5 w-3.5" />
+          {w.goToConfigs} <ArrowRight className="h-3.5 w-3.5" />
         </Button>
       </div>
     </div>
@@ -339,6 +345,7 @@ function StepItem({
 
 export function OnboardingWizard() {
   const { user } = useAuth()
+  const w = useLocale().t.onboarding
   const { companyId } = useAdminCompany()
   const navigate = useNavigate()
 
@@ -379,10 +386,10 @@ export function OnboardingWizard() {
   if (!isCompanyUser || dismissed || !companyId) return null
 
   const steps = [
-    { done: products.length > 0, doneDetail: products[0]?.name ?? `${products.length} produto(s)` },
-    { done: machines.length > 0, doneDetail: machines[0]?.name ?? `${machines.length} máquina(s)` },
-    { done: sets.length > 0, doneDetail: sets[0] ? `${sets[0].code} — ${sets[0].name}` : `${sets.length} jogo(s)` },
-    { done: configs.length > 0, doneDetail: `${configs.length} configuração(ões) criada(s)` },
+    { done: products.length > 0, doneDetail: products[0]?.name ?? w.productsCount(products.length) },
+    { done: machines.length > 0, doneDetail: machines[0]?.name ?? w.machinesCount(machines.length) },
+    { done: sets.length > 0, doneDetail: sets[0] ? `${sets[0].code} — ${sets[0].name}` : w.setsCount(sets.length) },
+    { done: configs.length > 0, doneDetail: w.configsCount(configs.length) },
   ]
 
   const completedCount = steps.filter(s => s.done).length
@@ -417,9 +424,9 @@ export function OnboardingWizard() {
               <Sparkles className="h-4 w-4 text-primary" />
             </div>
             <div>
-              <h3 className="text-sm font-semibold leading-tight">Configure seu ambiente</h3>
+              <h3 className="text-sm font-semibold leading-tight">{w.title}</h3>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {completedCount} de 4 etapas concluídas
+                {w.progress(completedCount)}
               </p>
             </div>
           </div>
@@ -427,7 +434,7 @@ export function OnboardingWizard() {
             type="button"
             onClick={dismiss}
             className="text-muted-foreground hover:text-foreground transition-colors flex-shrink-0 mt-0.5"
-            title="Ocultar guia de configuração"
+            title={w.hide}
           >
             <X className="h-4 w-4" />
           </button>
@@ -450,8 +457,8 @@ export function OnboardingWizard() {
           <StepItem
             index={0}
             icon={Package}
-            label="Cadastrar produto"
-            hint="O comprimido ou cápsula que será fabricado"
+            label={w.stepProduct}
+            hint={w.stepProductHint}
             isDone={steps[0].done}
             doneDetail={steps[0].doneDetail}
             isExpanded={activeStep === 0}
@@ -463,8 +470,8 @@ export function OnboardingWizard() {
           <StepItem
             index={1}
             icon={Cpu}
-            label="Cadastrar máquina"
-            hint="A compressora onde os comprimidos são fabricados"
+            label={w.stepMachine}
+            hint={w.stepMachineHint}
             isDone={steps[1].done}
             doneDetail={steps[1].doneDetail}
             isExpanded={activeStep === 1}
@@ -476,8 +483,8 @@ export function OnboardingWizard() {
           <StepItem
             index={2}
             icon={Layers3}
-            label="Cadastrar jogo de punções"
-            hint="O ferramental utilizado na compressão dos comprimidos"
+            label={w.stepSet}
+            hint={w.stepSetHint}
             isDone={steps[2].done}
             doneDetail={steps[2].doneDetail}
             isExpanded={activeStep === 2}
@@ -489,8 +496,8 @@ export function OnboardingWizard() {
           <StepItem
             index={3}
             icon={SlidersHorizontal}
-            label="Configurar processo (CEP)"
-            hint="Parâmetros de controle para Produto + Máquina"
+            label={w.stepConfig}
+            hint={w.stepConfigHint}
             isDone={steps[3].done}
             doneDetail={steps[3].doneDetail}
             isExpanded={activeStep === 3}
@@ -502,7 +509,7 @@ export function OnboardingWizard() {
 
         {/* Footer hint */}
         <p className="text-xs text-muted-foreground mt-3 text-center">
-          Você pode fechar este guia e retomá-lo a qualquer momento pelo Dashboard.
+          {w.footer}
         </p>
       </CardContent>
     </Card>
