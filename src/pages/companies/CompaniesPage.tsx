@@ -55,8 +55,11 @@ export function CompaniesPage() {
   })
 
   const toggleMutation = useMutation({
-    mutationFn: (id: string) => api.patch(`/companies/${id}/toggle`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['companies'] }),
+    mutationFn: (id: string) => api.patch<{ active: boolean }>(`/companies/${id}/toggle`).then((r) => r.data),
+    onSuccess: (c) => {
+      qc.invalidateQueries({ queryKey: ['companies'] })
+      toast.success(c.active ? t.companies.activated : t.companies.deactivated)
+    },
     onError: () => toast.error(t.companies.toggleError),
   })
 
@@ -125,7 +128,12 @@ export function CompaniesPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => toggleMutation.mutate(c.id)}
+                      title={c.active ? t.companies.deactivate : t.companies.activate}
+                      onClick={() => {
+                        // Desativar tira o acesso de todos os usuários da empresa
+                        if (c.active && !confirm(t.companies.deactivateConfirm(c.name))) return
+                        toggleMutation.mutate(c.id)
+                      }}
                       className={c.active ? 'text-destructive' : 'text-green-600'}
                     >
                       <Power className="h-4 w-4" />
