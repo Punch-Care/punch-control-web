@@ -135,6 +135,7 @@ const translations = {
       passwordChanged: 'Senha alterada com sucesso',
       changePasswordError: 'Erro ao alterar senha',
       passwordMinLength: 'Senha deve ter no mínimo 6 caracteres',
+      newPasswordRules: 'A nova senha precisa ter ao menos 8 caracteres, com letras e números',
     },
     sets: {
       title: 'Jogo de Punções',
@@ -1449,6 +1450,7 @@ const translations = {
       passwordChanged: 'Password changed successfully',
       changePasswordError: 'Error changing password',
       passwordMinLength: 'Password must be at least 6 characters',
+      newPasswordRules: 'The new password needs at least 8 characters, with letters and numbers',
     },
     sets: {
       title: 'Tool Set',
@@ -2763,6 +2765,7 @@ const translations = {
       passwordChanged: 'Contraseña cambiada con éxito',
       changePasswordError: 'Error al cambiar la contraseña',
       passwordMinLength: 'La contraseña debe tener al menos 6 caracteres',
+      newPasswordRules: 'La nueva contraseña necesita al menos 8 caracteres, con letras y números',
     },
     sets: {
       title: 'Juego de Punzones',

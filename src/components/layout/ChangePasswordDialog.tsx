@@ -32,7 +32,8 @@ export function ChangePasswordDialog({
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
-    if (next.length < 6) { setError(a.passwordMinLength); return }
+    // Mesma regra do servidor: 8+ caracteres com letras e números
+    if (next.length < 8 || !/[a-zA-Z]/.test(next) || !/\d/.test(next)) { setError(a.newPasswordRules); return }
     if (next !== confirm) { setError(a.passwordsDontMatch); return }
     setLoading(true)
     try {
@@ -66,6 +67,7 @@ export function ChangePasswordDialog({
           <div className="space-y-1.5">
             <Label>{a.newPassword}</Label>
             <Input type="password" value={next} onChange={(e) => setNext(e.target.value)} autoComplete="new-password" />
+            <p className="text-xs text-muted-foreground">{a.newPasswordRules}</p>
           </div>
           <div className="space-y-1.5">
             <Label>{a.confirmPassword}</Label>
