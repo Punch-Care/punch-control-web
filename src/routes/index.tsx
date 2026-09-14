@@ -19,11 +19,13 @@ import { LifecyclePage } from '@/pages/lifecycle/LifecyclePage'
 import { ReportsPage } from '@/pages/reports/ReportsPage'
 import { ProductsPage } from '@/pages/products/ProductsPage'
 import { AuditPage } from '@/pages/audit/AuditPage'
+import { RouteError } from '@/components/layout/RouteError'
 
 export const router = createBrowserRouter([
-  { path: '/', element: <LandingPage /> },
+  { path: '/', element: <LandingPage />, errorElement: <RouteError /> },
   {
     element: <PublicOnlyRoute />,
+    errorElement: <RouteError />,
     children: [{ path: '/login', element: <LoginPage /> }],
   },
   {
@@ -31,24 +33,31 @@ export const router = createBrowserRouter([
     children: [
       {
         element: <AppLayout />,
+        errorElement: <RouteError />,
         children: [
-          { path: '/dashboard', element: <DashboardPage /> },
-          { path: '/sets', element: <SetsPage /> },
-          { path: '/sets/:id', element: <SetDetailPage /> },
-          { path: '/products', element: <ProductsPage /> },
-          { path: '/dimensioning', element: <DimensioningPage /> },
-          { path: '/occurrences', element: <OccurrencesPage /> },
-          { path: '/lifecycle', element: <LifecyclePage /> },
-          { path: '/reports', element: <ReportsPage /> },
-          { path: '/companies', element: <CompaniesPage /> },
-          { path: '/my-company', element: <MyCompanyPage /> },
-          { path: '/machines', element: <MachinesPage /> },
-          { path: '/production', element: <ProductionPage /> },
-          { path: '/production/new', element: <BatchFormPage /> },
-          { path: '/production/:id', element: <BatchFormPage /> },
-          { path: '/users', element: <UsersPage /> },
-          { path: '/audit', element: <AuditPage /> },
-          { path: '*', element: <Navigate to="/dashboard" replace /> },
+          {
+            // Erro numa página aparece dentro do layout (menu continua acessível)
+            errorElement: <RouteError />,
+            children: [
+              { path: '/dashboard', element: <DashboardPage /> },
+              { path: '/sets', element: <SetsPage /> },
+              { path: '/sets/:id', element: <SetDetailPage /> },
+              { path: '/products', element: <ProductsPage /> },
+              { path: '/dimensioning', element: <DimensioningPage /> },
+              { path: '/occurrences', element: <OccurrencesPage /> },
+              { path: '/lifecycle', element: <LifecyclePage /> },
+              { path: '/reports', element: <ReportsPage /> },
+              { path: '/companies', element: <CompaniesPage /> },
+              { path: '/my-company', element: <MyCompanyPage /> },
+              { path: '/machines', element: <MachinesPage /> },
+              { path: '/production', element: <ProductionPage /> },
+              { path: '/production/new', element: <BatchFormPage /> },
+              { path: '/production/:id', element: <BatchFormPage /> },
+              { path: '/users', element: <UsersPage /> },
+              { path: '/audit', element: <AuditPage /> },
+              { path: '*', element: <Navigate to="/dashboard" replace /> },
+            ],
+          },
         ],
       },
     ],
