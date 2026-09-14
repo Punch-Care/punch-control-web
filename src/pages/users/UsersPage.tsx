@@ -1,3 +1,4 @@
+import { Navigate } from 'react-router-dom'
 import { useState, useMemo } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -247,6 +248,9 @@ export function UsersPage() {
     onError: (e: { response?: { data?: { message?: string } } }) =>
       toast.error(e.response?.data?.message ?? t.users.updateError),
   })
+
+  // Técnico não gerencia usuários (a API também recusa)
+  if (me?.role === 'CLIENT') return <Navigate to="/dashboard" replace />
 
   return (
     <div className="p-4 sm:p-6 space-y-5">

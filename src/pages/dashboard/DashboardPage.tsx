@@ -295,7 +295,8 @@ export function DashboardPage() {
   const navigate = useNavigate()
   const d = t.dashboard
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'MANAGER'
-  const canEdit = user?.role !== 'CLIENT'
+  // Ações rápidas são operacionais (lote, ocorrência) — o técnico também usa
+  const canEdit = true
 
   const { selectedCompany, setSelectedCompany } = useAdminContextStore()
 

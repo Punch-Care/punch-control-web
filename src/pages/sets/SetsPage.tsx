@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useAuth } from '@/hooks/useAuth'
+import { usePermissions } from '@/hooks/usePermissions'
 import { useLocale } from '@/hooks/useLocale'
 import { useAdminCompany } from '@/hooks/useAdminCompany'
 import {
@@ -38,6 +39,7 @@ export function SetsPage() {
   const { user } = useAuth()
   const { t } = useLocale()
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'MANAGER'
+  const { canManage } = usePermissions()
   const { companyId: adminCompanyId, selectedCompany } = useAdminCompany()
 
   const [createOpen, setCreateOpen] = useState(false)
@@ -116,9 +118,16 @@ export function SetsPage() {
   })
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => api.delete(`/punch-sets/${id}`),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['punch-sets'] }); toast.success(t.sets.deleted) },
-    onError: () => toast.error(t.sets.deleteError),
+    mutationFn: (id: string) =>
+      api.delete<{ deleted: boolean; inactivated: boolean }>(`/punch-sets/${id}`).then((r) => r.data),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ['punch-sets'] })
+      // Jogo com histórico não é apagado — o backend inativa e avisamos o motivo
+      if (res?.inactivated) toast.info(t.sets.inactivatedInstead)
+      else toast.success(t.sets.deleted)
+    },
+    onError: (e: { response?: { data?: { message?: string } } }) =>
+      toast.error(e.response?.data?.message ?? t.sets.deleteError),
   })
 
   const filtered = statusFilter === 'all' ? sets : sets.filter((s) => s.status === statusFilter)
@@ -130,9 +139,11 @@ export function SetsPage() {
           <h2 className="text-xl sm:text-2xl font-bold tracking-tight">{t.sets.title}</h2>
           <p className="text-muted-foreground text-sm mt-0.5">{t.sets.subtitle}</p>
         </div>
-        <Button size="sm" onClick={() => setCreateOpen(true)}>
-          <Plus className="h-4 w-4" /> {t.sets.newSet}
-        </Button>
+        {canManage && (
+          <Button size="sm" onClick={() => setCreateOpen(true)}>
+            <Plus className="h-4 w-4" /> {t.sets.newSet}
+          </Button>
+        )}
       </div>
 
       <div className="flex items-center gap-3 flex-wrap">
@@ -198,11 +209,13 @@ export function SetsPage() {
                 <TableCell className="text-muted-foreground">{s._count.occurrences}</TableCell>
                 {isAdmin && !selectedCompany && <TableCell className="text-muted-foreground text-xs">{s.company.name}</TableCell>}
                 <TableCell onClick={(e) => e.stopPropagation()}>
-                  <Button variant="ghost" size="icon" className="text-destructive" onClick={() => {
-                    if (confirm(t.sets.deleteConfirm)) deleteMutation.mutate(s.id)
-                  }}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  {canManage && (
+                    <Button variant="ghost" size="icon" className="text-destructive" onClick={() => {
+                      if (confirm(t.sets.deleteConfirm)) deleteMutation.mutate(s.id)
+                    }}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
                 </TableCell>
               </TableRow>
             ))}

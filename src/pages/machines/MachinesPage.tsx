@@ -18,6 +18,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useLocale } from '@/hooks/useLocale'
 import { useAuth } from '@/hooks/useAuth'
+import { usePermissions } from '@/hooks/usePermissions'
 import { useAdminCompany } from '@/hooks/useAdminCompany'
 import { knToTf } from '@/lib/utils'
 import type { Machine, Company } from '@/types'
@@ -458,6 +459,7 @@ export function MachinesPage() {
   const { t } = useLocale()
   const { user } = useAuth()
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'MANAGER'
+  const { canManage } = usePermissions()
   const { companyId: adminCompanyId, selectedCompany } = useAdminCompany()
 
   const [open, setOpen] = useState(false)
@@ -492,7 +494,7 @@ export function MachinesPage() {
   const toggleMutation = useMutation({
     mutationFn: (id: string) => api.patch(`/occurrences/machines/${id}/toggle`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['machines'] }),
-    onError: () => toast.error(t.machines.updateError),
+    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? t.machines.updateError),
   })
 
   return (
@@ -503,9 +505,11 @@ export function MachinesPage() {
           <p className="text-muted-foreground text-sm mt-0.5">{t.machines.subtitle}</p>
         </div>
         <Dialog open={open} onOpenChange={(o) => (o ? setOpen(true) : closeCreate())}>
-          <DialogTrigger asChild>
-            <Button size="sm"><Plus className="h-4 w-4" /> {t.machines.newMachine}</Button>
-          </DialogTrigger>
+          {canManage && (
+            <DialogTrigger asChild>
+              <Button size="sm"><Plus className="h-4 w-4" /> {t.machines.newMachine}</Button>
+            </DialogTrigger>
+          )}
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>{duplicateSource ? t.machines.duplicateTitle : t.machines.newMachine}</DialogTitle>
@@ -568,17 +572,21 @@ export function MachinesPage() {
                 </TableCell>
                 <TableCell>
                   <div className="flex gap-0.5">
-                    <Button variant="ghost" size="icon" onClick={() => setEditing(m)}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      title={t.machines.duplicate}
-                      onClick={() => { setDuplicateSource(m); setOpen(true) }}
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
+                    {canManage && (
+                      <>
+                        <Button variant="ghost" size="icon" onClick={() => setEditing(m)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          title={t.machines.duplicate}
+                          onClick={() => { setDuplicateSource(m); setOpen(true) }}
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
                     <Button
                       variant="ghost"
                       size="icon"
@@ -593,14 +601,16 @@ export function MachinesPage() {
                     >
                       <Printer className="h-4 w-4" />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => toggleMutation.mutate(m.id)}
-                      className={m.active ? 'text-destructive' : 'text-green-600'}
-                    >
-                      <Power className="h-4 w-4" />
-                    </Button>
+                    {canManage && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => toggleMutation.mutate(m.id)}
+                        className={m.active ? 'text-destructive' : 'text-green-600'}
+                      >
+                        <Power className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </TableCell>
               </TableRow>

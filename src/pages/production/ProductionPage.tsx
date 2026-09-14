@@ -15,8 +15,8 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useLocale } from '@/hooks/useLocale'
+import { usePermissions } from '@/hooks/usePermissions'
 import { useAdminCompany } from '@/hooks/useAdminCompany'
-import { useAuth } from '@/hooks/useAuth'
 import type { ProductionBatch } from '@/types'
 import { ProductionConfigsTab } from './ProductionConfigsTab'
 import { CepTab } from './CepTab'
@@ -105,7 +105,6 @@ export function ProductionPage() {
   const navigate = useNavigate()
   const qc = useQueryClient()
   const { t } = useLocale()
-  const { user } = useAuth()
   const { companyId: adminCompanyId } = useAdminCompany()
   const p = t.production
   const [searchParams] = useSearchParams()
@@ -114,7 +113,9 @@ export function ProductionPage() {
     if (param === 'configs' || param === 'cep' || param === 'batches') return param
     return 'batches'
   })
-  const canEdit = user?.role !== 'CLIENT'
+  // Técnico (CLIENT) também registra lotes; só a exclusão fica com o gestor
+  const canEdit = true
+  const { canManage } = usePermissions()
 
   const { data: batches = [], isLoading } = useQuery<ProductionBatch[]>({
     queryKey: ['production-batches', adminCompanyId],
@@ -125,7 +126,7 @@ export function ProductionPage() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/production-batches/${id}`),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['production-batches'] }); toast.success(p.deleted) },
-    onError: () => toast.error(p.deleteError),
+    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? p.deleteError),
   })
 
   const tabs = [
@@ -268,7 +269,7 @@ export function ProductionPage() {
                                   <CopyPlus className="h-3.5 w-3.5" />
                                 </Button>
                               )}
-                              {canEdit && (
+                              {canManage && (
                                 <Button
                                   variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive"
                                   disabled={deleteMutation.isPending}

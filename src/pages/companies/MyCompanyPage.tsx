@@ -1,3 +1,4 @@
+import { Navigate } from 'react-router-dom'
 import { Building2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -30,6 +31,8 @@ export function MyCompanyPage() {
     onError: (e: { response?: { data?: { message?: string } } }) =>
       toast.error(e.response?.data?.message ?? t.companies.updateError),
   })
+
+  if (user?.role === 'CLIENT') return <Navigate to="/dashboard" replace />
 
   return (
     <div className="p-4 sm:p-6 space-y-5">

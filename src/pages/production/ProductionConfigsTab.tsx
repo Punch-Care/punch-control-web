@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useLocale } from '@/hooks/useLocale'
+import { usePermissions } from '@/hooks/usePermissions'
 import { useAdminCompany } from '@/hooks/useAdminCompany'
 import type { ProductionConfig, Product, Machine, ParamSuggestionSource } from '@/types'
 
@@ -114,6 +115,7 @@ export function ProductionConfigsTab() {
   const { t } = useLocale()
   const p = t.production
   const { companyId: adminCompanyId } = useAdminCompany()
+  const { canManage } = usePermissions()
 
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<ProductionConfig | null>(null)
@@ -167,13 +169,13 @@ export function ProductionConfigsTab() {
   const updateMutation = useMutation({
     mutationFn: () => api.put(`/production-configs/${editing!.id}`, { params: buildPayload().params }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['production-configs'] }); setEditing(null); toast.success(p.configUpdated) },
-    onError: () => toast.error(p.configUpdateError),
+    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? p.configUpdateError),
   })
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/production-configs/${id}`),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['production-configs'] }); toast.success(p.configDeleted) },
-    onError: () => toast.error(t.common.noData),
+    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? t.common.noData),
   })
 
   const openCreate = () => {
@@ -420,7 +422,7 @@ export function ProductionConfigsTab() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">{p.configSubtitle}</p>
-        <Button size="sm" onClick={openCreate}><Plus className="h-4 w-4" /> {p.newConfig}</Button>
+        {canManage && <Button size="sm" onClick={openCreate}><Plus className="h-4 w-4" /> {p.newConfig}</Button>}
       </div>
 
       <div className="rounded-xl border overflow-x-auto">
@@ -446,7 +448,7 @@ export function ProductionConfigsTab() {
                 <TableCell className="text-muted-foreground">{cfg.params.length} parâmetros</TableCell>
                 <TableCell className="text-muted-foreground">{cfg._count?.batches ?? 0}</TableCell>
                 <TableCell>
-                  <div className="flex gap-1">
+                  {canManage && <div className="flex gap-1">
                     <Button variant="ghost" size="icon" onClick={() => openEdit(cfg)}><Pencil className="h-4 w-4" /></Button>
                     <Button
                       variant="ghost" size="icon" className="text-destructive hover:text-destructive"
@@ -455,7 +457,7 @@ export function ProductionConfigsTab() {
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
-                  </div>
+                  </div>}
                 </TableCell>
               </TableRow>
             ))}

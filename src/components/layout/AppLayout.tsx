@@ -147,17 +147,18 @@ function SidebarContent({ isAdmin, onNavigate }: { isAdmin: boolean; onNavigate?
           ))}
 
           {/* Gestão: Empresas (só admin, sem Usuários pois COMPANY_MGMT_GROUP já inclui) + Usuários */}
-          <GroupLabel label={nav.admin} />
+          {user?.role !== 'CLIENT' && <GroupLabel label={nav.admin} />}
           {isAdmin && selectedCompany && ADMIN_GLOBAL_GROUP.items
             .filter(item => item.labelKey !== 'users')
             .map(({ to, labelKey, icon }) => (
               <NavItemLink key={to} to={to} icon={icon} label={nav[labelKey]} onNavigate={onNavigate} />
             ))}
-          {COMPANY_MGMT_GROUP.items.map(({ to, labelKey, icon }) => (
+          {/* Técnico (CLIENT) não gerencia usuários nem os dados da empresa */}
+          {user?.role !== 'CLIENT' && COMPANY_MGMT_GROUP.items.map(({ to, labelKey, icon }) => (
             <NavItemLink key={to} to={to} icon={icon} label={nav[labelKey]} onNavigate={onNavigate} />
           ))}
           {/* Usuário de empresa edita os dados da própria empresa */}
-          {!isAdmin && (
+          {user?.role === 'COMPANY' && (
             <NavItemLink to="/my-company" icon={Building2} label={nav.myCompany} onNavigate={onNavigate} />
           )}
 

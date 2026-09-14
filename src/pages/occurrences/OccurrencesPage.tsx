@@ -19,6 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useAuth } from '@/hooks/useAuth'
 import { useLocale } from '@/hooks/useLocale'
+import { usePermissions } from '@/hooks/usePermissions'
 import { useAdminCompany } from '@/hooks/useAdminCompany'
 import { OccurrencesAnalytics } from './OccurrencesAnalytics'
 import type { Occurrence, OccurrenceStatus, OccurrenceType, PunchSet, Machine, Product } from '@/types'
@@ -32,6 +33,7 @@ const STATUS_VARIANTS: Record<OccurrenceStatus, 'destructive' | 'warning' | 'suc
 export function OccurrencesPage() {
   const qc = useQueryClient()
   const { user } = useAuth()
+  const { canManage } = usePermissions()
   const { t } = useLocale()
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'MANAGER'
   const { companyId: adminCompanyId, selectedCompany } = useAdminCompany()
@@ -300,13 +302,15 @@ export function OccurrencesPage() {
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <Label>{t.occurrences.machine}</Label>
-                  <button
-                    type="button"
-                    onClick={() => setMachineCreateOpen(true)}
-                    className="text-xs text-primary hover:underline flex items-center gap-0.5"
-                  >
-                    <Plus className="h-3 w-3" /> {t.occurrences.newMachineBtn}
-                  </button>
+                  {canManage && (
+                    <button
+                      type="button"
+                      onClick={() => setMachineCreateOpen(true)}
+                      className="text-xs text-primary hover:underline flex items-center gap-0.5"
+                    >
+                      <Plus className="h-3 w-3" /> {t.occurrences.newMachineBtn}
+                    </button>
+                  )}
                 </div>
                 <Select onValueChange={(v) => createForm.setValue('machineId', v)}>
                   <SelectTrigger><SelectValue placeholder={t.common.optional} /></SelectTrigger>
@@ -318,13 +322,15 @@ export function OccurrencesPage() {
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <Label>{t.occurrences.product}</Label>
-                  <button
-                    type="button"
-                    onClick={() => setProductCreateOpen(true)}
-                    className="text-xs text-primary hover:underline flex items-center gap-0.5"
-                  >
-                    <Plus className="h-3 w-3" /> {t.occurrences.newProductBtn}
-                  </button>
+                  {canManage && (
+                    <button
+                      type="button"
+                      onClick={() => setProductCreateOpen(true)}
+                      className="text-xs text-primary hover:underline flex items-center gap-0.5"
+                    >
+                      <Plus className="h-3 w-3" /> {t.occurrences.newProductBtn}
+                    </button>
+                  )}
                 </div>
                 <Select onValueChange={(v) => createForm.setValue('productId', v)}>
                   <SelectTrigger><SelectValue placeholder={t.common.optional} /></SelectTrigger>

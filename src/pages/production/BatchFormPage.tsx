@@ -290,7 +290,8 @@ export function BatchFormPage() {
   const [searchParams] = useSearchParams()
   const p = t.production
   const isEdit = !!id
-  const canEdit = user?.role !== 'CLIENT'
+  // O técnico é quem preenche o lote e as medições horárias — todos os perfis editam
+  const canEdit = true
 
   // Produto, máquina e jogo podem vir da URL — é assim que "repetir lote" e o
   // atalho do detalhe do jogo chegam aqui já preenchidos.
@@ -499,7 +500,7 @@ export function BatchFormPage() {
         navigate('/production')
       }
     },
-    onError: () => toast.error(isEdit ? p.updateError : p.createError),
+    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? (isEdit ? p.updateError : p.createError)),
   })
 
   const numHoras = parseInt(form.duracaoEstimadaHoras) || 8
@@ -664,12 +665,14 @@ export function BatchFormPage() {
                   {sets.map(s => {
                     // Jogo fora de LIMPO é recusado na gravação para quem não é
                     // gerente; melhor barrar aqui do que ao final do formulário.
-                    const bloqueado = !podeLiberarJogo && s.statusJogo !== 'LIMPO'
+                    // Jogo inativo, em reparo ou descartado não produz para ninguém
+                    const foraDeUso = s.status !== 'ACTIVE' && s.id !== form.punchSetId
+                    const bloqueado = foraDeUso || (!podeLiberarJogo && s.statusJogo !== 'LIMPO')
                     return (
                       <SelectItem key={s.id} value={s.id} disabled={bloqueado}>
                         <span className="font-mono">{s.code}</span> — {s.name}
                         <span className={bloqueado ? 'ml-2 text-xs text-destructive' : 'ml-2 text-xs text-muted-foreground'}>
-                          · {t.jogo.statuses[s.statusJogo]}
+                          · {foraDeUso ? t.status[s.status] : t.jogo.statuses[s.statusJogo]}
                         </span>
                       </SelectItem>
                     )

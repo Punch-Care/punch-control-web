@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import {
@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useLocale } from '@/hooks/useLocale'
+import { usePermissions } from '@/hooks/usePermissions'
 import { useAdminCompany } from '@/hooks/useAdminCompany'
 import type { PunchSet, SetStatus, LifecycleData, ComponentInventoryType } from '@/types'
 import { toast } from 'sonner'
@@ -84,6 +85,7 @@ function LifeBar({ value }: { value: number }) {
 
 export function LifecyclePage() {
   const [searchParams] = useSearchParams()
+  const { canManage } = usePermissions()
   const [selectedSetId, setSelectedSetId] = useState<string>(() => searchParams.get('setId') ?? '')
   const [addProdOpen, setAddProdOpen] = useState(false)
   const [addMaintOpen, setAddMaintOpen] = useState(false)
@@ -176,13 +178,13 @@ export function LifecyclePage() {
       setProdForm({ produto: selectedSet?.name ?? '', data: format(new Date(), 'yyyy-MM-dd'), maquina: '', numLote: '', qtdKg: '' })
       toast.success('Lote registrado')
     },
-    onError: () => toast.error('Erro ao registrar lote'),
+    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? 'Erro ao registrar lote'),
   })
 
   const deleteProdMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/punch-sets/${selectedSetId}/lifecycle/production/${id}`),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['lifecycle', selectedSetId] }); toast.success('Lote removido') },
-    onError: () => toast.error('Erro ao remover lote'),
+    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? 'Erro ao remover lote'),
   })
 
   const addMaintMutation = useMutation({
@@ -282,9 +284,11 @@ export function LifecyclePage() {
                 <Settings className="h-4 w-4 text-muted-foreground" />
                 <h3 className="font-semibold text-sm">Configuração de Depreciação</h3>
               </div>
-              <Button size="sm" variant="outline" onClick={() => setEditConfig(!editConfig)}>
-                {editConfig ? 'Cancelar' : 'Editar'}
-              </Button>
+              {canManage && (
+                <Button size="sm" variant="outline" onClick={() => setEditConfig(!editConfig)}>
+                  {editConfig ? 'Cancelar' : 'Editar'}
+                </Button>
+              )}
             </div>
             <Card>
               <CardContent className="p-4">
@@ -341,10 +345,12 @@ export function LifecyclePage() {
                 <Package className="h-4 w-4 text-muted-foreground" />
                 <h3 className="font-semibold text-sm">Estoque de Ferramental</h3>
               </div>
-              <Button size="sm" onClick={() => saveInventoryMutation.mutate()} disabled={saveInventoryMutation.isPending}>
-                {saveInventoryMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                Salvar Estoque
-              </Button>
+              {canManage && (
+                <Button size="sm" onClick={() => saveInventoryMutation.mutate()} disabled={saveInventoryMutation.isPending}>
+                  {saveInventoryMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+                  Salvar Estoque
+                </Button>
+              )}
             </div>
             <div className="rounded-xl border overflow-x-auto bg-background shadow-sm">
               <Table>
@@ -405,9 +411,11 @@ export function LifecyclePage() {
                 <h3 className="font-semibold text-sm">Registro de Produção</h3>
                 <span className="text-xs text-muted-foreground">({lifecycleData.production.length} lotes)</span>
               </div>
-              <Button size="sm" onClick={() => { setProdForm(f => ({ ...f, produto: selectedSet?.name ?? '' })); setAddProdOpen(true) }}>
-                <Plus className="h-3.5 w-3.5" /> Adicionar Lote
-              </Button>
+              {canManage && (
+                <Button size="sm" variant="outline" title="Para produção anterior ao sistema — lotes do módulo Produção entram sozinhos" onClick={() => { setProdForm(f => ({ ...f, produto: selectedSet?.name ?? '' })); setAddProdOpen(true) }}>
+                  <Plus className="h-3.5 w-3.5" /> Lançamento manual
+                </Button>
+              )}
             </div>
             <div className="rounded-xl border overflow-x-auto bg-background shadow-sm">
               <Table>
@@ -431,16 +439,25 @@ export function LifecyclePage() {
                       <TableCell className="text-sm">{r.produto}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">{format(new Date(r.data), 'dd/MM/yyyy')}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">{r.maquina ?? '—'}</TableCell>
-                      <TableCell className="font-mono text-sm">{r.numLote}</TableCell>
+                      <TableCell className="font-mono text-sm">
+                        {r.batchId ? (
+                          <Link to={`/production/${r.batchId}`} className="text-primary hover:underline" title="Lançado automaticamente pelo lote de produção">
+                            {r.numLote}
+                          </Link>
+                        ) : r.numLote}
+                      </TableCell>
                       <TableCell className="text-right text-sm tabular-nums">{r.qtdKg.toFixed(1)}</TableCell>
                       <TableCell className="text-right text-sm tabular-nums">{r.percUtilizacao.toFixed(2)}%</TableCell>
                       <TableCell className={`text-right font-bold text-sm tabular-nums ${r.percAcumulado >= 100 ? 'text-red-600' : r.percAcumulado >= 70 ? 'text-orange-600' : ''}`}>
                         {r.percAcumulado.toFixed(2)}%
                       </TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" disabled={deleteProdMutation.isPending} onClick={() => deleteProdMutation.mutate(r.id)}>
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
+                        {/* Registro vindo de lote é alterado pelo próprio lote, não aqui */}
+                        {canManage && !r.batchId && (
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" disabled={deleteProdMutation.isPending} onClick={() => deleteProdMutation.mutate(r.id)}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -483,9 +500,11 @@ export function LifecyclePage() {
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">{r.notas ?? '—'}</TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" disabled={deleteMaintMutation.isPending} onClick={() => deleteMaintMutation.mutate(r.id)}>
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
+                        {canManage && (
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" disabled={deleteMaintMutation.isPending} onClick={() => deleteMaintMutation.mutate(r.id)}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
