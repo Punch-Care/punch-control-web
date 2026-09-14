@@ -221,9 +221,9 @@ export function SetDetailPage() {
       {/* Abas do jogo */}
       <div className="flex gap-2 border-b overflow-x-auto">
         {([
-          { id: 'overview', label: 'Visão geral', icon: LayoutDashboard },
-          { id: 'rfq', label: 'RFQ / Especificações', icon: ClipboardList },
-          { id: 'anexos', label: 'Anexos', icon: Paperclip },
+          { id: 'overview', label: t.rfq.tabOverview, icon: LayoutDashboard },
+          { id: 'rfq', label: t.rfq.tabRfq, icon: ClipboardList },
+          { id: 'anexos', label: t.rfq.tabAttachments, icon: Paperclip },
         ] as const).map(({ id: tabId, label, icon: Icon }) => (
           <button
             key={tabId}
@@ -243,7 +243,7 @@ export function SetDetailPage() {
       {/* Dados básicos — edição rápida */}
       <div className="rounded-xl border p-4 bg-background space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-base">Dados básicos</h3>
+          <h3 className="font-semibold text-base">{t.rfq.basicData}</h3>
           {canEdit && (
             <Button
               size="sm"
@@ -354,37 +354,37 @@ export function SetDetailPage() {
 
       {/* Hub de ações rápidas */}
       <div>
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Ações rápidas</p>
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">{t.rfq.quickActions}</p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {[
             {
               icon: FlaskConical,
-              label: 'Novo Lote',
-              desc: 'Registrar produção',
+              label: t.rfq.qaNewLot,
+              desc: t.rfq.qaNewLotDesc,
               color: 'bg-primary/10 text-primary hover:bg-primary/20',
               onClick: () => navigate(`/production/new?setId=${id}`),
               show: canEdit,
             },
             {
               icon: AlertTriangle,
-              label: 'Ocorrências',
-              desc: 'Ver e registrar',
+              label: t.rfq.qaOccurrences,
+              desc: t.rfq.qaOccurrencesDesc,
               color: 'bg-red-50 text-red-700 hover:bg-red-100',
               onClick: () => navigate(`/occurrences?setId=${id}`),
               show: true,
             },
             {
               icon: Activity,
-              label: 'Ciclo de Vida',
-              desc: 'Histórico e estoque',
+              label: t.rfq.qaLifecycle,
+              desc: t.rfq.qaLifecycleDesc,
               color: 'bg-orange-50 text-orange-700 hover:bg-orange-100',
               onClick: () => navigate(`/lifecycle?setId=${id}`),
               show: true,
             },
             {
               icon: Ruler,
-              label: 'Dimensionar',
-              desc: 'Registrar medições',
+              label: t.rfq.qaDimension,
+              desc: t.rfq.qaDimensionDesc,
               color: 'bg-blue-50 text-blue-700 hover:bg-blue-100',
               onClick: () => navigate(`/dimensioning?setId=${id}`),
               show: true,

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/hooks/useAuth'
+import { useLocale } from '@/hooks/useLocale'
 import { ToolingSection, CARACTERISTICAS_PRODUTO } from './ToolingSection'
 import { generateRfqPdf } from './rfq-pdf'
 import type { PunchSet, Company, Machine, ToolingComponent, Product } from '@/types'
@@ -41,6 +42,8 @@ function field(label: string, value: string, onChange: (v: string) => void, disa
 export function RfqSection({ set, canEdit }: { set: PunchSet; canEdit: boolean }) {
   const qc = useQueryClient()
   const { user } = useAuth()
+  const { t } = useLocale()
+  const r = t.rfq
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'MANAGER'
 
   // ── Empresa ──────────────────────────────────────────────────────────────
@@ -61,8 +64,8 @@ export function RfqSection({ set, canEdit }: { set: PunchSet; canEdit: boolean }
   const saveCompany = useMutation({
     // COMPANY edita a própria empresa via /me; ADMIN/MANAGER via /:id.
     mutationFn: () => api.put(isAdmin ? `/companies/${set.companyId}` : '/companies/me', cd),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['company', set.companyId] }); setCompanyDraft(null); toast.success('Dados da empresa salvos') },
-    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? 'Erro ao salvar empresa'),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['company', set.companyId] }); setCompanyDraft(null); toast.success(r.companySaved) },
+    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? r.companySaveError),
   })
 
   // ── Máquinas ────────────────────────────────────────────────────────────────
@@ -81,14 +84,14 @@ export function RfqSection({ set, canEdit }: { set: PunchSet; canEdit: boolean }
 
   const linkMachine = useMutation({
     mutationFn: (machineId: string) => api.post(`/punch-sets/${set.id}/machines`, { machineId }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['punch-set-machines', set.id] }); toast.success('Compressora vinculada') },
-    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? 'Erro ao vincular'),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['punch-set-machines', set.id] }); toast.success(r.machineLinked) },
+    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? r.linkError),
   })
 
   const unlinkMachine = useMutation({
     mutationFn: (machineId: string) => api.delete(`/punch-sets/${set.id}/machines/${machineId}`),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['punch-set-machines', set.id] }); toast.success('Compressora desvinculada') },
-    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? 'Erro ao desvincular'),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['punch-set-machines', set.id] }); toast.success(r.machineUnlinked) },
+    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? r.unlinkError),
   })
 
   const naoVinculadas = machines.filter(m => m.active && !setMachines.some(sm => sm.id === m.id))
@@ -115,9 +118,9 @@ export function RfqSection({ set, canEdit }: { set: PunchSet; canEdit: boolean }
   const exportRfq = () => {
     generateRfqPdf({
       set, company, machines: setMachines, components,
-      products: linkedProducts, caracteristicas,
+      products: linkedProducts, caracteristicas, t,
     })
-    toast.success('RFQ exportado')
+    toast.success(r.rfqExported)
   }
 
   const toggleCaracteristica = (c: string) =>
@@ -132,8 +135,8 @@ export function RfqSection({ set, canEdit }: { set: PunchSet; canEdit: boolean }
       caracteristicas: caracteristicas.length ? JSON.stringify(caracteristicas) : null,
       observacoesRfq: observacoesRfq || null,
     }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['punch-set', set.id] }); toast.success('Dados do RFQ salvos') },
-    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? 'Erro ao salvar'),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['punch-set', set.id] }); toast.success(r.rfqSaved) },
+    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? r.saveError),
   })
 
   return (
@@ -141,10 +144,10 @@ export function RfqSection({ set, canEdit }: { set: PunchSet; canEdit: boolean }
       {/* Cabeçalho — exportação no formato da planilha de RFQ */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <p className="text-xs text-muted-foreground">
-          Estes dados compõem o documento enviado ao fornecedor.
+          {r.docHint}
         </p>
         <Button size="sm" variant="outline" onClick={exportRfq}>
-          <FileDown className="h-4 w-4" /> Exportar RFQ em PDF
+          <FileDown className="h-4 w-4" /> {r.exportPdf}
         </Button>
       </div>
 
@@ -153,27 +156,27 @@ export function RfqSection({ set, canEdit }: { set: PunchSet; canEdit: boolean }
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Building2 className="h-4 w-4 text-muted-foreground" />
-            <h3 className="font-semibold text-base">Dados da empresa</h3>
+            <h3 className="font-semibold text-base">{r.companyData}</h3>
           </div>
           {canEdit && (
             <Button size="sm" variant="outline" onClick={() => saveCompany.mutate()} disabled={saveCompany.isPending}>
-              {saveCompany.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Salvar empresa
+              {saveCompany.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} {r.saveCompany}
             </Button>
           )}
         </div>
         <div className="text-sm font-medium">{company?.name ?? set.company?.name ?? '—'}</div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {field('CNPJ', cd.cnpj, v => setCd({ cnpj: v }), !canEdit, '00.000.000/0000-00')}
-          {field('Inscrição Estadual', cd.inscricaoEstadual, v => setCd({ inscricaoEstadual: v }), !canEdit)}
-          {field('Razão Social', cd.razaoSocial, v => setCd({ razaoSocial: v }), !canEdit, '', 'sm:col-span-2')}
-          {field('Logradouro', cd.logradouro, v => setCd({ logradouro: v }), !canEdit, '', 'sm:col-span-2')}
-          {field('Nº', cd.numero, v => setCd({ numero: v }), !canEdit)}
-          {field('Complemento', cd.complemento, v => setCd({ complemento: v }), !canEdit)}
-          {field('Bairro', cd.bairro, v => setCd({ bairro: v }), !canEdit)}
-          {field('Cidade', cd.cidade, v => setCd({ cidade: v }), !canEdit)}
-          {field('Estado', cd.estado, v => setCd({ estado: v }), !canEdit, 'UF')}
-          {field('CEP', cd.cep, v => setCd({ cep: v }), !canEdit, '00000-000')}
-          {field('Telefone', cd.telefone, v => setCd({ telefone: v }), !canEdit)}
+          {field(r.stateReg, cd.inscricaoEstadual, v => setCd({ inscricaoEstadual: v }), !canEdit)}
+          {field(r.legalName, cd.razaoSocial, v => setCd({ razaoSocial: v }), !canEdit, '', 'sm:col-span-2')}
+          {field(r.street, cd.logradouro, v => setCd({ logradouro: v }), !canEdit, '', 'sm:col-span-2')}
+          {field(r.number, cd.numero, v => setCd({ numero: v }), !canEdit)}
+          {field(r.complement, cd.complemento, v => setCd({ complemento: v }), !canEdit)}
+          {field(r.district, cd.bairro, v => setCd({ bairro: v }), !canEdit)}
+          {field(r.city, cd.cidade, v => setCd({ cidade: v }), !canEdit)}
+          {field(r.state, cd.estado, v => setCd({ estado: v }), !canEdit, r.stateAbbr)}
+          {field(r.zip, cd.cep, v => setCd({ cep: v }), !canEdit, '00000-000')}
+          {field(r.phone, cd.telefone, v => setCd({ telefone: v }), !canEdit)}
         </div>
       </section>
 
@@ -182,25 +185,25 @@ export function RfqSection({ set, canEdit }: { set: PunchSet; canEdit: boolean }
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <User className="h-4 w-4 text-muted-foreground" />
-            <h3 className="font-semibold text-base">Solicitante e características</h3>
+            <h3 className="font-semibold text-base">{r.requesterSection}</h3>
           </div>
           {canEdit && (
             <Button size="sm" variant="outline" onClick={() => saveSet.mutate()} disabled={saveSet.isPending}>
-              {saveSet.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Salvar
+              {saveSet.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} {t.common.save}
             </Button>
           )}
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {field('Solicitante', solicitante, setSolicitante, !canEdit)}
-          {field('Função', funcaoSolicitante, setFuncao, !canEdit)}
-          {field('E-mail', emailSolicitante, setEmail, !canEdit)}
-          {field('Telefone', telefoneSolicitante, setTel, !canEdit)}
+          {field(r.requester, solicitante, setSolicitante, !canEdit)}
+          {field(r.role, funcaoSolicitante, setFuncao, !canEdit)}
+          {field(r.email, emailSolicitante, setEmail, !canEdit)}
+          {field(r.phone, telefoneSolicitante, setTel, !canEdit)}
         </div>
 
         <div className="border-t pt-3">
           <div className="flex items-center gap-2 mb-2">
             <Tags className="h-3.5 w-3.5 text-muted-foreground" />
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Características do produto</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{r.productCharacteristics}</p>
           </div>
           <div className="flex flex-wrap gap-2">
             {CARACTERISTICAS_PRODUTO.map(c => {
@@ -215,7 +218,7 @@ export function RfqSection({ set, canEdit }: { set: PunchSet; canEdit: boolean }
                     selected ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:border-foreground'
                   }`}
                 >
-                  {c}
+                  {(t.productCharacteristics as Record<string, string>)[c] ?? c}
                 </button>
               )
             })}
@@ -223,7 +226,7 @@ export function RfqSection({ set, canEdit }: { set: PunchSet; canEdit: boolean }
         </div>
 
         <div className="border-t pt-3">
-          {field('Observações', observacoesRfq, setObservacoesRfq, !canEdit, 'Texto livre')}
+          {field(r.notes, observacoesRfq, setObservacoesRfq, !canEdit, r.freeText)}
         </div>
       </section>
 
@@ -231,24 +234,24 @@ export function RfqSection({ set, canEdit }: { set: PunchSet; canEdit: boolean }
       <section className="border rounded-xl p-4 bg-background space-y-3">
         <div className="flex items-center gap-2">
           <Factory className="h-4 w-4 text-muted-foreground" />
-          <h3 className="font-semibold text-base">Informações da máquina</h3>
-          <span className="text-xs text-muted-foreground">Compressoras a que este jogo serve</span>
+          <h3 className="font-semibold text-base">{r.machineInfo}</h3>
+          <span className="text-xs text-muted-foreground">{r.machineInfoHint}</span>
         </div>
 
         {setMachines.length === 0 ? (
           <p className="text-xs text-muted-foreground">
-            Nenhuma compressora vinculada a este jogo ainda.
+            {r.noLinkedMachine}
           </p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
                 <tr className="text-left text-muted-foreground border-b">
-                  <th className="py-1.5 pr-3 font-medium">Fabricante</th>
-                  <th className="py-1.5 pr-3 font-medium">Modelo</th>
-                  <th className="py-1.5 pr-3 font-medium">Nº de série</th>
-                  <th className="py-1.5 pr-3 font-medium">Ano</th>
-                  <th className="py-1.5 pr-3 font-medium">Qtd. estações</th>
+                  <th className="py-1.5 pr-3 font-medium">{r.manufacturer}</th>
+                  <th className="py-1.5 pr-3 font-medium">{r.model}</th>
+                  <th className="py-1.5 pr-3 font-medium">{r.serial}</th>
+                  <th className="py-1.5 pr-3 font-medium">{r.year}</th>
+                  <th className="py-1.5 pr-3 font-medium">{r.stations}</th>
                   {canEdit && <th className="py-1.5 w-10" />}
                 </tr>
               </thead>
@@ -280,7 +283,7 @@ export function RfqSection({ set, canEdit }: { set: PunchSet; canEdit: boolean }
 
         {canEdit && naoVinculadas.length > 0 && (
           <div className="space-y-1.5 border-t pt-3">
-            <Label className="text-xs">Vincular compressora</Label>
+            <Label className="text-xs">{r.linkMachine}</Label>
             <div className="flex flex-wrap gap-2">
               {naoVinculadas.map(m => (
                 <button
@@ -299,7 +302,7 @@ export function RfqSection({ set, canEdit }: { set: PunchSet; canEdit: boolean }
 
         {canEdit && machines.length === 0 && (
           <p className="text-xs text-muted-foreground border-t pt-3">
-            Nenhuma compressora cadastrada nesta empresa — cadastre em Máquinas para poder vincular.
+            {r.noMachines}
           </p>
         )}
       </section>

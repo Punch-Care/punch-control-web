@@ -3,21 +3,16 @@ import autoTable from 'jspdf-autotable'
 import { format } from 'date-fns'
 
 import type { PunchSet, Company, Machine, ToolingComponent, ToolingComponentType, Product } from '@/types'
+import type { Translations } from '@/lib/i18n'
 
 const BRAND: [number, number, number] = [240, 89, 34]
 
-const TIPO_COLUNA: { tipo: ToolingComponentType; label: string }[] = [
-  { tipo: 'UPPER_PUNCH', label: 'Punções superiores' },
-  { tipo: 'LOWER_PUNCH', label: 'Punções inferiores' },
-  { tipo: 'MATRIX', label: 'Matrizes' },
-  { tipo: 'SEGMENT', label: 'Segmentos' },
+const TIPO_COLUNA: { tipo: ToolingComponentType; key: 'pdfUpper' | 'pdfLower' | 'pdfDies' | 'pdfSegments' }[] = [
+  { tipo: 'UPPER_PUNCH', key: 'pdfUpper' },
+  { tipo: 'LOWER_PUNCH', key: 'pdfLower' },
+  { tipo: 'MATRIX', key: 'pdfDies' },
+  { tipo: 'SEGMENT', key: 'pdfSegments' },
 ]
-
-const txt = (v: unknown): string => {
-  if (v === null || v === undefined || v === '') return '—'
-  if (typeof v === 'boolean') return v ? 'Sim' : 'Não'
-  return String(v)
-}
 
 /** Junta os raios preenchidos numa célula só, como a linha "Raio da cavidade" da planilha */
 function raios(c: ToolingComponent | undefined): string {
@@ -42,8 +37,19 @@ export function generateRfqPdf(params: {
   components: ToolingComponent[]
   products: Product[]
   caracteristicas: string[]
+  t: Translations
 }) {
-  const { set, company, machines, components, products, caracteristicas } = params
+  const { set, company, machines, components, products, caracteristicas, t } = params
+  const r = t.rfq
+  const opt = t.toolingOptions as Record<string, string>
+  const car = t.productCharacteristics as Record<string, string>
+  const txt = (v: unknown): string => {
+    if (v === null || v === undefined || v === '') return '—'
+    if (typeof v === 'boolean') return v ? r.yes : r.no
+    return String(v)
+  }
+  // Opções gravadas em português saem no idioma de quem exporta
+  const optTxt = (v: string | null | undefined, prefix = '') => (v ? opt[`${prefix}${v}`] ?? v : '—')
   const doc = new jsPDF({ orientation: 'portrait' })
   const W = doc.internal.pageSize.width
 
@@ -52,10 +58,10 @@ export function generateRfqPdf(params: {
   doc.setTextColor(255, 255, 255)
   doc.setFontSize(13)
   doc.setFont('helvetica', 'bold')
-  doc.text('INFORMAÇÕES PARA AQUISIÇÃO DE PUNÇÕES', 14, 11)
+  doc.text(r.pdfTitle, 14, 11)
   doc.setFontSize(8)
   doc.setFont('helvetica', 'normal')
-  doc.text(`Punch Control · Jogo ${set.code} — ${set.name}`, 14, 17)
+  doc.text(`Punch Control · ${r.pdfSet} ${set.code} — ${set.name}`, 14, 17)
 
   const linhaY = (fallback: number) =>
     (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? fallback
@@ -75,32 +81,32 @@ export function generateRfqPdf(params: {
   }
 
   // ── Dados da empresa ──
-  let y = secao('DADOS DA EMPRESA', [
-    ['Empresa', txt(company?.razaoSocial || company?.name)],
-    ['CNPJ / Inscr. Estadual', `${txt(company?.cnpj)}   ·   ${txt(company?.inscricaoEstadual)}`],
-    ['Endereço', `${txt(company?.logradouro)}, ${txt(company?.numero)} ${company?.complemento ?? ''}`.trim()],
-    ['Bairro / Cidade / UF', `${txt(company?.bairro)} · ${txt(company?.cidade)} · ${txt(company?.estado)}`],
-    ['CEP / Telefone', `${txt(company?.cep)}   ·   ${txt(company?.telefone)}`],
+  let y = secao(r.pdfCompanyData, [
+    [r.pdfCompany, txt(company?.razaoSocial || company?.name)],
+    [r.pdfCnpjIe, `${txt(company?.cnpj)}   ·   ${txt(company?.inscricaoEstadual)}`],
+    [r.pdfAddress, `${txt(company?.logradouro)}, ${txt(company?.numero)} ${company?.complemento ?? ''}`.trim()],
+    [r.pdfDistrictCityState, `${txt(company?.bairro)} · ${txt(company?.cidade)} · ${txt(company?.estado)}`],
+    [r.pdfZipPhone, `${txt(company?.cep)}   ·   ${txt(company?.telefone)}`],
   ], 26)
 
   // ── Solicitante ──
-  y = secao('DADOS DO SOLICITANTE', [
-    ['Solicitante', txt(set.solicitante)],
-    ['Função', txt(set.funcaoSolicitante)],
-    ['E-mail', txt(set.emailSolicitante)],
-    ['Telefone', txt(set.telefoneSolicitante)],
+  y = secao(r.pdfRequesterData, [
+    [r.requester, txt(set.solicitante)],
+    [r.role, txt(set.funcaoSolicitante)],
+    [r.email, txt(set.emailSolicitante)],
+    [r.phone, txt(set.telefoneSolicitante)],
   ], y)
 
   // ── Máquinas ──
   autoTable(doc, {
     startY: y,
-    head: [['INFORMAÇÕES DA MÁQUINA', 'Modelo', 'Nº de série', 'Ano', 'Estações']],
+    head: [[r.pdfMachineInfo, r.model, r.serial, r.year, r.pdfStations]],
     body: machines.length
       ? machines.map(m => [
           txt(m.fabricante ?? m.name), txt(m.modelo), txt(m.numeroSerie),
           txt(m.anoFabricacao), txt(m.qtdEstacao),
         ])
-      : [['Nenhuma compressora vinculada', '', '', '', '']],
+      : [[r.pdfNoMachine, '', '', '', '']],
     theme: 'grid',
     headStyles: { fillColor: BRAND, fontSize: 8.5, fontStyle: 'bold', textColor: 255 },
     bodyStyles: { fontSize: 8 },
@@ -113,33 +119,33 @@ export function generateRfqPdf(params: {
   const col = (tipo: ToolingComponentType) => porTipo.get(tipo)
 
   const linhas: [string, (c: ToolingComponent | undefined) => string][] = [
-    ['Quantidade solicitada', c => txt(c?.qtdSolicitada)],
-    ['Nº desenho de referência', c => txt(c?.numDesenho)],
-    ['Norma', c => txt(c?.norma)],
-    ['Dimensões em mm', c => txt(c?.dimensoes)],
-    ['Carga real aplicada KN', c => txt(c?.cargaRealKN)],
-    ['Quant. de pontas', c => txt(c?.qtdPontas)],
-    ['Tipo de fixação', c => txt(c?.tipoFixacao)],
-    ['Rebaixo p/ retentor de óleo', c => txt(c?.rebaixoRetentorOleo)],
-    ['Formato do comprimido (Tab. A)', c => txt(c?.formatoComprimido)],
-    ['Profundidade da cavidade (mm)', c => txt(c?.profundidadeCavMm)],
-    ['Raio da cavidade (mm)', c => raios(c)],
-    ['Espessura da borda (land)', c => txt(c?.espessuraBorda)],
-    ['Descrição do formato especial', c => txt(c?.descricaoFormatoEspecial)],
-    ['Contém chaveta', c => txt(c?.contemChaveta)],
-    ['Tipo de vinco (Tab. B)', c => txt(c?.tipoVinco)],
-    ['Configuração do vinco', c => txt(c?.configuracaoVinco)],
-    ['Gravação da ponta', c => txt(c?.gravacaoPonta)],
-    ['Cônico / paralelo (matriz)', c => txt(c?.conicoOuParalelo)],
-    ['Opção de aço', c => txt(c?.opcaoAco)],
-    ['Opção de revestimento', c => txt(c?.opcaoRevestimento)],
-    ['Opção de tratamento', c => txt(c?.opcaoTratamento)],
+    [r.rQty, c => txt(c?.qtdSolicitada)],
+    [r.rDrawing, c => txt(c?.numDesenho)],
+    [r.rStandard, c => optTxt(c?.norma)],
+    [r.rDimensions, c => txt(c?.dimensoes)],
+    [r.rLoad, c => txt(c?.cargaRealKN)],
+    [r.rTips, c => txt(c?.qtdPontas)],
+    [r.rFixing, c => optTxt(c?.tipoFixacao)],
+    [r.rOilSeal, c => txt(c?.rebaixoRetentorOleo)],
+    [r.rShape, c => optTxt(c?.formatoComprimido)],
+    [r.rDepth, c => txt(c?.profundidadeCavMm)],
+    [r.rRadius, c => raios(c)],
+    [r.rLand, c => txt(c?.espessuraBorda)],
+    [r.rSpecial, c => txt(c?.descricaoFormatoEspecial)],
+    [r.rKey, c => txt(c?.contemChaveta)],
+    [r.rScore, c => optTxt(c?.tipoVinco, 'SCORE_')],
+    [r.rScoreConfig, c => optTxt(c?.configuracaoVinco)],
+    [r.rEmbossing, c => txt(c?.gravacaoPonta)],
+    [r.rTaper, c => optTxt(c?.conicoOuParalelo)],
+    [r.rSteel, c => optTxt(c?.opcaoAco)],
+    [r.rCoating, c => optTxt(c?.opcaoRevestimento)],
+    [r.rTreatment, c => optTxt(c?.opcaoTratamento)],
   ]
 
   autoTable(doc, {
     startY: y,
-    head: [['INFORMAÇÕES DO FERRAMENTAL', ...TIPO_COLUNA.map(t => t.label)]],
-    body: linhas.map(([label, get]) => [label, ...TIPO_COLUNA.map(t => get(col(t.tipo)))]),
+    head: [[r.pdfToolingInfo, ...TIPO_COLUNA.map(col => r[col.key])]],
+    body: linhas.map(([label, get]) => [label, ...TIPO_COLUNA.map(c => get(col(c.tipo)))]),
     theme: 'grid',
     headStyles: { fillColor: BRAND, fontSize: 7.5, fontStyle: 'bold', textColor: 255 },
     bodyStyles: { fontSize: 7 },
@@ -151,11 +157,11 @@ export function generateRfqPdf(params: {
   // ── Produtos e características ──
   autoTable(doc, {
     startY: y,
-    head: [['PRODUTOS E CARACTERÍSTICAS', '']],
+    head: [[r.pdfProductsSection, '']],
     body: [
-      ['Produtos', products.length ? products.map(p => p.name).join(', ') : '—'],
-      ['Características do produto', caracteristicas.length ? caracteristicas.join(' · ') : '—'],
-      ['Observações', txt(set.observacoesRfq)],
+      [r.pdfProducts, products.length ? products.map(p => p.name).join(', ') : '—'],
+      [r.productCharacteristics, caracteristicas.length ? caracteristicas.map(c => car[c] ?? c).join(' · ') : '—'],
+      [r.notes, txt(set.observacoesRfq)],
     ],
     theme: 'grid',
     headStyles: { fillColor: BRAND, fontSize: 8.5, fontStyle: 'bold', textColor: 255 },
@@ -167,7 +173,7 @@ export function generateRfqPdf(params: {
   doc.setFontSize(7)
   doc.setTextColor(160, 160, 160)
   doc.text(
-    `Gerado em ${format(new Date(), "dd/MM/yyyy 'às' HH:mm")} · Punch Control`,
+    `${r.pdfGenerated} ${format(new Date(), 'dd/MM/yyyy HH:mm')} · Punch Control`,
     14,
     doc.internal.pageSize.height - 6,
   )
