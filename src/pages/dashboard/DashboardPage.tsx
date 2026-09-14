@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Package, AlertTriangle, RefreshCw, TrendingDown, Building2, Plus, FlaskConical, Ruler, FileText, ChevronRight } from 'lucide-react'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import { useQuery } from '@tanstack/react-query'
@@ -13,7 +13,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useLocale } from '@/hooks/useLocale'
 import { useAdminContextStore } from '@/store/admin-context.store'
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard'
-import type { DashboardStats, Occurrence, OccurrenceType, CompanyOverview, ProductionBatch } from '@/types'
+import type { DashboardStats, Occurrence, OccurrenceType, CompanyOverview, ProductionBatch, ComponentInventoryType } from '@/types'
 
 const TYPE_LABELS_PT: Record<OccurrenceType, string> = {
   COMPRESSION: 'Compressão', DIMENSIONAL: 'Dimensional', MAINTENANCE: 'Manutenção', OTHER: 'Outro',
@@ -26,6 +26,13 @@ const TYPE_LABELS_ES: Record<OccurrenceType, string> = {
 }
 
 // ── Card de empresa (admin) ────────────────────────────────────────────────────
+
+const COMPONENT_LABELS: Record<ComponentInventoryType, string> = {
+  P_SUPERIOR: 'Punção Superior',
+  P_INFERIOR: 'Punção Inferior',
+  MATRIZ_1: 'Matriz 1',
+  MATRIZ_2: 'Matriz 2',
+}
 
 function CompanyCard({ company, onClick, d }: {
   company: CompanyOverview
@@ -150,6 +157,28 @@ function StatsSection({ companyId, d, TYPE_LABELS }: {
           </CardContent>
         </Card>
       </div>
+
+      {stats && stats.componentsToRestock?.length > 0 && (
+        <Card className="border-amber-200 bg-amber-50/60 border-0 shadow-sm">
+          <CardContent className="p-4 space-y-2">
+            <div className="flex items-center gap-2">
+              <Package className="h-5 w-5 text-amber-600 flex-shrink-0" />
+              <p className="text-sm font-medium">{d.restockTitle(stats.componentsToRestock.length)}</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {stats.componentsToRestock.map((c) => (
+                <Link
+                  key={`${c.setId}-${c.tipo}`}
+                  to={`/lifecycle?setId=${c.setId}`}
+                  className="text-xs rounded-full border border-amber-300 bg-background px-3 py-1 hover:border-amber-500"
+                >
+                  <span className="font-mono">{c.setCode}</span> · {COMPONENT_LABELS[c.tipo]} · {d.restockLeft(c.sobra, c.pontoEncomenda)}
+                </Link>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {stats && stats.lowUsefulValue > 0 && (
         <Card className="border-orange-200 bg-orange-50/60 border-0 shadow-sm">

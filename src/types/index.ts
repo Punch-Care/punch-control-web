@@ -477,5 +477,10 @@ export interface DashboardStats {
   recentlyDiscarded: number
   openOccurrences: number
   lowUsefulValue: number
+  /** Componentes de ferramental com sobra no ponto de encomenda */
+  componentsToRestock: {
+    setId: string; setCode: string; setName: string
+    tipo: ComponentInventoryType; sobra: number; pontoEncomenda: number
+  }[]
   statusDistribution: { name: string; value: number; fill: string }[]
 }
