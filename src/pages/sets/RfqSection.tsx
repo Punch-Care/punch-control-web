@@ -91,7 +91,7 @@ export function RfqSection({ set, canEdit }: { set: PunchSet; canEdit: boolean }
     onError: () => toast.error('Erro ao desvincular'),
   })
 
-  const naoVinculadas = machines.filter(m => !setMachines.some(sm => sm.id === m.id))
+  const naoVinculadas = machines.filter(m => m.active && !setMachines.some(sm => sm.id === m.id))
 
   // ── Solicitante + Características + Observações (no próprio jogo) ─────────────
   const [solicitante, setSolicitante] = useState(set.solicitante ?? '')

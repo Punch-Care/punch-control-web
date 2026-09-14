@@ -366,7 +366,7 @@ export function OccurrencesPage() {
                 <Select onValueChange={(v) => createForm.setValue('machineId', v)}>
                   <SelectTrigger><SelectValue placeholder={t.common.optional} /></SelectTrigger>
                   <SelectContent>
-                    {machines.map((m) => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
+                    {machines.filter((m) => m.active).map((m) => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -386,7 +386,7 @@ export function OccurrencesPage() {
                 <Select onValueChange={(v) => createForm.setValue('productId', v)}>
                   <SelectTrigger><SelectValue placeholder={t.common.optional} /></SelectTrigger>
                   <SelectContent>
-                    {products.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                    {products.filter((p) => p.active).map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>

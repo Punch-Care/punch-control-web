@@ -641,7 +641,8 @@ export function BatchFormPage() {
                 <SelectTrigger><SelectValue placeholder="Selecione o produto" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__none__" disabled>Selecione o produto</SelectItem>
-                  {products.map(pr => <SelectItem key={pr.id} value={pr.id}>{pr.name}{pr.code ? ` · ${pr.code}` : ''}</SelectItem>)}
+                  {/* Inativos não entram em lote novo; o já gravado continua visível */}
+                  {products.filter(pr => pr.active || pr.id === form.productId).map(pr => <SelectItem key={pr.id} value={pr.id}>{pr.name}{pr.code ? ` · ${pr.code}` : ''}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -652,7 +653,7 @@ export function BatchFormPage() {
                 <SelectTrigger><SelectValue placeholder="Selecione a máquina" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__none__" disabled>Selecione a máquina</SelectItem>
-                  {machines.map(m => <SelectItem key={m.id} value={m.id}>{m.name}{m.modelo ? ` · ${m.modelo}` : ''}</SelectItem>)}
+                  {machines.filter(m => m.active || m.id === form.machineId).map(m => <SelectItem key={m.id} value={m.id}>{m.name}{m.modelo ? ` · ${m.modelo}` : ''}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

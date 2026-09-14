@@ -536,7 +536,7 @@ export function SetDetailPage() {
                 <SelectTrigger><SelectValue placeholder={t.products.selectProduct} /></SelectTrigger>
                 <SelectContent>
                   {allProducts
-                    .filter((p) => !linkedProducts.some((lp) => lp.id === p.id))
+                    .filter((p) => p.active && !linkedProducts.some((lp) => lp.id === p.id))
                     .map((p) => (
                       <SelectItem key={p.id} value={p.id}>
                         {p.name}{p.code ? ` · ${p.code}` : ''}

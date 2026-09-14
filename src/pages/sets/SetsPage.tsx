@@ -289,7 +289,7 @@ export function SetsPage() {
                   <p className="text-xs text-muted-foreground">{t.sets.noProductsForCompany}</p>
                 ) : (
                   <div className="flex flex-wrap gap-2">
-                    {companyProducts.map((p) => {
+                    {companyProducts.filter((p) => p.active).map((p) => {
                       const selected = selectedProductIds.includes(p.id)
                       return (
                         <button

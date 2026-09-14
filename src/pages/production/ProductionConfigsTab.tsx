@@ -232,14 +232,14 @@ export function ProductionConfigsTab() {
               <Label>Produto *</Label>
               <Select value={productId} onValueChange={setProductId}>
                 <SelectTrigger><SelectValue placeholder="Selecione o produto" /></SelectTrigger>
-                <SelectContent>{products.map(pr => <SelectItem key={pr.id} value={pr.id}>{pr.name}</SelectItem>)}</SelectContent>
+                <SelectContent>{products.filter(pr => pr.active).map(pr => <SelectItem key={pr.id} value={pr.id}>{pr.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
               <Label>Máquina *</Label>
               <Select value={machineId} onValueChange={setMachineId}>
                 <SelectTrigger><SelectValue placeholder="Selecione a máquina" /></SelectTrigger>
-                <SelectContent>{machines.map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}</SelectContent>
+                <SelectContent>{machines.filter(m => m.active).map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
           </div>
