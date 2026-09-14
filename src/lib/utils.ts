@@ -78,3 +78,13 @@ export function resolveLimit<T extends LimitLike>(limits: T[], value: number): T
 export function limitLabel(limit: LimitLike): string {
   return limit.label?.trim() || `L${limit.percentual}`
 }
+
+/**
+ * Data sem hora vinda da API (gravada como meia-noite UTC, ex. "2026-09-12T00:00:00.000Z").
+ * `new Date(iso)` no fuso do Brasil vira o dia anterior (21h do dia 11); aqui a data
+ * é montada pelas partes do calendário, sem conversão de fuso.
+ */
+export function parseDateOnly(iso: string): Date {
+  const [y, m, d] = iso.slice(0, 10).split('-').map(Number)
+  return new Date(y, m - 1, d)
+}

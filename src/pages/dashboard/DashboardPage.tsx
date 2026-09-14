@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { api } from '@/lib/api'
+import { parseDateOnly } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { useLocale } from '@/hooks/useLocale'
 import { useAdminContextStore } from '@/store/admin-context.store'
@@ -258,7 +259,7 @@ function QuickActions({ navigate, canEdit, lastBatches }: {
                     <Badge variant={b.status === 'COMPLETED' ? 'success' : 'secondary'} className="text-xs mb-0.5">
                       {b.status === 'COMPLETED' ? 'Concluído' : 'Rascunho'}
                     </Badge>
-                    <p className="text-xs text-muted-foreground">{format(new Date(b.dataProducao), 'dd/MM')}</p>
+                    <p className="text-xs text-muted-foreground">{format(parseDateOnly(b.dataProducao), 'dd/MM')}</p>
                   </div>
                 </button>
               ))}

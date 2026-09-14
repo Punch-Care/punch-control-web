@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '@/lib/api'
+import { parseDateOnly } from '@/lib/utils'
 import { useLocale } from '@/hooks/useLocale'
 import { useAdminCompany } from '@/hooks/useAdminCompany'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -245,7 +246,7 @@ export function CepTab() {
                 {cep.rows.map(row => (
                   <tr key={row.batchId} className="border-b hover:bg-muted/20">
                     <td className="px-3 py-1.5 font-mono font-semibold">{row.loteNumero}</td>
-                    <td className="px-3 py-1.5 text-muted-foreground">{format(new Date(row.dataProducao), 'dd/MM/yy')}</td>
+                    <td className="px-3 py-1.5 text-muted-foreground">{format(parseDateOnly(row.dataProducao), 'dd/MM/yy')}</td>
                     <td className="px-3 py-1.5 text-center">{fmt(row.roloCmpDir.inicio)}</td>
                     <td className="px-3 py-1.5 text-center">{fmt(row.roloCmpDir.meio)}</td>
                     <td className="px-3 py-1.5 text-center">{fmt(row.roloCmpDir.fim)}</td>

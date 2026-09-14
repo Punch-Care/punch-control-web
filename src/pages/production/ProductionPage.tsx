@@ -10,6 +10,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { format } from 'date-fns'
 
 import { api } from '@/lib/api'
+import { parseDateOnly } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
@@ -244,7 +245,7 @@ export function ProductionPage() {
                             </Badge>
                           </TableCell>
                           <TableCell className="text-muted-foreground text-sm">
-                            {format(new Date(b.dataProducao), 'dd/MM/yyyy')}
+                            {format(parseDateOnly(b.dataProducao), 'dd/MM/yyyy')}
                             <span className="ml-1 text-muted-foreground/60">{b.horaInicio}</span>
                           </TableCell>
                           <TableCell className="text-sm">{b.product.name}</TableCell>

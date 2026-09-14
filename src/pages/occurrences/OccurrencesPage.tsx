@@ -9,6 +9,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { format } from 'date-fns'
 
 import { api } from '@/lib/api'
+import { parseDateOnly } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -311,7 +312,7 @@ export function OccurrencesPage() {
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">{o.batch.machine.name}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{o.batch.product.name}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{format(new Date(o.batch.dataProducao), 'dd/MM/yyyy')}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{format(parseDateOnly(o.batch.dataProducao), 'dd/MM/yyyy')}</TableCell>
                   <TableCell className="text-xs text-muted-foreground max-w-[220px] truncate">{o.notas ?? '—'}</TableCell>
                 </TableRow>
               ))}

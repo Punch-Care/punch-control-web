@@ -11,6 +11,7 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
 import { api } from '@/lib/api'
+import { parseDateOnly } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -126,7 +127,7 @@ function generateCompletedPdf(batch: ProductionBatch) {
     `Produto: ${batch.product.name}`,
     `Máquina: ${batch.machine.name}`,
     `Jogo: ${batch.punchSet.code} — ${batch.punchSet.name}`,
-    `Data: ${format(new Date(batch.dataProducao), 'dd/MM/yyyy')}  ${batch.horaInicio}`,
+    `Data: ${format(parseDateOnly(batch.dataProducao), 'dd/MM/yyyy')}  ${batch.horaInicio}`,
     batch.kgProduzidos ? `KG: ${batch.kgProduzidos}` : '',
   ].filter(Boolean).join('     ')
   doc.text(info, 14, 28)
@@ -361,7 +362,7 @@ export function BatchFormPage() {
       machineId: existingBatch.machineId,
       punchSetId: existingBatch.punchSetId,
       loteNumero: existingBatch.loteNumero,
-      dataProducao: format(new Date(existingBatch.dataProducao), 'yyyy-MM-dd'),
+      dataProducao: format(parseDateOnly(existingBatch.dataProducao), 'yyyy-MM-dd'),
       horaInicio: existingBatch.horaInicio,
       duracaoEstimadaHoras: existingBatch.duracaoEstimadaHoras?.toString() ?? '8',
       kgProduzidos: existingBatch.kgProduzidos?.toString() ?? '',

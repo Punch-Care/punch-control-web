@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 
 import { api } from '@/lib/api'
+import { parseDateOnly } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -437,7 +438,7 @@ export function LifecyclePage() {
                   ) : lifecycleData.production.map((r, i) => (
                     <TableRow key={r.id} className={r.percAcumulado >= 100 ? 'bg-red-50' : i % 2 ? 'bg-muted/20' : ''}>
                       <TableCell className="text-sm">{r.produto}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{format(new Date(r.data), 'dd/MM/yyyy')}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{format(parseDateOnly(r.data), 'dd/MM/yyyy')}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">{r.maquina ?? '—'}</TableCell>
                       <TableCell className="font-mono text-sm">
                         {r.batchId ? (
@@ -493,7 +494,7 @@ export function LifecyclePage() {
                     <TableRow><TableCell colSpan={5} className="text-center py-6 text-muted-foreground text-sm">Nenhum registro de manutenção</TableCell></TableRow>
                   ) : lifecycleData.maintenance.map(r => (
                     <TableRow key={r.id}>
-                      <TableCell className="text-sm">{format(new Date(r.data), 'dd/MM/yyyy')}</TableCell>
+                      <TableCell className="text-sm">{format(parseDateOnly(r.data), 'dd/MM/yyyy')}</TableCell>
                       <TableCell className="text-sm font-medium">{COMPONENT_LABELS[r.componente]}</TableCell>
                       <TableCell className={`text-center font-bold text-sm ${r.quantidade < 0 ? 'text-red-600' : 'text-green-600'}`}>
                         {r.quantidade > 0 ? `+${r.quantidade}` : r.quantidade}
