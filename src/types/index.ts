@@ -140,6 +140,7 @@ export interface DimensionRecord {
 
 export interface Machine {
   id: string
+  company?: { id: string; name: string }
   name: string
   code: string | null
   fabricante: string | null

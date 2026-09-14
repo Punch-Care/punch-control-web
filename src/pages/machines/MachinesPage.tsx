@@ -563,7 +563,7 @@ export function MachinesPage() {
                 <TableCell className="text-muted-foreground">{m.norma ?? '—'}</TableCell>
                 <TableCell className="text-muted-foreground">{m.qtdEstacao ?? '—'}</TableCell>
                 {isAdmin && !selectedCompany && (
-                  <TableCell className="text-muted-foreground text-xs">{m.companyId}</TableCell>
+                  <TableCell className="text-muted-foreground text-xs">{m.company?.name ?? '—'}</TableCell>
                 )}
                 <TableCell>
                   <Badge variant={m.active ? 'success' : 'secondary'}>
