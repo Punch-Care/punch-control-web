@@ -27,11 +27,12 @@ type Tab = 'batches' | 'cep' | 'configs'
 // ── Empty state guiado ─────────────────────────────────────────────────────────
 
 function EmptyBatches({ navigate, canEdit }: { navigate: ReturnType<typeof useNavigate>; canEdit: boolean }) {
+  const pp = useLocale().t.productionPage
   const steps = [
-    { num: '1', label: 'Cadastrar Máquinas', desc: 'Registre as máquinas da empresa com modelo e norma', path: '/machines', done: false },
-    { num: '2', label: 'Cadastrar Jogos', desc: 'Adicione os jogos de punções com suas especificações', path: '/sets', done: false },
-    { num: '3', label: 'Configurar Processo', desc: 'Defina os parâmetros fixos para cada Produto + Máquina', path: null, action: 'configs', done: false },
-    { num: '4', label: 'Criar o Primeiro Lote', desc: 'Imprima o formulário, preencha na produção e registre os dados', path: '/production/new', done: false },
+    { num: '1', label: pp.step1, desc: pp.step1Desc, path: '/machines', done: false },
+    { num: '2', label: pp.step2, desc: pp.step2Desc, path: '/sets', done: false },
+    { num: '3', label: pp.step3, desc: pp.step3Desc, path: null, action: 'configs', done: false },
+    { num: '4', label: pp.step4, desc: pp.step4Desc, path: '/production/new', done: false },
   ]
 
   return (
@@ -41,21 +42,20 @@ function EmptyBatches({ navigate, canEdit }: { navigate: ReturnType<typeof useNa
         <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
           <FlaskConical className="h-8 w-8 text-primary" />
         </div>
-        <h3 className="text-lg font-semibold">Bem-vindo ao Módulo de Produção</h3>
+        <h3 className="text-lg font-semibold">{pp.welcome}</h3>
         <p className="text-sm text-muted-foreground mt-2 max-w-md mx-auto">
-          Aqui você controla os lotes de produção via CEP (Controle Estatístico em Processo),
-          registrando parâmetros do setup e medições horárias para análise estatística.
+          {pp.welcomeDesc}
         </p>
       </div>
 
       {/* Como funciona */}
       <div className="bg-muted/40 rounded-xl p-5">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">Como funciona</p>
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">{pp.howItWorks}</p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
           {[
-            { icon: Printer,  title: '1. Imprime',  desc: 'Formulário em branco gerado pelo sistema com os parâmetros configurados' },
-            { icon: PenLine,  title: '2. Preenche', desc: 'Operador anota os dados no papel durante a produção, a cada hora' },
-            { icon: Monitor,  title: '3. Registra', desc: 'Digita tudo no sistema, que valida e gera alertas automaticamente' },
+            { icon: Printer,  title: pp.how1, desc: pp.how1Desc },
+            { icon: PenLine,  title: pp.how2, desc: pp.how2Desc },
+            { icon: Monitor,  title: pp.how3, desc: pp.how3Desc },
           ].map(item => (
             <div key={item.title} className="flex gap-3">
               <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -73,7 +73,7 @@ function EmptyBatches({ navigate, canEdit }: { navigate: ReturnType<typeof useNa
       {/* Passos para começar */}
       {canEdit && (
         <div>
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">Para começar, siga estes passos</p>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">{pp.getStarted}</p>
           <div className="space-y-2">
             {steps.map((step, i) => (
               <div key={step.num} className="flex items-center gap-3 p-3 rounded-xl border bg-background hover:bg-muted/30 transition-colors group">
@@ -86,10 +86,10 @@ function EmptyBatches({ navigate, canEdit }: { navigate: ReturnType<typeof useNa
                 </div>
                 {step.path ? (
                   <Button size="sm" variant={i === 3 ? 'default' : 'outline'} onClick={() => navigate(step.path!)}>
-                    {i === 3 ? <><Plus className="h-3.5 w-3.5" /> Criar lote</> : <>Ir <ArrowRight className="h-3.5 w-3.5" /></>}
+                    {i === 3 ? <><Plus className="h-3.5 w-3.5" /> {pp.createLot}</> : <>{pp.go} <ArrowRight className="h-3.5 w-3.5" /></>}
                   </Button>
                 ) : (
-                  <Badge variant="secondary" className="text-xs cursor-default">Esta aba → Configs</Badge>
+                  <Badge variant="secondary" className="text-xs cursor-default">{pp.thisTabConfigs}</Badge>
                 )}
               </div>
             ))}
@@ -108,6 +108,7 @@ export function ProductionPage() {
   const { t } = useLocale()
   const { companyId: adminCompanyId } = useAdminCompany()
   const p = t.production
+  const pp = t.productionPage
   const [searchParams] = useSearchParams()
   const [activeTab, setActiveTab] = useState<Tab>(() => {
     const param = searchParams.get('tab')
@@ -201,9 +202,9 @@ export function ProductionPage() {
                 {/* Resumo rápido */}
                 <div className="grid grid-cols-3 gap-3 mb-4">
                   {[
-                    { label: 'Total de Lotes', value: batches.length, color: 'text-foreground' },
-                    { label: 'Concluídos', value: batches.filter(b => b.status === 'COMPLETED').length, color: 'text-green-600' },
-                    { label: 'Rascunhos', value: batches.filter(b => b.status === 'DRAFT').length, color: 'text-muted-foreground' },
+                    { label: pp.totalLots, value: batches.length, color: 'text-foreground' },
+                    { label: pp.completed, value: batches.filter(b => b.status === 'COMPLETED').length, color: 'text-green-600' },
+                    { label: pp.drafts, value: batches.filter(b => b.status === 'DRAFT').length, color: 'text-muted-foreground' },
                   ].map(s => (
                     <Card key={s.label} className="border-0 shadow-sm">
                       <CardContent className="p-3">
@@ -219,12 +220,12 @@ export function ProductionPage() {
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-muted/30">
-                        <TableHead className="font-semibold">Lote</TableHead>
-                        <TableHead className="font-semibold">Status</TableHead>
-                        <TableHead className="font-semibold">Data</TableHead>
-                        <TableHead className="font-semibold">Produto</TableHead>
-                        <TableHead className="font-semibold">Máquina</TableHead>
-                        <TableHead className="font-semibold">Jogo</TableHead>
+                        <TableHead className="font-semibold">{pp.colLot}</TableHead>
+                        <TableHead className="font-semibold">{t.common.status}</TableHead>
+                        <TableHead className="font-semibold">{pp.colDate}</TableHead>
+                        <TableHead className="font-semibold">{pp.colProduct}</TableHead>
+                        <TableHead className="font-semibold">{pp.colMachine}</TableHead>
+                        <TableHead className="font-semibold">{pp.colSet}</TableHead>
                         <TableHead className="font-semibold">KG</TableHead>
                         <TableHead className="w-20" />
                       </TableRow>
@@ -240,8 +241,8 @@ export function ProductionPage() {
                           <TableCell>
                             <Badge variant={b.status === 'COMPLETED' ? 'success' : 'secondary'} className="gap-1 text-xs">
                               {b.status === 'COMPLETED'
-                                ? <><CheckCircle2 className="h-3 w-3" /> Concluído</>
-                                : <><Clock className="h-3 w-3" /> Rascunho</>}
+                                ? <><CheckCircle2 className="h-3 w-3" /> {pp.statusCompleted}</>
+                                : <><Clock className="h-3 w-3" /> {pp.statusDraft}</>}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-muted-foreground text-sm">
@@ -262,7 +263,7 @@ export function ProductionPage() {
                               {canEdit && (
                                 <Button
                                   variant="ghost" size="icon" className="h-7 w-7"
-                                  title="Novo lote com o mesmo produto, máquina e jogo"
+                                  title={pp.duplicateLot}
                                   onClick={() => navigate(
                                     `/production/new?productId=${b.productId}&machineId=${b.machineId}&setId=${b.punchSetId}`,
                                   )}
