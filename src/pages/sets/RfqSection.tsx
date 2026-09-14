@@ -88,7 +88,7 @@ export function RfqSection({ set, canEdit }: { set: PunchSet; canEdit: boolean }
   const unlinkMachine = useMutation({
     mutationFn: (machineId: string) => api.delete(`/punch-sets/${set.id}/machines/${machineId}`),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['punch-set-machines', set.id] }); toast.success('Compressora desvinculada') },
-    onError: () => toast.error('Erro ao desvincular'),
+    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? 'Erro ao desvincular'),
   })
 
   const naoVinculadas = machines.filter(m => m.active && !setMachines.some(sm => sm.id === m.id))

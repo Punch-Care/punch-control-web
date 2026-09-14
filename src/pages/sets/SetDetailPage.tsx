@@ -102,7 +102,7 @@ export function SetDetailPage() {
       qc.invalidateQueries({ queryKey: ['punch-set-products', id] })
       toast.success(t.products.unlinked)
     },
-    onError: () => toast.error(t.products.unlinkError),
+    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? t.products.unlinkError),
   })
 
   const addForm = useForm<AddPunchData>({
@@ -128,7 +128,7 @@ export function SetDetailPage() {
       qc.invalidateQueries({ queryKey: ['punch-set', id] })
       toast.success(t.setDetail.punchRemoved)
     },
-    onError: () => toast.error(t.setDetail.punchRemoveError),
+    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? t.setDetail.punchRemoveError),
   })
 
   // Enquanto o usuário não mexe nos limites, o rascunho espelha o que veio do servidor

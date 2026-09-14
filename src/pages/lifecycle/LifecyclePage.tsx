@@ -165,7 +165,7 @@ export function LifecyclePage() {
       }))
     ),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['lifecycle', selectedSetId] }); toast.success('Estoque salvo') },
-    onError: () => toast.error('Erro ao salvar estoque'),
+    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? 'Erro ao salvar estoque'),
   })
 
   const addProdMutation = useMutation({
@@ -205,13 +205,13 @@ export function LifecyclePage() {
       setMaintForm({ data: format(new Date(), 'yyyy-MM-dd'), componente: 'P_SUPERIOR', quantidade: '', notas: '' })
       toast.success('Manutenção registrada')
     },
-    onError: () => toast.error('Erro ao registrar manutenção'),
+    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? 'Erro ao registrar manutenção'),
   })
 
   const deleteMaintMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/punch-sets/${selectedSetId}/lifecycle/maintenance/${id}`),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['lifecycle', selectedSetId] }); toast.success('Registro removido') },
-    onError: () => toast.error('Erro ao remover registro'),
+    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? 'Erro ao remover registro'),
   })
 
   const percAcumulado = lifecycleData?.percAcumulado ?? 0

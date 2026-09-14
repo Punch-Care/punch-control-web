@@ -488,7 +488,7 @@ export function ToolingSection({ setId, canEdit }: { setId: string; canEdit: boo
       setDraft({ UPPER_PUNCH: {}, LOWER_PUNCH: {}, MATRIX: {}, SEGMENT: {} })
       toast.success(t.tooling.saved)
     },
-    onError: () => toast.error(t.tooling.saveError),
+    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? t.tooling.saveError),
   })
 
   return (

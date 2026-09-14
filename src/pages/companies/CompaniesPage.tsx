@@ -60,7 +60,7 @@ export function CompaniesPage() {
       qc.invalidateQueries({ queryKey: ['companies'] })
       toast.success(c.active ? t.companies.activated : t.companies.deactivated)
     },
-    onError: () => toast.error(t.companies.toggleError),
+    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? t.companies.toggleError),
   })
 
   return (

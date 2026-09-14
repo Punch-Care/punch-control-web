@@ -57,7 +57,7 @@ function ProductStepForm({ companyId, onSuccess }: { companyId: string; onSucces
       form.reset()
       onSuccess()
     },
-    onError: () => toast.error('Erro ao cadastrar produto. Tente novamente.'),
+    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? 'Erro ao cadastrar produto. Tente novamente.'),
   })
 
   return (
@@ -110,7 +110,7 @@ function MachineStepForm({ companyId, onSuccess }: { companyId: string; onSucces
       form.reset()
       onSuccess()
     },
-    onError: () => toast.error('Erro ao cadastrar máquina. Tente novamente.'),
+    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? 'Erro ao cadastrar máquina. Tente novamente.'),
   })
 
   return (
@@ -179,7 +179,7 @@ function PunchSetStepForm({ companyId, onSuccess }: { companyId: string; onSucce
       form.reset()
       onSuccess()
     },
-    onError: () => toast.error('Erro ao cadastrar jogo. Tente novamente.'),
+    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? 'Erro ao cadastrar jogo. Tente novamente.'),
   })
 
   return (
