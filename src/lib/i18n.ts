@@ -543,6 +543,7 @@ const translations = {
       noLogs: 'Nenhum registro de auditoria',
       actions: {
         LOGIN: 'Login',
+        LOGIN_FAILED: 'Login recusado',
         CREATE: 'Criação',
         UPDATE: 'Alteração',
         DELETE: 'Exclusão',
@@ -1205,6 +1206,7 @@ const translations = {
       noLogs: 'No audit records',
       actions: {
         LOGIN: 'Login',
+        LOGIN_FAILED: 'Failed login',
         CREATE: 'Create',
         UPDATE: 'Update',
         DELETE: 'Delete',
@@ -1867,6 +1869,7 @@ const translations = {
       noLogs: 'Sin registros de auditoría',
       actions: {
         LOGIN: 'Inicio de sesión',
+        LOGIN_FAILED: 'Inicio de sesión rechazado',
         CREATE: 'Creación',
         UPDATE: 'Modificación',
         DELETE: 'Eliminación',

@@ -16,6 +16,7 @@ import type { AuditLogResponse } from '@/types'
 
 const ACTION_VARIANT: Record<string, 'success' | 'warning' | 'secondary' | 'destructive'> = {
   LOGIN: 'secondary',
+  LOGIN_FAILED: 'destructive',
   CREATE: 'success',
   UPDATE: 'warning',
   DELETE: 'destructive',
@@ -73,6 +74,7 @@ export function AuditPage() {
             <SelectContent>
               <SelectItem value="__all__">{t.common.all}</SelectItem>
               <SelectItem value="LOGIN">{a.actions.LOGIN}</SelectItem>
+              <SelectItem value="LOGIN_FAILED">{a.actions.LOGIN_FAILED}</SelectItem>
               <SelectItem value="CREATE">{a.actions.CREATE}</SelectItem>
               <SelectItem value="UPDATE">{a.actions.UPDATE}</SelectItem>
               <SelectItem value="DELETE">{a.actions.DELETE}</SelectItem>
