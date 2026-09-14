@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { DecimalInput } from '@/components/ui/decimal-input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useLocale } from '@/hooks/useLocale'
@@ -216,12 +217,10 @@ function boolSel(value: boolean | null | undefined, onValueChange: (v: boolean |
 
 function num(value: number | null | undefined, onChange: (v: number | null) => void, placeholder = '—', disabled?: boolean) {
   return (
-    <Input
-      type="number"
-      step="any"
+    <DecimalInput
       className="h-8 text-xs"
-      value={value ?? ''}
-      onChange={e => onChange(e.target.value === '' ? null : parseFloat(e.target.value))}
+      value={value}
+      onValueChange={onChange}
       placeholder={placeholder}
       disabled={disabled}
     />

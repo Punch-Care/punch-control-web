@@ -88,3 +88,15 @@ export function parseDateOnly(iso: string): Date {
   const [y, m, d] = iso.slice(0, 10).split('-').map(Number)
   return new Date(y, m - 1, d)
 }
+
+/**
+ * Número digitado pelo usuário, aceitando vírgula ou ponto decimal.
+ * `parseFloat("0,00015")` dá 0 — por isso nunca usar parseFloat direto em campo de tela.
+ * Vazio → null; texto que não é número → NaN.
+ */
+export function parseDecimal(raw: string | null | undefined): number | null {
+  const t = (raw ?? '').trim().replace(',', '.')
+  if (t === '') return null
+  const n = Number(t)
+  return Number.isFinite(n) ? n : NaN
+}

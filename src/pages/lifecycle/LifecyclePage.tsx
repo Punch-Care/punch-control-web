@@ -8,7 +8,7 @@ import {
 } from 'lucide-react'
 
 import { api } from '@/lib/api'
-import { parseDateOnly } from '@/lib/utils'
+import { parseDateOnly, parseDecimal } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -142,12 +142,16 @@ export function LifecyclePage() {
 
   // Mutations
   const saveConfigMutation = useMutation({
-    mutationFn: () => api.put(`/punch-sets/${selectedSetId}/lifecycle/config`, {
-      fatorDepreciacao: parseFloat(configForm.fatorDepreciacao),
-      pesoMedioPadrao: configForm.pesoMedioPadrao ? parseFloat(configForm.pesoMedioPadrao) : null,
-    }),
+    mutationFn: () => {
+      const fatorDepreciacao = parseDecimal(configForm.fatorDepreciacao)
+      const pesoMedioPadrao = parseDecimal(configForm.pesoMedioPadrao)
+      if (fatorDepreciacao === null || Number.isNaN(fatorDepreciacao) || Number.isNaN(pesoMedioPadrao)) {
+        return Promise.reject({ response: { data: { message: 'Fator ou peso médio inválido' } } })
+      }
+      return api.put(`/punch-sets/${selectedSetId}/lifecycle/config`, { fatorDepreciacao, pesoMedioPadrao })
+    },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['lifecycle', selectedSetId] }); setEditConfig(false); toast.success('Configuração salva') },
-    onError: () => toast.error('Erro ao salvar configuração'),
+    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? 'Erro ao salvar configuração'),
   })
 
   const saveInventoryMutation = useMutation({
@@ -170,7 +174,7 @@ export function LifecyclePage() {
       data: prodForm.data,
       maquina: prodForm.maquina || null,
       numLote: prodForm.numLote,
-      qtdKg: parseFloat(prodForm.qtdKg),
+      qtdKg: parseDecimal(prodForm.qtdKg),
     }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['lifecycle', selectedSetId] })
@@ -211,7 +215,7 @@ export function LifecyclePage() {
   })
 
   const percAcumulado = lifecycleData?.percAcumulado ?? 0
-  const fator = parseFloat(configForm.fatorDepreciacao) || 0.00015
+  const fator = parseDecimal(configForm.fatorDepreciacao) || 0.00015
 
   return (
     <div className="p-4 sm:p-6 space-y-5">
@@ -302,7 +306,7 @@ export function LifecyclePage() {
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs">Peso Médio Padrão (g)</Label>
-                      <Input className="h-8 text-xs" type="number" step="0.001" value={configForm.pesoMedioPadrao} onChange={e => setConfigForm(f => ({ ...f, pesoMedioPadrao: e.target.value }))} placeholder="ex: 0.500" />
+                      <Input className="h-8 text-xs" inputMode="decimal" value={configForm.pesoMedioPadrao} onChange={e => setConfigForm(f => ({ ...f, pesoMedioPadrao: e.target.value }))} placeholder="ex: 0.500" />
                     </div>
                     <div className="flex items-end">
                       <Button size="sm" onClick={() => saveConfigMutation.mutate()} disabled={saveConfigMutation.isPending}>
@@ -532,7 +536,7 @@ export function LifecyclePage() {
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Qtd. kg produzidos</Label>
-                <Input type="number" step="0.1" className="h-8 text-sm" value={prodForm.qtdKg} onChange={e => setProdForm(f => ({ ...f, qtdKg: e.target.value }))} placeholder="ex: 450" />
+                <Input inputMode="decimal" className="h-8 text-sm" value={prodForm.qtdKg} onChange={e => setProdForm(f => ({ ...f, qtdKg: e.target.value }))} placeholder="ex: 450" />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -548,7 +552,7 @@ export function LifecyclePage() {
             {prodForm.qtdKg && (
               <div className="bg-muted/40 rounded-lg px-3 py-2 text-xs">
                 <span className="text-muted-foreground">% utilização estimada: </span>
-                <span className="font-semibold">{(parseFloat(prodForm.qtdKg) * fator * 100).toFixed(2)}%</span>
+                <span className="font-semibold">{((parseDecimal(prodForm.qtdKg) || 0) * fator * 100).toFixed(2)}%</span>
               </div>
             )}
             <Button className="w-full" disabled={addProdMutation.isPending || !prodForm.produto || !prodForm.numLote || !prodForm.qtdKg} onClick={() => addProdMutation.mutate()}>

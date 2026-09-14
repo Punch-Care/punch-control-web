@@ -472,7 +472,7 @@ export function BatchFormPage() {
     dataProducao: form.dataProducao,
     horaInicio: form.horaInicio,
     duracaoEstimadaHoras: form.duracaoEstimadaHoras ? parseInt(form.duracaoEstimadaHoras) : null,
-    kgProduzidos: form.kgProduzidos ? parseFloat(form.kgProduzidos) : null,
+    kgProduzidos: parseDecimal(form.kgProduzidos),
     observacoesOperador: form.observacoesOperador || null,
     observacoesTecnico: form.observacoesTecnico || null,
     separadoPor: form.separadoPor || null,
@@ -1057,7 +1057,7 @@ export function BatchFormPage() {
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium">KG Produzidos</Label>
                 <div className="relative">
-                  <Input type="number" step="0.1" value={form.kgProduzidos} onChange={e => setField('kgProduzidos', e.target.value)} disabled={!canEdit} placeholder="ex: 450.5" />
+                  <Input inputMode="decimal" value={form.kgProduzidos} onChange={e => setField('kgProduzidos', sanitizeDecimal(e.target.value))} disabled={!canEdit} placeholder="ex: 450,5" />
                   <span className="absolute right-3 top-2.5 text-xs text-muted-foreground">kg</span>
                 </div>
               </div>
