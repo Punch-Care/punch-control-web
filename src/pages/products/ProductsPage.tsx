@@ -95,12 +95,15 @@ export function ProductsPage() {
   })
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => api.delete(`/products/${id}`),
-    onSuccess: () => {
+    mutationFn: (id: string) =>
+      api.delete<{ deleted: boolean; inactivated: boolean }>(`/products/${id}`).then((r) => r.data),
+    onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ['products'] })
-      toast.success(t.products.deleted)
+      if (res?.inactivated) toast.info(t.products.inactivatedInstead)
+      else toast.success(t.products.deleted)
     },
-    onError: () => toast.error(t.products.deleteError),
+    onError: (e: { response?: { data?: { message?: string } } }) =>
+      toast.error(e.response?.data?.message ?? t.products.deleteError),
   })
 
   const handleCreate = (data: CreateData) => {
