@@ -20,7 +20,10 @@ import type { PunchSet, DimensionRecord, Occurrence, OccurrenceType, OccurrenceS
 
 function exportCSV(filename: string, headers: string[], rows: string[][]) {
   const bom = '\uFEFF'
-  const csv = bom + [headers, ...rows].map((r) => r.map((v) => `"${v}"`).join(';')).join('\n')
+  // Aspas dentro do texto são duplicadas (padrão CSV); sem isso uma descrição com
+  // aspas desalinha todas as colunas seguintes
+  const cell = (v: string) => `"${String(v ?? '').replace(/"/g, '""')}"`
+  const csv = bom + [headers, ...rows].map((r) => r.map(cell).join(';')).join('\n')
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -115,7 +118,7 @@ export function ReportsPage() {
   function exportOcorrenciasCSV() {
     exportCSV(
       `ocorrencias_${format(new Date(), 'yyyyMMdd')}.csv`,
-      [t.reports.set, t.reports.csvStatus, t.reports.machine, t.reports.product, t.common.description, t.reports.csvResolution, t.reports.openedAt, t.reports.closedAt],
+      [t.reports.set, t.common.type, t.reports.csvStatus, t.reports.machine, t.reports.product, t.common.description, t.reports.csvResolution, t.reports.openedAt, t.reports.closedAt],
       occurrences.map((o) => [`${o.set.code} - ${o.set.name}`, t.occurrenceType[o.type], t.occurrenceStatus[o.status], o.machine?.name ?? '', o.product?.name ?? '', o.description, o.resolution ?? '', format(new Date(o.openedAt), 'dd/MM/yyyy'), o.closedAt ? format(new Date(o.closedAt), 'dd/MM/yyyy') : ''])
     )
   }
@@ -168,7 +171,7 @@ export function ReportsPage() {
 
     autoTable(doc, {
       startY: 44,
-      head: [[t.reports.set, t.reports.csvStatus, t.reports.machine, t.reports.product, t.common.description, t.reports.pdfResolution, t.reports.openedAt, t.reports.closedAt]],
+      head: [[t.reports.set, t.common.type, t.reports.csvStatus, t.reports.machine, t.reports.product, t.common.description, t.reports.pdfResolution, t.reports.openedAt, t.reports.closedAt]],
       body: occurrences.map((o) => [
         `${o.set.code}\n${o.set.name}`,
         t.occurrenceType[o.type],
