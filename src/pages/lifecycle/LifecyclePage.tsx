@@ -381,17 +381,17 @@ export function LifecyclePage() {
                       <TableRow key={tipo} className={alerta ? 'bg-orange-50' : ''}>
                         <TableCell className="font-medium text-sm">{COMPONENT_LABELS[tipo]}</TableCell>
                         <TableCell className="text-center">
-                          <Input className="h-7 text-xs text-center w-24 mx-auto" placeholder="ex: 24mm" value={inventory[tipo].dimensao} onChange={e => setInventory(prev => ({ ...prev, [tipo]: { ...prev[tipo], dimensao: e.target.value } }))} />
+                          <Input className="h-7 text-xs text-center w-24 mx-auto" placeholder="ex: 24mm" value={inventory[tipo].dimensao} onChange={e => setInventory(prev => ({ ...prev, [tipo]: { ...prev[tipo], dimensao: e.target.value } }))} disabled={!canManage} />
                         </TableCell>
                         <TableCell className="text-center">
-                          <Input type="number" className="h-7 text-xs text-center w-20 mx-auto" value={inventory[tipo].qtdAdquirida} onChange={e => setInventory(prev => ({ ...prev, [tipo]: { ...prev[tipo], qtdAdquirida: e.target.value } }))} />
+                          <Input type="number" className="h-7 text-xs text-center w-20 mx-auto" value={inventory[tipo].qtdAdquirida} onChange={e => setInventory(prev => ({ ...prev, [tipo]: { ...prev[tipo], qtdAdquirida: e.target.value } }))} disabled={!canManage} />
                         </TableCell>
                         <TableCell className="text-center">
-                          <Input type="number" className="h-7 text-xs text-center w-20 mx-auto" value={inventory[tipo].qtdUtilizada} onChange={e => setInventory(prev => ({ ...prev, [tipo]: { ...prev[tipo], qtdUtilizada: e.target.value } }))} />
+                          <Input type="number" className="h-7 text-xs text-center w-20 mx-auto" value={inventory[tipo].qtdUtilizada} onChange={e => setInventory(prev => ({ ...prev, [tipo]: { ...prev[tipo], qtdUtilizada: e.target.value } }))} disabled={!canManage} />
                         </TableCell>
                         <TableCell className={`text-center font-bold text-sm ${sobra <= 0 ? 'text-red-600' : ''}`}>{sobra}</TableCell>
                         <TableCell className="text-center">
-                          <Input type="number" className="h-7 text-xs text-center w-20 mx-auto" value={inventory[tipo].pontoEncomenda} onChange={e => setInventory(prev => ({ ...prev, [tipo]: { ...prev[tipo], pontoEncomenda: e.target.value } }))} placeholder="—" />
+                          <Input type="number" className="h-7 text-xs text-center w-20 mx-auto" value={inventory[tipo].pontoEncomenda} onChange={e => setInventory(prev => ({ ...prev, [tipo]: { ...prev[tipo], pontoEncomenda: e.target.value } }))} placeholder="—" disabled={!canManage} />
                         </TableCell>
                         <TableCell className="text-center">
                           {alerta ? (
