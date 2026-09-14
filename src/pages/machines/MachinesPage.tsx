@@ -29,6 +29,12 @@ const NORMAS = [
 ] as const
 
 const MACHINE_NAME = 'Compressora'
+
+// Aceita vírgula ou ponto como separador decimal ("40,5" e "40.5").
+// input type="number" rejeita a vírgula dependendo do navegador/idioma.
+const toDecimal = (v: unknown) =>
+  typeof v === 'string' && v.trim() !== '' ? Number(v.trim().replace(',', '.')) : v
+const decimalField = z.preprocess(toDecimal, z.number().min(0).optional().or(z.literal('')))
 const BRAND: [number, number, number] = [240, 89, 34]
 
 /**
@@ -199,10 +205,10 @@ function MachineForm({
         capacidadeMaxCph: z.coerce.number().int().min(0).optional().or(z.literal('')),
         qtdSaidas: z.coerce.number().int().min(0).optional().or(z.literal('')),
         torreIntercambiavel: z.boolean().optional(),
-        forcaPreCompressaoKN: z.coerce.number().min(0).optional().or(z.literal('')),
-        forcaCompressaoKN: z.coerce.number().min(0).optional().or(z.literal('')),
-        diametroMaxComprimidoMm: z.coerce.number().min(0).optional().or(z.literal('')),
-        espessuraMaxComprimidoMm: z.coerce.number().min(0).optional().or(z.literal('')),
+        forcaPreCompressaoKN: decimalField,
+        forcaCompressaoKN: decimalField,
+        diametroMaxComprimidoMm: decimalField,
+        espessuraMaxComprimidoMm: decimalField,
         observacoes: z.string().optional(),
         companyId: (isAdmin && !hasCompanyContext) ? z.string().uuid(m.selectCompanyRequired) : z.string().optional(),
       }),
@@ -218,8 +224,8 @@ function MachineForm({
     },
   })
 
-  const forcaPre = watch('forcaPreCompressaoKN')
-  const forcaPrinc = watch('forcaCompressaoKN')
+  const forcaPre = toDecimal(watch('forcaPreCompressaoKN'))
+  const forcaPrinc = toDecimal(watch('forcaCompressaoKN'))
 
   const { data: companies = [] } = useQuery<Company[]>({
     queryKey: ['companies'],
@@ -403,7 +409,7 @@ function MachineForm({
         {/* Força pré-compressão KN + conversão ton */}
         <div className="space-y-1.5">
           <Label>{m.forcaPreCompressaoKN}</Label>
-          <Input type="number" step="any" placeholder="ex: 10" {...register('forcaPreCompressaoKN')} />
+          <Input type="text" inputMode="decimal" placeholder="ex: 10,5" {...register('forcaPreCompressaoKN')} />
           {knToTf(Number(forcaPre)) !== null && Number(forcaPre) > 0 && (
             <p className="text-xs text-muted-foreground">≈ {knToTf(Number(forcaPre))} tf</p>
           )}
@@ -412,7 +418,7 @@ function MachineForm({
         {/* Força compressão principal KN + conversão ton */}
         <div className="space-y-1.5">
           <Label>{m.forcaCompressaoKN}</Label>
-          <Input type="number" step="any" placeholder="ex: 100" {...register('forcaCompressaoKN')} />
+          <Input type="text" inputMode="decimal" placeholder="ex: 100,5" {...register('forcaCompressaoKN')} />
           {knToTf(Number(forcaPrinc)) !== null && Number(forcaPrinc) > 0 && (
             <p className="text-xs text-muted-foreground">≈ {knToTf(Number(forcaPrinc))} tf</p>
           )}
@@ -421,11 +427,11 @@ function MachineForm({
         {/* Diâmetro / espessura máx do comprimido */}
         <div className="space-y-1.5">
           <Label>{m.diametroMaxComprimidoMm}</Label>
-          <Input type="number" step="any" placeholder="ex: 25" {...register('diametroMaxComprimidoMm')} />
+          <Input type="text" inputMode="decimal" placeholder="ex: 12,7" {...register('diametroMaxComprimidoMm')} />
         </div>
         <div className="space-y-1.5">
           <Label>{m.espessuraMaxComprimidoMm}</Label>
-          <Input type="number" step="any" placeholder="ex: 8" {...register('espessuraMaxComprimidoMm')} />
+          <Input type="text" inputMode="decimal" placeholder="ex: 8,5" {...register('espessuraMaxComprimidoMm')} />
         </div>
 
         {/* Observações */}
