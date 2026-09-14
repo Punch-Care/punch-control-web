@@ -226,6 +226,11 @@ export interface ComponentInventory {
   qtdAdquirida: number
   qtdUtilizada: number
   pontoEncomenda: number | null
+  /** Soma dos registros de manutenção do componente (positivo consome estoque) */
+  qtdManutencao?: number
+  /** Adquirida − utilizada inicial − manutenção */
+  sobra?: number
+  precisaRepor?: boolean
 }
 
 export interface LifecycleProductionRecord {

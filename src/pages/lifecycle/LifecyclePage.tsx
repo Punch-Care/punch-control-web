@@ -364,7 +364,8 @@ export function LifecyclePage() {
                     <TableHead>Componente</TableHead>
                     <TableHead className="text-center">Dimensão</TableHead>
                     <TableHead className="text-center">Adquirida</TableHead>
-                    <TableHead className="text-center">Utilizada</TableHead>
+                    <TableHead className="text-center" title="Quantidade já em uso antes dos registros de manutenção">Utilizada (inicial)</TableHead>
+                    <TableHead className="text-center" title="Soma dos registros de manutenção: positivo tira do estoque, negativo devolve">Manutenção</TableHead>
                     <TableHead className="text-center">Sobra</TableHead>
                     <TableHead className="text-center">Ponto de Encomenda</TableHead>
                     <TableHead className="text-center">Status</TableHead>
@@ -374,7 +375,11 @@ export function LifecyclePage() {
                   {COMPONENT_TYPES.map(tipo => {
                     const adq = parseInt(inventory[tipo].qtdAdquirida) || 0
                     const util = parseInt(inventory[tipo].qtdUtilizada) || 0
-                    const sobra = adq - util
+                    // Substituições registradas na manutenção consomem (ou devolvem) estoque
+                    const manut = lifecycleData.maintenance
+                      .filter(m => m.componente === tipo)
+                      .reduce((soma, m) => soma + m.quantidade, 0)
+                    const sobra = adq - util - manut
                     const pe = inventory[tipo].pontoEncomenda ? parseInt(inventory[tipo].pontoEncomenda) : null
                     const alerta = pe !== null && sobra <= pe
                     return (
@@ -389,6 +394,7 @@ export function LifecyclePage() {
                         <TableCell className="text-center">
                           <Input type="number" className="h-7 text-xs text-center w-20 mx-auto" value={inventory[tipo].qtdUtilizada} onChange={e => setInventory(prev => ({ ...prev, [tipo]: { ...prev[tipo], qtdUtilizada: e.target.value } }))} disabled={!canManage} />
                         </TableCell>
+                        <TableCell className="text-center text-sm tabular-nums text-muted-foreground">{manut > 0 ? `+${manut}` : manut}</TableCell>
                         <TableCell className={`text-center font-bold text-sm ${sobra <= 0 ? 'text-red-600' : ''}`}>{sobra}</TableCell>
                         <TableCell className="text-center">
                           <Input type="number" className="h-7 text-xs text-center w-20 mx-auto" value={inventory[tipo].pontoEncomenda} onChange={e => setInventory(prev => ({ ...prev, [tipo]: { ...prev[tipo], pontoEncomenda: e.target.value } }))} placeholder="—" disabled={!canManage} />
@@ -582,8 +588,9 @@ export function LifecyclePage() {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Quantidade (negativo = retirada)</Label>
+              <Label className="text-xs">Quantidade</Label>
               <Input type="number" className="h-8 text-sm" value={maintForm.quantidade} onChange={e => setMaintForm(f => ({ ...f, quantidade: e.target.value }))} placeholder="ex: 5 ou -3" />
+              <p className="text-xs text-muted-foreground">Positivo: componentes tirados do estoque e colocados no jogo. Negativo: devolvidos ao estoque.</p>
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Observações</Label>
