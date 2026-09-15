@@ -161,9 +161,14 @@ export function ProductionPage() {
             </div>
           </div>
           {activeTab === 'batches' && canEdit && hasData && (
-            <Button onClick={() => navigate('/production/new')}>
-              <Plus className="h-4 w-4" /> {p.newBatch}
-            </Button>
+            <div className="flex items-center gap-2 flex-wrap justify-end">
+              <Button variant="outline" title={p.fullFormHint} onClick={() => navigate('/production/new')}>
+                {p.fullForm}
+              </Button>
+              <Button onClick={() => navigate('/operador/lote/novo/maquina')}>
+                <Plus className="h-4 w-4" /> {p.newBatch}
+              </Button>
+            </div>
           )}
         </div>
       </div>
@@ -277,7 +282,7 @@ export function ProductionPage() {
                                   variant="ghost" size="icon" className="h-7 w-7"
                                   title={pp.duplicateLot}
                                   onClick={() => navigate(
-                                    `/production/new?productId=${b.productId}&machineId=${b.machineId}&setId=${b.punchSetId}`,
+                                    `/operador/lote/novo/identificacao?productId=${b.productId}&machineId=${b.machineId}&setId=${b.punchSetId}`,
                                   )}
                                 >
                                   <CopyPlus className="h-3.5 w-3.5" />
@@ -287,7 +292,7 @@ export function ProductionPage() {
                                 <Button
                                   variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive"
                                   disabled={deleteMutation.isPending}
-                                  onClick={() => { if (confirm(`Remover lote ${b.loteNumero}?`)) deleteMutation.mutate(b.id) }}
+                                  onClick={() => { if (confirm(p.deleteBatchConfirm(b.loteNumero))) deleteMutation.mutate(b.id) }}
                                 >
                                   <Trash2 className="h-3.5 w-3.5" />
                                 </Button>

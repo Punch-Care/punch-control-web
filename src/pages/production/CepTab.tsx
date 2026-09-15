@@ -264,7 +264,7 @@ export function CepTab() {
                     <td className="px-3 py-1.5">
                       <div className="flex gap-1 flex-wrap">
                         {row.occurrences.map(o => (
-                          <Badge key={o} variant="destructive" className="text-xs px-1 py-0">{p[o as keyof typeof p] ?? o}</Badge>
+                          <Badge key={o} variant="destructive" className="text-xs px-1 py-0">{(p as unknown as Record<string, string>)[o] ?? o}</Badge>
                         ))}
                       </div>
                     </td>

@@ -284,7 +284,7 @@ function QuickActions({ navigate, canEdit, lastBatches }: {
       label: u.qaNewLot,
       desc: u.qaNewLotDesc,
       color: 'bg-primary text-primary-foreground',
-      onClick: () => navigate('/production/new'),
+      onClick: () => navigate('/operador/lote/novo/maquina'),
       primary: true,
       show: canEdit,
     },
@@ -385,7 +385,7 @@ function QuickActions({ navigate, canEdit, lastBatches }: {
             <p className="font-medium text-sm">{u.noLotsYet}</p>
             <p className="text-xs text-muted-foreground mt-1 mb-4">{u.noLotsYetDesc}</p>
             {canEdit && (
-              <Button size="sm" onClick={() => navigate('/production/new')}>
+              <Button size="sm" onClick={() => navigate('/operador/lote/novo/maquina')}>
                 <Plus className="h-3.5 w-3.5" /> {u.createFirstLot}
               </Button>
             )}

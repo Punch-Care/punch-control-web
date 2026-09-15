@@ -405,7 +405,7 @@ export function SetDetailPage() {
               label: t.rfq.qaNewLot,
               desc: t.rfq.qaNewLotDesc,
               color: 'bg-primary/10 text-primary hover:bg-primary/20',
-              onClick: () => navigate(`/production/new?setId=${id}`),
+              onClick: () => navigate(`/operador/lote/novo/maquina?setId=${id}`),
               show: canEdit,
             },
             {

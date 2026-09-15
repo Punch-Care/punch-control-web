@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Navigate, useNavigate, useParams } from 'react-router-dom'
+import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
@@ -48,7 +48,13 @@ export function NewBatch() {
   const { t } = useLocale()
   const o = t.operator
   const { companyId } = useAdminCompany()
-  const [draft, setDraft] = useState<Draft>(lerRascunho)
+  const [searchParams] = useSearchParams()
+  // Atalhos (repetir lote, novo lote a partir do jogo) já chegam com as escolhas feitas
+  const [draft, setDraft] = useState<Draft>(() => {
+    const pre = { machineId: searchParams.get('machineId'), productId: searchParams.get('productId'), punchSetId: searchParams.get('setId') }
+    if (!pre.machineId && !pre.productId && !pre.punchSetId) return lerRascunho()
+    return { ...vazio(), ...Object.fromEntries(Object.entries(pre).filter(([, v]) => v)) }
+  })
 
   useEffect(() => { sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft)) }, [draft])
   const set = (patch: Partial<Draft>) => setDraft(d => ({ ...d, ...patch }))
