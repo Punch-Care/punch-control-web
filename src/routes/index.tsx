@@ -20,6 +20,13 @@ import { ReportsPage } from '@/pages/reports/ReportsPage'
 import { ProductsPage } from '@/pages/products/ProductsPage'
 import { AuditPage } from '@/pages/audit/AuditPage'
 import { RouteError } from '@/components/layout/RouteError'
+import { OperatorLayout } from '@/pages/operator/OperatorLayout'
+import { OperatorHome } from '@/pages/operator/OperatorHome'
+import { NewBatch } from '@/pages/operator/NewBatch'
+import { BatchRun } from '@/pages/operator/BatchRun'
+import { MeasurementPage } from '@/pages/operator/MeasurementPage'
+import { FinishBatch } from '@/pages/operator/FinishBatch'
+import { BatchDone } from '@/pages/operator/BatchDone'
 
 export const router = createBrowserRouter([
   { path: '/', element: <LandingPage />, errorElement: <RouteError /> },
@@ -31,6 +38,22 @@ export const router = createBrowserRouter([
   {
     element: <PrivateRoute />,
     children: [
+      {
+        // Modo operador: fluxo guiado para o chão de fábrica, sem menu lateral
+        path: '/operador',
+        element: <OperatorLayout />,
+        errorElement: <RouteError />,
+        children: [
+          { index: true, element: <OperatorHome /> },
+          { path: 'lote/novo/:step', element: <NewBatch /> },
+          { path: 'lote/novo', element: <Navigate to="/operador/lote/novo/maquina" replace /> },
+          { path: 'lote/:id', element: <BatchRun /> },
+          { path: 'lote/:id/medicao', element: <MeasurementPage /> },
+          { path: 'lote/:id/medicao/:mid', element: <MeasurementPage /> },
+          { path: 'lote/:id/encerrar/:step', element: <FinishBatch /> },
+          { path: 'lote/:id/concluido', element: <BatchDone /> },
+        ],
+      },
       {
         element: <AppLayout />,
         errorElement: <RouteError />,

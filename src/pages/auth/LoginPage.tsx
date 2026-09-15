@@ -13,6 +13,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/hooks/useAuth'
 import { useLocale } from '@/hooks/useLocale'
+import { homeRouteFor } from '@/lib/home-route'
+import { useAuthStore } from '@/store/auth.store'
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -41,7 +43,7 @@ export function LoginPage() {
     setLoading(true)
     try {
       await login(data.email, data.password)
-      navigate('/dashboard')
+      navigate(homeRouteFor(useAuthStore.getState().user?.role))
     } catch (err) {
       const message = axios.isAxiosError(err)
         ? (err.response?.data?.message ?? t.auth.errorConnecting)
