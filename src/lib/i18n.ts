@@ -114,6 +114,9 @@ const translations = {
       CLIENT: 'Cliente',
     },
     auth: {
+      ruleLength: 'Pelo menos 8 caracteres',
+      ruleLettersNumbers: 'Tem letras e números',
+      ruleMatch: 'A confirmação é igual à senha nova',
       showPassword: 'Mostrar senha',
       hidePassword: 'Esconder senha',
       forgotHint: 'Esqueceu a senha? Peça ao gestor da sua empresa para criar uma nova.',
@@ -2161,6 +2164,9 @@ const translations = {
       CLIENT: 'Client',
     },
     auth: {
+      ruleLength: 'At least 8 characters',
+      ruleLettersNumbers: 'Has letters and numbers',
+      ruleMatch: 'Confirmation matches the new password',
       showPassword: 'Show password',
       hidePassword: 'Hide password',
       forgotHint: 'Forgot your password? Ask your company manager to create a new one.',
@@ -4208,6 +4214,9 @@ const translations = {
       CLIENT: 'Cliente',
     },
     auth: {
+      ruleLength: 'Al menos 8 caracteres',
+      ruleLettersNumbers: 'Tiene letras y números',
+      ruleMatch: 'La confirmación es igual a la nueva contraseña',
       showPassword: 'Mostrar contraseña',
       hidePassword: 'Ocultar contraseña',
       forgotHint: '¿Olvidó la contraseña? Pida al gestor de su empresa que cree una nueva.',

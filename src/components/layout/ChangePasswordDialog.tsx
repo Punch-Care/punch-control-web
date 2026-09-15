@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Loader2, KeyRound } from 'lucide-react'
+import { Loader2, KeyRound, CheckCircle2, Circle } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
@@ -20,7 +20,7 @@ export function ChangePasswordDialog({
 }) {
   const { t } = useLocale()
   const a = t.auth
-  const { changePassword } = useAuth()
+  const { changePassword, logout } = useAuth()
   const [current, setCurrent] = useState('')
   const [next, setNext] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -67,17 +67,33 @@ export function ChangePasswordDialog({
           <div className="space-y-1.5">
             <Label>{a.newPassword}</Label>
             <Input type="password" value={next} onChange={(e) => setNext(e.target.value)} autoComplete="new-password" />
-            <p className="text-xs text-muted-foreground">{a.newPasswordRules}</p>
           </div>
           <div className="space-y-1.5">
             <Label>{a.confirmPassword}</Label>
             <Input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" />
           </div>
-          {error && <p className="text-xs text-destructive">{error}</p>}
+          {/* Regras marcadas conforme digita: sem adivinhar por que a senha foi recusada */}
+          <ul className="space-y-1 text-sm">
+            {([
+              [a.ruleLength, next.length >= 8],
+              [a.ruleLettersNumbers, /[a-zA-Z]/.test(next) && /\d/.test(next)],
+              [a.ruleMatch, next.length > 0 && next === confirm],
+            ] as const).map(([rotulo, ok]) => (
+              <li key={rotulo} className={`flex items-center gap-2 ${ok ? 'text-green-700' : 'text-muted-foreground'}`}>
+                {ok ? <CheckCircle2 className="h-4 w-4" /> : <Circle className="h-4 w-4" />} {rotulo}
+              </li>
+            ))}
+          </ul>
+          {error && <p className="text-sm text-destructive">{error}</p>}
           <Button type="submit" className="w-full" disabled={loading}>
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
             {a.changePasswordTitle}
           </Button>
+          {forced && (
+            <button type="button" onClick={logout} className="w-full text-sm text-muted-foreground hover:text-foreground underline-offset-2 hover:underline">
+              {t.nav.logout}
+            </button>
+          )}
         </form>
       </DialogContent>
     </Dialog>
