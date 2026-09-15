@@ -49,6 +49,8 @@ export interface PunchSet {
   name: string
   status: SetStatus
   usefulValue: number
+  /** % de vida consumido antes dos registros de produção */
+  vidaConsumidaInicial?: number
   limits: PunchSetLimit[]
   notes: string | null
   companyId: string

@@ -63,13 +63,13 @@ function StatusFlow({ sets, statusLabels }: { sets: PunchSet[]; statusLabels: Re
 
 // ── Barra de vida útil ────────────────────────────────────────────────────────
 
-function LifeBar({ value, label }: { value: number; label: string }) {
+function LifeBar({ value, label, locale }: { value: number; label: string; locale: string }) {
   const color = value >= 100 ? 'bg-red-500' : value >= 70 ? 'bg-orange-500' : value >= 40 ? 'bg-yellow-500' : 'bg-green-500'
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between text-xs">
         <span className="text-muted-foreground">{label}</span>
-        <span className={`font-bold ${value >= 100 ? 'text-red-600' : ''}`}>{value.toFixed(1)}%</span>
+        <span className={`font-bold ${value >= 100 ? 'text-red-600' : ''}`}>{value.toLocaleString(locale, { maximumFractionDigits: 1 })}%</span>
       </div>
       <div className="h-2 bg-muted rounded-full overflow-hidden">
         <div className={`h-full rounded-full transition-all ${color}`} style={{ width: `${Math.min(100, value)}%` }} />
@@ -210,6 +210,9 @@ export function LifecyclePage() {
   })
 
   const percAcumulado = lifecycleData?.percAcumulado ?? 0
+  // Vida usada = consumo antes do sistema (jogo que chegou usado) + produção registrada
+  const inicial = sets.find(s => s.id === selectedSetId)?.vidaConsumidaInicial ?? 0
+  const vidaUsada = inicial + percAcumulado
   const fator = parseDecimal(configForm.fatorDepreciacao) || 0.00015
 
   return (
@@ -269,8 +272,13 @@ export function LifecyclePage() {
                   <p className="text-muted-foreground text-sm mt-0.5">{selectedSet?.name}</p>
                 </div>
                 <div className="min-w-[200px]">
-                  <LifeBar value={percAcumulado} label={lp.accumulated} />
-                  {percAcumulado >= 100 && (
+                  <LifeBar value={vidaUsada} label={lp.accumulated} locale={locale} />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {lp.remaining(Math.max(0, 100 - vidaUsada).toLocaleString(locale, { maximumFractionDigits: 1 }))}
+                    {inicial > 0 && ` · ${lp.usedBefore(inicial.toLocaleString(locale, { maximumFractionDigits: 1 }))}`}
+                  </p>
+                  <Link to={`/sets/${selectedSetId}?tab=historico`} className="text-xs text-primary hover:underline">{lp.seeHistory}</Link>
+                  {vidaUsada >= 100 && (
                     <p className="text-xs text-red-600 font-medium mt-1 flex items-center gap-1">
                       <AlertTriangle className="h-3.5 w-3.5" /> {lp.endOfLife}
                     </p>
