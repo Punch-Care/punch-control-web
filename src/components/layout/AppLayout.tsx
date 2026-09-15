@@ -21,27 +21,28 @@ interface NavGroup { groupKey: NavKey; items: NavItem[] }
 
 // ── Grupos do menu operacional ─────────────────────────────────────────────────
 
+// Ordem por tarefa: o trabalho do dia primeiro, cadastros (feitos uma vez) por último
 const GROUPS_COMPANY: NavGroup[] = [
-  {
-    groupKey: 'groupCadastro',
-    items: [
-      { to: '/sets',      labelKey: 'sets',      icon: Package },
-      { to: '/machines',  labelKey: 'machines',  icon: Cog },
-      { to: '/products',  labelKey: 'products',  icon: Box },
-    ],
-  },
   {
     groupKey: 'groupProducao',
     items: [
-      { to: '/production', labelKey: 'production', icon: FlaskConical },
+      { to: '/production',   labelKey: 'production',   icon: FlaskConical },
+      { to: '/occurrences',  labelKey: 'occurrences',  icon: AlertTriangle },
     ],
   },
   {
     groupKey: 'groupQualidade',
     items: [
-      { to: '/occurrences',  labelKey: 'occurrences',  icon: AlertTriangle },
+      { to: '/sets',         labelKey: 'sets',         icon: Package },
       { to: '/dimensioning', labelKey: 'dimensioning', icon: Ruler },
       { to: '/lifecycle',    labelKey: 'lifecycle',    icon: RefreshCw },
+    ],
+  },
+  {
+    groupKey: 'groupCadastro',
+    items: [
+      { to: '/machines',  labelKey: 'machines',  icon: Cog },
+      { to: '/products',  labelKey: 'products',  icon: Box },
     ],
   },
   {
