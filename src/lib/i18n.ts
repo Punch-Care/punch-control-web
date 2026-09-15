@@ -114,6 +114,9 @@ const translations = {
       CLIENT: 'Cliente',
     },
     auth: {
+      showPassword: 'Mostrar senha',
+      hidePassword: 'Esconder senha',
+      forgotHint: 'Esqueceu a senha? Peça ao gestor da sua empresa para criar uma nova.',
       email: 'E-mail',
       password: 'Senha',
       emailPlaceholder: 'seu@email.com',
@@ -2158,6 +2161,9 @@ const translations = {
       CLIENT: 'Client',
     },
     auth: {
+      showPassword: 'Show password',
+      hidePassword: 'Hide password',
+      forgotHint: 'Forgot your password? Ask your company manager to create a new one.',
       email: 'E-mail',
       password: 'Password',
       emailPlaceholder: 'your@email.com',
@@ -4202,6 +4208,9 @@ const translations = {
       CLIENT: 'Cliente',
     },
     auth: {
+      showPassword: 'Mostrar contraseña',
+      hidePassword: 'Ocultar contraseña',
+      forgotHint: '¿Olvidó la contraseña? Pida al gestor de su empresa que cree una nueva.',
       email: 'Correo electrónico',
       password: 'Contraseña',
       emailPlaceholder: 'su@correo.com',
