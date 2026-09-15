@@ -89,7 +89,7 @@ export function SetDetailPage() {
     return inicial === 'rfq' || inicial === 'anexos' ? inicial : 'overview'
   })
   const [basicsDraft, setBasicsDraft] = useState<Partial<{
-    code: string; name: string; status: SetStatus; notes: string
+    code: string; name: string; status: SetStatus; notes: string; usefulValue: string
     fabricante: string; dataFabricacao: string; dataAquisicao: string
     numeroNotaFiscal: string; fornecedor: string
   }>>({})
@@ -182,6 +182,9 @@ export function SetDetailPage() {
       name: basicsDraft.name ?? set?.name,
       status: basicsDraft.status ?? set?.status,
       notes: (basicsDraft.notes ?? set?.notes) || null,
+      ...(basicsDraft.usefulValue !== undefined && basicsDraft.usefulValue.trim() !== ''
+        ? { usefulValue: Math.min(100, Math.max(0, Number(basicsDraft.usefulValue.replace(',', '.')) || 0)) }
+        : {}),
       limits: limitsToPayload(limits),
       fabricante: (basicsDraft.fabricante ?? set?.fabricante) || null,
       fornecedor: (basicsDraft.fornecedor ?? set?.fornecedor) || null,
@@ -191,6 +194,9 @@ export function SetDetailPage() {
     }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['punch-set', id] })
+      qc.invalidateQueries({ queryKey: ['punch-sets'] })
+      qc.invalidateQueries({ queryKey: ['lifecycle', id] })
+      qc.invalidateQueries({ queryKey: ['stats-dashboard'] })
       setBasicsDraft({})
       setLimitDrafts(null) // volta a espelhar o servidor
       toast.success(t.sets.updated)
@@ -224,6 +230,7 @@ export function SetDetailPage() {
 
   const b = {
     code: set.code, name: set.name, status: set.status, notes: set.notes ?? '',
+    usefulValue: String(set.usefulValue ?? 100).replace('.', ','),
     fabricante: set.fabricante ?? '',
     fornecedor: set.fornecedor ?? '',
     numeroNotaFiscal: set.numeroNotaFiscal ?? '',
@@ -320,6 +327,14 @@ export function SetDetailPage() {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+          <div className="space-y-1 col-span-2 sm:col-span-3">
+            <Label className="text-xs" htmlFor="vida-util">{t.sets.usefulValueLabel}</Label>
+            <div className="flex items-center gap-3 flex-wrap">
+              <Input id="vida-util" inputMode="decimal" className="h-8 text-xs w-24" value={b.usefulValue}
+                onChange={(e) => setB({ usefulValue: e.target.value.replace(/[^\d.,]/g, '') })} disabled={!canEdit} />
+              <p className="text-xs text-muted-foreground flex-1 min-w-[12rem]">{t.sets.usefulValueHint}</p>
+            </div>
           </div>
           <div className="space-y-1 sm:col-span-3">
             <Label className="text-xs">{t.common.notes}</Label>

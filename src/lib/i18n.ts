@@ -169,6 +169,8 @@ const translations = {
       limitOutOfRange: 'Percentual deve estar entre 0 e 100',
       limitDuplicated: 'Há percentuais repetidos',
       // Identificação/procedência do jogo
+      usefulValueLabel: 'Vida útil atual (%)',
+      usefulValueHint: 'Jogo que já chegou usado? Informe quanto de vida ainda resta. Os lotes concluídos descontam a partir deste valor.',
       identificationTitle: 'Identificação e procedência',
       fabricante: 'Fabricante',
       dataFabricacao: 'Data de fabricação',
@@ -2219,6 +2221,8 @@ const translations = {
       limitOutOfRange: 'Percentage must be between 0 and 100',
       limitDuplicated: 'Duplicate percentages',
       // Set identification / provenance
+      usefulValueLabel: 'Current useful life (%)',
+      usefulValueHint: 'Set already used when it arrived? Enter how much life is left. Completed batches count down from this value.',
       identificationTitle: 'Identification and provenance',
       fabricante: 'Manufacturer',
       dataFabricacao: 'Manufacturing date',
@@ -4269,6 +4273,8 @@ const translations = {
       limitOutOfRange: 'El porcentaje debe estar entre 0 y 100',
       limitDuplicated: 'Hay porcentajes repetidos',
       // Identificación/procedencia del juego
+      usefulValueLabel: 'Vida útil actual (%)',
+      usefulValueHint: '¿El juego llegó ya usado? Indique cuánta vida le queda. Los lotes concluidos descuentan a partir de este valor.',
       identificationTitle: 'Identificación y procedencia',
       fabricante: 'Fabricante',
       dataFabricacao: 'Fecha de fabricación',
