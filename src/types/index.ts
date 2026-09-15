@@ -495,4 +495,12 @@ export interface DashboardStats {
     tipo: ComponentInventoryType; sobra: number; pontoEncomenda: number
   }[]
   statusDistribution: { name: string; value: number; fill: string }[]
+  /** Jogos ativos no limite crítico (menor limite configurado) */
+  belowCritical?: { setId: string; setCode: string; setName: string; usefulValue: number; limit: number }[]
+  /** O que precisa de alguém hoje */
+  attention?: {
+    setsNotClean: { id: string; code: string; name: string; statusJogo: JogoStatus }[]
+    batchesInProgress: { id: string; loteNumero: string; dataProducao: string; horaInicio: string; productName: string; machineName: string; setCode: string }[]
+    recentOpenOccurrences: { id: string; type: OccurrenceType; description: string; openedAt: string; setId: string; setCode: string }[]
+  }
 }

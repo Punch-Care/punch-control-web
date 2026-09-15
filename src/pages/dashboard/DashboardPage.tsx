@@ -15,6 +15,7 @@ import { useAdminContextStore } from '@/store/admin-context.store'
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard'
 import type { DashboardStats, Occurrence, OccurrenceType, CompanyOverview, ProductionBatch } from '@/types'
 import { HelpButton } from '@/components/ui/help-button'
+import { AttentionPanel } from './AttentionPanel'
 
 const TYPE_LABELS_PT: Record<OccurrenceType, string> = {
   COMPRESSION: 'Compressão', DIMENSIONAL: 'Dimensional', MAINTENANCE: 'Manutenção', OTHER: 'Outro',
@@ -62,8 +63,10 @@ function CompanyCard({ company, onClick, d }: {
 
 // ── Stats + gráficos ───────────────────────────────────────────────────────────
 
-function StatsSection({ companyId, d, TYPE_LABELS }: {
+function StatsSection({ companyId, d, TYPE_LABELS, showAlerts = true }: {
   companyId?: string
+  /** Avisos de reposição e limite — escondidos quando o painel de atenção já os mostra */
+  showAlerts?: boolean
   d: ReturnType<typeof useLocale>['t']['dashboard']
   TYPE_LABELS: Record<OccurrenceType, string>
 }) {
@@ -155,7 +158,7 @@ function StatsSection({ companyId, d, TYPE_LABELS }: {
         </Card>
       </div>
 
-      {stats && stats.upcomingCritical?.length > 0 && (
+      {showAlerts && stats && stats.upcomingCritical?.length > 0 && (
         <Card className="border-orange-200 bg-orange-50/60 border-0 shadow-sm">
           <CardContent className="p-4 space-y-2">
             <div className="flex items-center gap-2">
@@ -179,7 +182,7 @@ function StatsSection({ companyId, d, TYPE_LABELS }: {
         </Card>
       )}
 
-      {stats && stats.componentsToRestock?.length > 0 && (
+      {showAlerts && stats && stats.componentsToRestock?.length > 0 && (
         <Card className="border-amber-200 bg-amber-50/60 border-0 shadow-sm">
           <CardContent className="p-4 space-y-2">
             <div className="flex items-center gap-2">
@@ -201,7 +204,7 @@ function StatsSection({ companyId, d, TYPE_LABELS }: {
         </Card>
       )}
 
-      {stats && stats.lowUsefulValue > 0 && (
+      {showAlerts && stats && stats.lowUsefulValue > 0 && (
         <Card className="border-orange-200 bg-orange-50/60 border-0 shadow-sm">
           <CardContent className="p-4 flex items-center gap-3">
             <TrendingDown className="h-5 w-5 text-orange-500 flex-shrink-0" />
@@ -478,19 +481,23 @@ export function DashboardPage() {
 
         {/* ── ADMIN com empresa selecionada ─────────────────────────── */}
         {isAdmin && selectedCompany && (
-          <StatsSection companyId={selectedCompany.id} d={d} TYPE_LABELS={TYPE_LABELS} />
+          <div className="space-y-6">
+            <AttentionPanel companyId={selectedCompany.id} />
+            <StatsSection companyId={selectedCompany.id} d={d} TYPE_LABELS={TYPE_LABELS} showAlerts={false} />
+          </div>
         )}
 
         {/* ── USUÁRIO DE EMPRESA ────────────────────────────────────── */}
         {!isAdmin && (
           <div className="space-y-6">
             <OnboardingWizard />
+            <AttentionPanel />
             <div className="space-y-6 lg:space-y-0 lg:grid lg:grid-cols-5 lg:gap-6">
               <div className="lg:col-span-2 order-1">
                 <QuickActions navigate={navigate} canEdit={canEdit} lastBatches={recentBatches} />
               </div>
               <div className="lg:col-span-3 order-2">
-                <StatsSection d={d} TYPE_LABELS={TYPE_LABELS} />
+                <StatsSection d={d} TYPE_LABELS={TYPE_LABELS} showAlerts={false} />
               </div>
             </div>
           </div>
