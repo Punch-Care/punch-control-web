@@ -3,7 +3,7 @@ import type { Locale } from '@/store/settings.store'
 const translations = {
   'pt-BR': {
     nav: {
-      operatorMode: 'Modo operador',
+      operatorMode: 'Tarefas do dia',
       dashboard: 'Início',
       sets: 'Jogos',
       products: 'Produtos',
@@ -1725,7 +1725,7 @@ const translations = {
           'Toque num aviso para ir direto ao jogo ou à ocorrência.',
           'Use os atalhos para as tarefas mais comuns.',
         ],
-        tip: 'No chão de fábrica, prefira o Modo operador: ele guia passo a passo.',
+        tip: 'No chão de fábrica, prefira as Tarefas do dia: elas guiam passo a passo.',
       },
       sets: {
         title: 'Jogos',
@@ -1761,7 +1761,7 @@ const translations = {
         what: 'Guarda fabricante, datas e a condição de limpeza do jogo (limpo, não limpo, em manutenção…).',
         steps: [
           'Confira a condição antes de produzir: só jogo limpo inicia lote.',
-          'O mecânico pode marcar limpeza e polimento pelo Modo operador.',
+          'O mecânico pode marcar limpeza e polimento pelas Tarefas do dia.',
         ],
       },
       tooling: {
@@ -1818,7 +1818,7 @@ const translations = {
           'Na aba CEP, acompanhe se as medições da hora estão estáveis.',
           'Na aba Configurações, cadastre o setup de cada produto em cada máquina.',
         ],
-        tip: 'Para o mecânico, iniciar e encerrar lote é mais fácil pelo Modo operador.',
+        tip: 'Para o mecânico, iniciar e encerrar lote é mais fácil pelas Tarefas do dia.',
       },
       cep: {
         title: 'CEP (controle estatístico)',
@@ -1917,7 +1917,7 @@ const translations = {
           'Confira a especificação (faixa aceita de cada medida).',
           'Registre uma nova medição. O que ficar fora da faixa abre uma ocorrência.',
         ],
-        tip: 'O mecânico também pode medir pelo Modo operador, uma medida por tela.',
+        tip: 'O mecânico também pode medir pelas Tarefas do dia, uma medida por tela.',
       },
       dimensionSpec: {
         title: 'Especificação dimensional',
@@ -1927,7 +1927,7 @@ const translations = {
           'Importe as medidas nominais do ferramental ou digite.',
           'Informe os limites inferior e superior e salve.',
         ],
-        tip: 'Sem especificação, o mecânico não consegue medir pelo Modo operador.',
+        tip: 'Sem especificação, o mecânico não consegue medir pelas Tarefas do dia.',
       },
       lifecycle: {
         title: 'Ciclo de vida',
@@ -1981,7 +1981,7 @@ const translations = {
           'Registre a data, a peça e a quantidade.',
           'Positivo tira do estoque; negativo devolve.',
         ],
-        tip: 'O mecânico registra isso pelo Modo operador em Limpeza e manutenção.',
+        tip: 'O mecânico registra isso pelas Tarefas do dia em Limpeza e manutenção.',
       },
       reports: {
         title: 'Relatórios',
@@ -2046,7 +2046,7 @@ const translations = {
       restockItem: (code: string, part: string, left: number) => `${code} · ${part} · sobram ${left}`,
       openStock: 'Ver estoque',
       setsWithoutSpec: (n: number) => n === 1 ? '1 jogo ativo sem medidas cadastradas' : `${n} jogos ativos sem medidas cadastradas`,
-      setsWithoutSpecHint: 'Sem a especificação dimensional o mecânico não consegue medir o jogo pelo Modo operador.',
+      setsWithoutSpecHint: 'Sem a especificação dimensional o mecânico não consegue medir o jogo pelas Tarefas do dia.',
       openSpec: 'Cadastrar medidas',
       occurrences: (n: number) => n === 1 ? '1 problema aberto' : `${n} problemas abertos`,
       openOccurrences: 'Ver problemas',
@@ -2055,7 +2055,7 @@ const translations = {
   },
   en: {
     nav: {
-      operatorMode: 'Operator mode',
+      operatorMode: 'Daily tasks',
       dashboard: 'Home',
       sets: 'Sets',
       products: 'Products',
@@ -3777,7 +3777,7 @@ const translations = {
           'Tap a warning to go straight to the set or occurrence.',
           'Use the shortcuts for the most common tasks.',
         ],
-        tip: 'On the shop floor, prefer Operator mode: it guides step by step.',
+        tip: 'On the shop floor, prefer Daily tasks: they guide step by step.',
       },
       sets: {
         title: 'Sets',
@@ -3813,7 +3813,7 @@ const translations = {
         what: 'Holds manufacturer, dates and the cleaning condition of the set (clean, not clean, under maintenance…).',
         steps: [
           'Check the condition before producing: only a clean set can start a batch.',
-          'Mechanics can record cleaning and polishing in Operator mode.',
+          'Mechanics can record cleaning and polishing in Daily tasks.',
         ],
       },
       tooling: {
@@ -3870,7 +3870,7 @@ const translations = {
           'In the SPC tab, check whether hourly measurements are stable.',
           'In the Settings tab, set up each product on each machine.',
         ],
-        tip: 'For mechanics, starting and finishing batches is easier in Operator mode.',
+        tip: 'For mechanics, starting and finishing batches is easier in Daily tasks.',
       },
       cep: {
         title: 'SPC (statistical control)',
@@ -3969,7 +3969,7 @@ const translations = {
           'Check the specification (accepted range for each measurement).',
           'Record a new measurement. Anything out of range opens an occurrence.',
         ],
-        tip: 'Mechanics can also measure in Operator mode, one measurement per screen.',
+        tip: 'Mechanics can also measure in Daily tasks, one measurement per screen.',
       },
       dimensionSpec: {
         title: 'Dimensional specification',
@@ -3979,7 +3979,7 @@ const translations = {
           'Import nominal sizes from tooling or type them.',
           'Enter lower and upper limits and save.',
         ],
-        tip: 'Without a specification, mechanics cannot measure in Operator mode.',
+        tip: 'Without a specification, mechanics cannot measure in Daily tasks.',
       },
       lifecycle: {
         title: 'Life cycle',
@@ -4033,7 +4033,7 @@ const translations = {
           'Record the date, part and quantity.',
           'Positive takes from stock; negative returns.',
         ],
-        tip: 'Mechanics record this in Operator mode under Cleaning and maintenance.',
+        tip: 'Mechanics record this in Daily tasks under Cleaning and maintenance.',
       },
       reports: {
         title: 'Reports',
@@ -4098,7 +4098,7 @@ const translations = {
       restockItem: (code: string, part: string, left: number) => `${code} · ${part} · ${left} left`,
       openStock: 'View stock',
       setsWithoutSpec: (n: number) => n === 1 ? '1 active set without measurements set up' : `${n} active sets without measurements set up`,
-      setsWithoutSpecHint: 'Without a dimensional specification, mechanics cannot measure the set in Operator mode.',
+      setsWithoutSpecHint: 'Without a dimensional specification, mechanics cannot measure the set in Daily tasks.',
       openSpec: 'Set up measurements',
       occurrences: (n: number) => n === 1 ? '1 open problem' : `${n} open problems`,
       openOccurrences: 'View problems',
@@ -4107,7 +4107,7 @@ const translations = {
   },
   es: {
     nav: {
-      operatorMode: 'Modo operador',
+      operatorMode: 'Tareas del día',
       dashboard: 'Inicio',
       sets: 'Juegos',
       products: 'Productos',
@@ -5829,7 +5829,7 @@ const translations = {
           'Toque un aviso para ir directo al juego o a la ocurrencia.',
           'Use los accesos rápidos para las tareas más comunes.',
         ],
-        tip: 'En planta, prefiera el Modo operador: guía paso a paso.',
+        tip: 'En planta, prefiera Tareas del día: guían paso a paso.',
       },
       sets: {
         title: 'Juegos',
@@ -5865,7 +5865,7 @@ const translations = {
         what: 'Guarda fabricante, fechas y la condición de limpieza del juego (limpio, no limpio, en mantenimiento…).',
         steps: [
           'Revise la condición antes de producir: solo un juego limpio inicia lote.',
-          'El mecánico puede registrar limpieza y pulido en el Modo operador.',
+          'El mecánico puede registrar limpieza y pulido en Tareas del día.',
         ],
       },
       tooling: {
@@ -5922,7 +5922,7 @@ const translations = {
           'En la pestaña CEP, siga si las mediciones horarias están estables.',
           'En la pestaña Configuraciones, registre el setup de cada producto en cada máquina.',
         ],
-        tip: 'Para el mecánico, iniciar y cerrar lote es más fácil en el Modo operador.',
+        tip: 'Para el mecánico, iniciar y cerrar lote es más fácil en Tareas del día.',
       },
       cep: {
         title: 'CEP (control estadístico)',
@@ -6021,7 +6021,7 @@ const translations = {
           'Revise la especificación (rango aceptado de cada medida).',
           'Registre una nueva medición. Lo que quede fuera del rango abre una ocurrencia.',
         ],
-        tip: 'El mecánico también puede medir en el Modo operador, una medida por pantalla.',
+        tip: 'El mecánico también puede medir en Tareas del día, una medida por pantalla.',
       },
       dimensionSpec: {
         title: 'Especificación dimensional',
@@ -6031,7 +6031,7 @@ const translations = {
           'Importe las medidas nominales del herramental o escríbalas.',
           'Indique los límites inferior y superior y guarde.',
         ],
-        tip: 'Sin especificación, el mecánico no puede medir en el Modo operador.',
+        tip: 'Sin especificación, el mecánico no puede medir en Tareas del día.',
       },
       lifecycle: {
         title: 'Ciclo de vida',
@@ -6085,7 +6085,7 @@ const translations = {
           'Registre fecha, pieza y cantidad.',
           'Positivo saca del stock; negativo devuelve.',
         ],
-        tip: 'El mecánico lo registra en el Modo operador, en Limpieza y mantenimiento.',
+        tip: 'El mecánico lo registra en Tareas del día, en Limpieza y mantenimiento.',
       },
       reports: {
         title: 'Informes',
@@ -6150,7 +6150,7 @@ const translations = {
       restockItem: (code: string, part: string, left: number) => `${code} · ${part} · quedan ${left}`,
       openStock: 'Ver stock',
       setsWithoutSpec: (n: number) => n === 1 ? '1 juego activo sin medidas registradas' : `${n} juegos activos sin medidas registradas`,
-      setsWithoutSpecHint: 'Sin la especificación dimensional el mecánico no puede medir el juego en el Modo operador.',
+      setsWithoutSpecHint: 'Sin la especificación dimensional el mecánico no puede medir el juego en Tareas del día.',
       openSpec: 'Registrar medidas',
       occurrences: (n: number) => n === 1 ? '1 problema abierto' : `${n} problemas abiertos`,
       openOccurrences: 'Ver problemas',

@@ -60,7 +60,7 @@ export function ReportProblem() {
     )
   }
 
-  if (l1 || l2) return <p className="text-lg text-[#52606D]">{t.common.loading}</p>
+  if (l1 || l2) return <p className="text-sm text-muted-foreground">{t.common.loading}</p>
 
   const ativas = machines.filter(m => m.active)
   const passos = STEPS.filter(s => s !== 'maquina' || ativas.length > 0)
@@ -153,9 +153,9 @@ export function ReportProblem() {
             value={draft.description}
             onChange={e => set({ description: e.target.value })}
             placeholder={f.describePlaceholder}
-            className="w-full rounded-xl border-2 border-[#D9DEE3] bg-white px-4 py-3 text-lg focus:outline-none focus:ring-4 focus:ring-primary/25"
+            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-ring"
           />
-          {draft.description.length > 0 && curto && <p className="text-sm text-[#9A6B00]">{f.describeMin}</p>}
+          {draft.description.length > 0 && curto && <p className="text-sm text-amber-700">{f.describeMin}</p>}
         </div>
         <BottomAction><PrimaryButton type="submit" disabled={curto}>{f.continue}</PrimaryButton></BottomAction>
       </form>

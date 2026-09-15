@@ -42,28 +42,6 @@ export const router = createBrowserRouter([
     element: <PrivateRoute />,
     children: [
       {
-        // Modo operador: fluxo guiado para o chão de fábrica, sem menu lateral
-        path: '/operador',
-        element: <OperatorLayout />,
-        errorElement: <RouteError />,
-        children: [
-          { index: true, element: <OperatorHome /> },
-          { path: 'lote/novo/:step', element: <NewBatch /> },
-          { path: 'lote/novo', element: <Navigate to="/operador/lote/novo/maquina" replace /> },
-          { path: 'lote/:id', element: <BatchRun /> },
-          { path: 'lote/:id/medicao', element: <MeasurementPage /> },
-          { path: 'lote/:id/medicao/:mid', element: <MeasurementPage /> },
-          { path: 'lote/:id/encerrar/:step', element: <FinishBatch /> },
-          { path: 'lote/:id/concluido', element: <BatchDone /> },
-          { path: 'problema/:step', element: <ReportProblem /> },
-          { path: 'problema', element: <Navigate to="/operador/problema/jogo" replace /> },
-          { path: 'limpeza/:step', element: <CleaningFlow /> },
-          { path: 'limpeza', element: <Navigate to="/operador/limpeza/jogo" replace /> },
-          { path: 'medir/:step', element: <MeasureSet /> },
-          { path: 'medir', element: <Navigate to="/operador/medir/jogo" replace /> },
-        ],
-      },
-      {
         element: <AppLayout />,
         errorElement: <RouteError />,
         children: [
@@ -71,6 +49,27 @@ export const router = createBrowserRouter([
             // Erro numa página aparece dentro do layout (menu continua acessível)
             errorElement: <RouteError />,
             children: [
+              {
+                // Tarefas do dia: fluxos guiados dentro do mesmo layout (menu, topo e marca iguais)
+                path: '/operador',
+                element: <OperatorLayout />,
+                children: [
+                  { index: true, element: <OperatorHome /> },
+                  { path: 'lote/novo/:step', element: <NewBatch /> },
+                  { path: 'lote/novo', element: <Navigate to="/operador/lote/novo/maquina" replace /> },
+                  { path: 'lote/:id', element: <BatchRun /> },
+                  { path: 'lote/:id/medicao', element: <MeasurementPage /> },
+                  { path: 'lote/:id/medicao/:mid', element: <MeasurementPage /> },
+                  { path: 'lote/:id/encerrar/:step', element: <FinishBatch /> },
+                  { path: 'lote/:id/concluido', element: <BatchDone /> },
+                  { path: 'problema/:step', element: <ReportProblem /> },
+                  { path: 'problema', element: <Navigate to="/operador/problema/jogo" replace /> },
+                  { path: 'limpeza/:step', element: <CleaningFlow /> },
+                  { path: 'limpeza', element: <Navigate to="/operador/limpeza/jogo" replace /> },
+                  { path: 'medir/:step', element: <MeasureSet /> },
+                  { path: 'medir', element: <Navigate to="/operador/medir/jogo" replace /> },
+                ],
+              },
               { path: '/dashboard', element: <DashboardPage /> },
               { path: '/sets', element: <SetsPage /> },
               { path: '/sets/:id', element: <SetDetailPage /> },

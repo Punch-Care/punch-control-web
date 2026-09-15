@@ -95,13 +95,13 @@ export function CleaningFlow() {
         secondary={{ label: f.recordAnother, onClick: recomecar }}
       >
         {state?.sobra != null && (
-          <p className="rounded-2xl bg-white border p-5 text-2xl font-semibold text-center">{f.stockLeft(state.sobra)}</p>
+          <p className="rounded-xl bg-card shadow-sm border p-5 text-2xl font-semibold text-center">{f.stockLeft(state.sobra)}</p>
         )}
       </DoneScreen>
     )
   }
 
-  if (isLoading) return <p className="text-lg text-[#52606D]">{t.common.loading}</p>
+  if (isLoading) return <p className="text-sm text-muted-foreground">{t.common.loading}</p>
 
   const passos: Step[] = troca ? ['jogo', 'acao', 'peca', 'quantidade', 'revisar'] : ['jogo', 'acao', 'revisar']
   const indice = passos.indexOf(step as Step)
@@ -180,9 +180,9 @@ export function CleaningFlow() {
       <div className="space-y-6">
         {header(draft.action === 'COLOQUEI' ? f.qtyPutTitle : f.qtyReturnTitle, draft.componente ? t.componentTypes[draft.componente] : f.qtyHint)}
         <QuantityStepper label={f.qtyLabel} value={draft.quantidade} onChange={n => set({ quantidade: n })} />
-        <p className="text-center text-base text-[#52606D]">{sobra === null ? f.qtyHint : f.inStock(sobra)}</p>
+        <p className="text-center text-base text-muted-foreground">{sobra === null ? f.qtyHint : f.inStock(sobra)}</p>
         {acimaDoEstoque && (
-          <p className="text-base text-[#9A6B00] font-medium flex items-center gap-2 justify-center"><AlertTriangle className="h-5 w-5" /> {f.moreThanStock}</p>
+          <p className="text-base text-amber-700 font-medium flex items-center gap-2 justify-center"><AlertTriangle className="h-5 w-5" /> {f.moreThanStock}</p>
         )}
         <BottomAction><PrimaryButton onClick={() => irPara('revisar')}>{f.continue}</PrimaryButton></BottomAction>
       </div>
@@ -205,7 +205,7 @@ export function CleaningFlow() {
         <div className="space-y-1">
           <label htmlFor="notas" className="block text-base font-medium">{f.noteLabel}</label>
           <textarea id="notas" rows={2} value={draft.notas} onChange={e => set({ notas: e.target.value })} placeholder={f.notePlaceholder}
-            className="w-full rounded-xl border-2 border-[#D9DEE3] bg-white px-4 py-3 text-lg focus:outline-none focus:ring-4 focus:ring-primary/25" />
+            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-ring" />
         </div>
       )}
       <BottomAction>

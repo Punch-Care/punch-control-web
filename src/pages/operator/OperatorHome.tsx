@@ -45,8 +45,8 @@ export function OperatorHome() {
     <div className="space-y-7">
       <div className="flex items-start gap-2">
         <div className="flex-1">
-          <h1 className="text-[28px] leading-tight font-semibold">{o.hello(user?.name?.split(' ')[0] ?? '')}</h1>
-          <p className="text-base text-[#52606D] mt-1">{o.homeSubtitle}</p>
+          <h1 className="text-xl sm:text-2xl leading-tight font-bold tracking-tight">{o.hello(user?.name?.split(' ')[0] ?? '')}</h1>
+          <p className="text-base text-muted-foreground mt-1">{o.homeSubtitle}</p>
         </div>
         <HelpButton content={o.helpHome} size="lg" />
       </div>
@@ -57,24 +57,24 @@ export function OperatorHome() {
           {emAndamento.map(lote => {
             const proxima = nextMeasurementTime(lote, lote.hourlyMeasurements ?? [])
             return (
-              <article key={lote.id} className="rounded-2xl bg-white border-2 border-primary/40 overflow-hidden">
+              <article key={lote.id} className="rounded-xl bg-card shadow-sm border border-primary/40 overflow-hidden">
                 <button type="button" onClick={() => navigate(`/operador/lote/${lote.id}`)} className="w-full text-left px-5 pt-4 pb-3">
-                  <p className="text-base text-[#52606D]">{o.lotNumber(lote.loteNumero)}</p>
+                  <p className="text-base text-muted-foreground">{o.lotNumber(lote.loteNumero)}</p>
                   <p className="text-lg font-medium truncate">{lote.product.name}</p>
-                  <p className="text-sm text-[#52606D] truncate">{lote.machine.name} · {o.setShort(lote.punchSet.code)}</p>
+                  <p className="text-sm text-muted-foreground truncate">{lote.machine.name} · {o.setShort(lote.punchSet.code)}</p>
                 </button>
                 <div className="px-5 pb-4 flex items-end justify-between gap-4">
                   <div>
-                    <p className="text-sm text-[#52606D] flex items-center gap-1"><Clock className="h-4 w-4" /> {o.nextMeasurement}</p>
+                    <p className="text-sm text-muted-foreground flex items-center gap-1"><Clock className="h-4 w-4" /> {o.nextMeasurement}</p>
                     <p className="text-5xl font-semibold tabular-nums tracking-tight leading-none mt-1">{proxima}</p>
-                    <p className="text-sm text-[#52606D] mt-1">{o.measurementsDone(lote.hourlyMeasurements?.length ?? 0)}</p>
+                    <p className="text-sm text-muted-foreground mt-1">{o.measurementsDone(lote.hourlyMeasurements?.length ?? 0)}</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 border-t">
-                  <button type="button" onClick={() => navigate(`/operador/lote/${lote.id}/medicao`)} className="h-14 bg-primary text-white text-lg font-semibold">
+                  <button type="button" onClick={() => navigate(`/operador/lote/${lote.id}/medicao`)} className="h-12 bg-primary text-primary-foreground text-base font-semibold hover:bg-primary/90">
                     {o.recordMeasurement}
                   </button>
-                  <button type="button" onClick={() => navigate(`/operador/lote/${lote.id}/encerrar/kg`)} className="h-14 bg-white text-[#1F2933] text-lg font-medium border-l">
+                  <button type="button" onClick={() => navigate(`/operador/lote/${lote.id}/encerrar/kg`)} className="h-12 bg-card text-foreground text-base font-medium border-l hover:bg-muted">
                     {o.finishLot}
                   </button>
                 </div>
@@ -88,32 +88,32 @@ export function OperatorHome() {
         <button
           type="button"
           onClick={() => navigate('/operador/limpeza/jogo')}
-          className="w-full text-left rounded-2xl border-2 border-[#E8A317] bg-[#FFF8E6] px-4 py-4 flex items-center gap-4"
+          className="w-full text-left rounded-xl border border-amber-300 bg-amber-50 px-4 py-4 flex items-center gap-4"
         >
-          <Sparkles className="h-7 w-7 text-[#9A6B00] flex-shrink-0" />
+          <Sparkles className="h-7 w-7 text-amber-700 flex-shrink-0" />
           <span className="flex-1 min-w-0">
             <span className="block text-lg font-semibold">{o.needsCleaning(sujos.length)}</span>
-            <span className="block text-sm text-[#52606D] truncate">{sujos.map(s => s.code).join(', ')}</span>
-            <span className="block text-sm text-[#52606D]">{o.needsCleaningHint}</span>
+            <span className="block text-sm text-muted-foreground truncate">{sujos.map(s => s.code).join(', ')}</span>
+            <span className="block text-sm text-muted-foreground">{o.needsCleaningHint}</span>
           </span>
-          <ChevronRight className="h-6 w-6 text-[#9A6B00]" />
+          <ChevronRight className="h-6 w-6 text-amber-700" />
         </button>
       )}
 
       <section className="space-y-3" aria-labelledby="tarefas">
         <h2 id="tarefas" className="text-lg font-semibold">{o.whatToDo}</h2>
-        <ul className="rounded-2xl bg-white border divide-y overflow-hidden">
+        <ul className="rounded-xl bg-card shadow-sm border divide-y overflow-hidden">
           {tarefas.map(({ key, icon: Icon, title, desc, to }) => (
             <li key={key}>
-              <button type="button" onClick={() => navigate(to)} className="w-full flex items-center gap-4 px-4 py-4 min-h-20 text-left hover:bg-[#F7F9FA]">
-                <span className={`h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0 ${key === 'start' ? 'bg-primary text-white' : 'bg-[#EEF1F4] text-[#1F2933]'}`}>
+              <button type="button" onClick={() => navigate(to)} className="w-full flex items-center gap-4 px-4 py-4 min-h-20 text-left hover:bg-muted/50">
+                <span className={`h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0 ${key === 'start' ? 'bg-primary text-white' : 'bg-muted text-foreground'}`}>
                   <Icon className="h-6 w-6" />
                 </span>
                 <span className="flex-1 min-w-0">
                   <span className="block text-lg font-medium">{title}</span>
-                  <span className="block text-sm text-[#52606D]">{desc}</span>
+                  <span className="block text-sm text-muted-foreground">{desc}</span>
                 </span>
-                <ChevronRight className="h-6 w-6 text-[#9AA5B1]" />
+                <ChevronRight className="h-6 w-6 text-muted-foreground/60" />
               </button>
             </li>
           ))}

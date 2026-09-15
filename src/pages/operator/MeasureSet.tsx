@@ -80,7 +80,7 @@ export function MeasureSet() {
   }
 
   if (isLoading || (draft.setId && carregandoSpecs && step !== 'jogo')) {
-    return <p className="text-lg text-[#52606D]">{t.common.loading}</p>
+    return <p className="text-sm text-muted-foreground">{t.common.loading}</p>
   }
 
   // jogo + uma página por medida + conferir
@@ -107,8 +107,8 @@ export function MeasureSet() {
     return (
       <div className="space-y-6">
         <ScreenHeader title={f.noSpecTitle} back="/operador/medir/jogo" help={f.helpMeasure} />
-        <div className="rounded-2xl bg-white border p-5 flex gap-4">
-          <Ruler className="h-8 w-8 text-[#52606D] flex-shrink-0" />
+        <div className="rounded-xl bg-card shadow-sm border p-5 flex gap-4">
+          <Ruler className="h-8 w-8 text-muted-foreground flex-shrink-0" />
           <p className="text-lg">{f.noSpecText}</p>
         </div>
         <div className="space-y-3">
@@ -137,7 +137,7 @@ export function MeasureSet() {
           step={{ current: i + 1, total }}
           help={f.helpMeasure}
         />
-        <div className="rounded-2xl bg-white border p-4 space-y-1 text-base">
+        <div className="rounded-xl bg-card shadow-sm border p-4 space-y-1 text-base">
           {sp.nominal != null && <p>{f.nominal(num(sp.nominal), sp.unit)}</p>}
           {temFaixa && <p className="font-medium">{f.accepted(num(sp.lowerLimit), num(sp.upperLimit), sp.unit)}</p>}
         </div>
@@ -154,14 +154,14 @@ export function MeasureSet() {
         />
         {n !== null && temFaixa && (
           foraDaFaixa(sp, n)
-            ? <p className="text-xl font-semibold text-[#C62828] flex items-center gap-2"><XCircle className="h-7 w-7" /> {f.outRange}</p>
-            : <p className="text-xl font-semibold text-[#1E8E3E] flex items-center gap-2"><CheckCircle2 className="h-7 w-7" /> {f.inRange}</p>
+            ? <p className="text-xl font-semibold text-red-600 flex items-center gap-2"><XCircle className="h-7 w-7" /> {f.outRange}</p>
+            : <p className="text-xl font-semibold text-green-600 flex items-center gap-2"><CheckCircle2 className="h-7 w-7" /> {f.inRange}</p>
         )}
         <BottomAction>
           <div className="space-y-2">
             <PrimaryButton type="submit" disabled={n === null}>{i < specs.length ? f.nextMeasure : f.continue}</PrimaryButton>
             {n === null && (
-              <button type="button" onClick={avancar} className="w-full h-12 rounded-xl text-base text-[#52606D] hover:bg-black/5">{f.skipMeasure}</button>
+              <button type="button" onClick={avancar} className="w-full h-12 rounded-xl text-base text-muted-foreground hover:bg-black/5">{f.skipMeasure}</button>
             )}
           </div>
         </BottomAction>
@@ -175,20 +175,20 @@ export function MeasureSet() {
   return (
     <div className="space-y-5">
       <ScreenHeader title={f.reviewMeasuresTitle} subtitle={f.reviewMeasuresHint} back={voltarPara(`medida-${specs.length}`)} step={{ current: total, total }} />
-      <ul className="rounded-2xl bg-white border divide-y">
+      <ul className="rounded-xl bg-card shadow-sm border divide-y">
         {specs.map((sp, idx) => {
           const v = toNumberOrNull(draft.values[sp.id] ?? '')
           const ruim = v !== null && foraDaFaixa(sp, v)
           return (
             <li key={sp.id}>
-              <button type="button" onClick={() => navigate(voltarPara(`medida-${idx + 1}`))} className="w-full text-left flex items-center gap-3 px-4 py-3 min-h-16 hover:bg-[#F7F9FA]">
+              <button type="button" onClick={() => navigate(voltarPara(`medida-${idx + 1}`))} className="w-full text-left flex items-center gap-3 px-4 py-3 min-h-16 hover:bg-muted/50">
                 <span className="flex-1 min-w-0">
                   <span className="block text-base">{sp.parameter}</span>
-                  <span className={cn('block text-lg font-semibold tabular-nums', v === null ? 'text-[#9AA5B1] font-normal' : ruim ? 'text-[#C62828]' : 'text-[#1E8E3E]')}>
+                  <span className={cn('block text-lg font-semibold tabular-nums', v === null ? 'text-muted-foreground/60 font-normal' : ruim ? 'text-red-600' : 'text-green-600')}>
                     {v === null ? f.notMeasured : `${num(v)} ${sp.unit}`}
                   </span>
                 </span>
-                {v !== null && (ruim ? <XCircle className="h-6 w-6 text-[#C62828]" /> : <CheckCircle2 className="h-6 w-6 text-[#1E8E3E]" />)}
+                {v !== null && (ruim ? <XCircle className="h-6 w-6 text-red-600" /> : <CheckCircle2 className="h-6 w-6 text-green-600" />)}
               </button>
             </li>
           )
@@ -196,8 +196,8 @@ export function MeasureSet() {
       </ul>
       <BottomAction>
         {medidas.length === 0
-          ? <p className="text-base text-[#9A6B00] font-medium mb-2">{f.needOne}</p>
-          : <p className={cn('text-base font-medium mb-2 flex items-center gap-2', fora > 0 ? 'text-[#C62828]' : 'text-[#1E8E3E]')}>
+          ? <p className="text-base text-amber-700 font-medium mb-2">{f.needOne}</p>
+          : <p className={cn('text-base font-medium mb-2 flex items-center gap-2', fora > 0 ? 'text-red-600' : 'text-green-600')}>
               {fora > 0 ? <XCircle className="h-5 w-5" /> : <CheckCircle2 className="h-5 w-5" />}
               {fora > 0 ? f.outCount(fora) : f.allInRange}
             </p>}

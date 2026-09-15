@@ -30,16 +30,16 @@ export function BatchDone() {
   return (
     <div className="space-y-6 pt-4">
       <div className="text-center space-y-3">
-        <CheckCircle2 className="h-20 w-20 text-[#1E8E3E] mx-auto" />
-        <h1 className="text-[28px] font-semibold">{o.doneTitle}</h1>
-        {lote && <p className="text-lg text-[#52606D]">{o.doneSubtitle(lote.loteNumero, (lote.kgProduzidos ?? 0).toLocaleString(locale))}</p>}
+        <CheckCircle2 className="h-14 w-14 text-green-600 mx-auto" />
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{o.doneTitle}</h1>
+        {lote && <p className="text-lg text-muted-foreground">{o.doneSubtitle(lote.loteNumero, (lote.kgProduzidos ?? 0).toLocaleString(locale))}</p>}
       </div>
 
       {lote && (
-        <div className="rounded-2xl bg-white border p-5 space-y-2">
-          <p className="text-base text-[#52606D]">{o.setUsefulLife(lote.punchSet.code)}</p>
+        <div className="rounded-xl bg-card shadow-sm border p-5 space-y-2">
+          <p className="text-base text-muted-foreground">{o.setUsefulLife(lote.punchSet.code)}</p>
           <p className="text-4xl font-semibold tabular-nums">{pct(state?.depois ?? vida?.forecast?.usefulValue ?? 0)}%</p>
-          {state && state.antes > state.depois && <p className="text-base text-[#52606D]">{o.lifeUsed(pct(state.antes - state.depois))}</p>}
+          {state && state.antes > state.depois && <p className="text-base text-muted-foreground">{o.lifeUsed(pct(state.antes - state.depois))}</p>}
           {proximo && <p className="text-base">{o.nextLimitIn(proximo.label ?? `${proximo.percentual}%`, proximo.daysLeft ?? 0)}</p>}
         </div>
       )}

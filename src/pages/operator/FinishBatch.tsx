@@ -96,12 +96,12 @@ export function FinishBatch() {
             const marcado = draft.problemas.includes(tipo)
             return (
               <button key={tipo} type="button" onClick={() => alternar(tipo)} aria-pressed={marcado}
-                className={cn('rounded-xl border-2 p-4 min-h-24 text-left bg-white', marcado ? 'border-[#C62828] bg-[#FDECEA]' : 'border-[#D9DEE3]')}>
+                className={cn('rounded-xl border p-4 min-h-24 text-left bg-card shadow-sm', marcado ? 'border-red-600 bg-red-50' : 'border-input')}>
                 <p className="text-lg font-semibold flex items-center justify-between gap-2">
                   {t.production[tipo]}
-                  {marcado && <CheckCircle2 className="h-5 w-5 text-[#C62828]" />}
+                  {marcado && <CheckCircle2 className="h-5 w-5 text-red-600" />}
                 </p>
-                <p className="text-sm text-[#52606D] mt-1">{o.problemDesc[tipo]}</p>
+                <p className="text-sm text-muted-foreground mt-1">{o.problemDesc[tipo]}</p>
               </button>
             )
           })}
@@ -109,7 +109,7 @@ export function FinishBatch() {
         <div className="space-y-1">
           <label htmlFor="obs" className="block text-base font-medium">{o.operatorNoteOptional}</label>
           <textarea id="obs" rows={3} value={draft.observacoes} onChange={e => setDraft(d => ({ ...d, observacoes: e.target.value }))}
-            className="w-full rounded-xl border-2 border-[#D9DEE3] bg-white px-4 py-3 text-lg focus:outline-none focus:ring-4 focus:ring-primary/25" />
+            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-ring" />
         </div>
         <BottomAction>
           <PrimaryButton onClick={proximo}>{draft.problemas.length === 0 ? o.noProblemsContinue : o.continue}</PrimaryButton>
@@ -121,13 +121,13 @@ export function FinishBatch() {
   return (
     <div className="space-y-6">
       <ScreenHeader title={o.finishConfirmTitle} subtitle={subtitulo} back={voltar} step={passo} />
-      <dl className="rounded-2xl bg-white border divide-y">
-        <div className="px-4 py-3"><dt className="text-sm text-[#52606D]">{o.kgProduced}</dt><dd className="text-2xl font-semibold tabular-nums">{(toNumberOrNull(draft.kg) ?? 0).toLocaleString(locale)} kg</dd></div>
-        <div className="px-4 py-3"><dt className="text-sm text-[#52606D]">{o.finishProblemsTitle}</dt><dd className="text-lg">{draft.problemas.length ? draft.problemas.map(p => t.production[p]).join(', ') : o.none}</dd></div>
-        <div className="px-4 py-3"><dt className="text-sm text-[#52606D]">{o.stepSet}</dt><dd className="text-lg">{lote ? `${lote.punchSet.code} · ${lote.punchSet.name}` : '—'}</dd></div>
-        <div className="px-4 py-3"><dt className="text-sm text-[#52606D]">{o.measurementsLabel}</dt><dd className="text-lg">{o.measurementsDone(lote?.hourlyMeasurements?.length ?? 0)}</dd></div>
+      <dl className="rounded-xl bg-card shadow-sm border divide-y">
+        <div className="px-4 py-3"><dt className="text-sm text-muted-foreground">{o.kgProduced}</dt><dd className="text-2xl font-semibold tabular-nums">{(toNumberOrNull(draft.kg) ?? 0).toLocaleString(locale)} kg</dd></div>
+        <div className="px-4 py-3"><dt className="text-sm text-muted-foreground">{o.finishProblemsTitle}</dt><dd className="text-lg">{draft.problemas.length ? draft.problemas.map(p => t.production[p]).join(', ') : o.none}</dd></div>
+        <div className="px-4 py-3"><dt className="text-sm text-muted-foreground">{o.stepSet}</dt><dd className="text-lg">{lote ? `${lote.punchSet.code} · ${lote.punchSet.name}` : '—'}</dd></div>
+        <div className="px-4 py-3"><dt className="text-sm text-muted-foreground">{o.measurementsLabel}</dt><dd className="text-lg">{o.measurementsDone(lote?.hourlyMeasurements?.length ?? 0)}</dd></div>
       </dl>
-      <p className="text-base text-[#52606D]">{o.finishWarning}</p>
+      <p className="text-base text-muted-foreground">{o.finishWarning}</p>
       <BottomAction>
         <PrimaryButton onClick={() => encerrar.mutate()} loading={encerrar.isPending}>{o.finishLot}</PrimaryButton>
       </BottomAction>

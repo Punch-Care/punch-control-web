@@ -20,7 +20,7 @@ export function BatchRun() {
     queryFn: () => api.get(`/production-batches/${id}`).then(r => r.data),
   })
 
-  if (isLoading || !lote) return <p className="text-lg text-[#52606D]">{t.common.loading}</p>
+  if (isLoading || !lote) return <p className="text-sm text-muted-foreground">{t.common.loading}</p>
 
   const medicoes = [...(lote.hourlyMeasurements ?? [])].sort((a, b) => a.horario.localeCompare(b.horario))
   const proxima = nextMeasurementTime(lote, medicoes)
@@ -37,17 +37,17 @@ export function BatchRun() {
       />
 
       {encerrado ? (
-        <div className="rounded-2xl bg-white border-2 border-[#1E8E3E]/40 p-5 flex items-start gap-3">
-          <CheckCircle2 className="h-7 w-7 text-[#1E8E3E] flex-shrink-0" />
+        <div className="rounded-xl bg-card shadow-sm border border-green-600/40 p-5 flex items-start gap-3">
+          <CheckCircle2 className="h-7 w-7 text-green-600 flex-shrink-0" />
           <div>
             <p className="text-lg font-semibold">{o.lotClosed}</p>
-            <p className="text-base text-[#52606D]">{o.lotClosedKg((lote.kgProduzidos ?? 0).toLocaleString(locale))}</p>
+            <p className="text-base text-muted-foreground">{o.lotClosedKg((lote.kgProduzidos ?? 0).toLocaleString(locale))}</p>
           </div>
         </div>
       ) : (
-        <section className="rounded-2xl bg-white border-2 border-primary/40 p-5 space-y-4">
+        <section className="rounded-xl bg-card shadow-sm border border-primary/40 p-5 space-y-4">
           <div>
-            <p className="text-base text-[#52606D] flex items-center gap-1.5"><Clock className="h-5 w-5" /> {o.nextMeasurement}</p>
+            <p className="text-base text-muted-foreground flex items-center gap-1.5"><Clock className="h-5 w-5" /> {o.nextMeasurement}</p>
             <p className="text-6xl font-semibold tabular-nums tracking-tight leading-none mt-2">{proxima}</p>
           </div>
           <PrimaryButton onClick={() => navigate(`/operador/lote/${lote.id}/medicao`)}>{o.recordMeasurementAt(proxima)}</PrimaryButton>
@@ -55,7 +55,7 @@ export function BatchRun() {
       )}
 
       {desvios > 0 && (
-        <p className="rounded-xl bg-[#FDECEA] text-[#C62828] px-4 py-3 text-base flex items-center gap-2">
+        <p className="rounded-xl bg-red-50 text-red-600 px-4 py-3 text-base flex items-center gap-2">
           <AlertTriangle className="h-5 w-5 flex-shrink-0" /> {o.setupDeviations(desvios)}
         </p>
       )}
@@ -63,17 +63,17 @@ export function BatchRun() {
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">{o.measurementsTitle(medicoes.length)}</h2>
         {medicoes.length === 0 ? (
-          <p className="text-base text-[#52606D]">{o.noMeasurementsYet}</p>
+          <p className="text-base text-muted-foreground">{o.noMeasurementsYet}</p>
         ) : (
-          <ul className="rounded-2xl bg-white border divide-y overflow-hidden">
+          <ul className="rounded-xl bg-card shadow-sm border divide-y overflow-hidden">
             {medicoes.map(m => {
               const preenchidos = MEASUREMENT_FIELDS.filter(f => m[f] != null).length
               return (
                 <li key={m.id}>
                   <button type="button" disabled={encerrado} onClick={() => navigate(`/operador/lote/${lote.id}/medicao/${m.id}`)}
-                    className="w-full flex items-center gap-4 px-4 py-3 min-h-16 text-left hover:bg-[#F7F9FA] disabled:hover:bg-transparent">
+                    className="w-full flex items-center gap-4 px-4 py-3 min-h-16 text-left hover:bg-muted/50 disabled:hover:bg-transparent">
                     <span className="text-2xl font-semibold tabular-nums w-20">{m.horario}</span>
-                    <span className="flex-1 text-base text-[#52606D]">
+                    <span className="flex-1 text-base text-muted-foreground">
                       {o.valuesFilled(preenchidos, MEASUREMENT_FIELDS.length)}{m.responsavel ? ` · ${m.responsavel}` : ''}
                     </span>
                     {!encerrado && <span className="text-base text-primary inline-flex items-center">{o.fix}<ChevronRight className="h-5 w-5" /></span>}
@@ -87,10 +87,10 @@ export function BatchRun() {
 
       <div className="space-y-3 pt-2">
         {!encerrado && <SecondaryButton onClick={() => navigate(`/operador/lote/${lote.id}/encerrar/kg`)}>{o.finishLot}</SecondaryButton>}
-        <button type="button" onClick={() => navigate(`/production/${lote.id}`)} className="w-full h-12 text-base text-[#52606D] inline-flex items-center justify-center gap-2 hover:text-[#1F2933]">
+        <button type="button" onClick={() => navigate(`/production/${lote.id}`)} className="w-full h-12 text-base text-muted-foreground inline-flex items-center justify-center gap-2 hover:text-foreground">
           <FileText className="h-5 w-5" /> {o.openFullForm}
         </button>
-        <p className="text-sm text-center text-[#52606D]">{o.startedAt(format(parseDateOnly(lote.dataProducao), 'dd/MM/yyyy'), lote.horaInicio)}</p>
+        <p className="text-sm text-center text-muted-foreground">{o.startedAt(format(parseDateOnly(lote.dataProducao), 'dd/MM/yyyy'), lote.horaInicio)}</p>
       </div>
     </div>
   )

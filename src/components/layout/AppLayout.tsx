@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Package, Box, Ruler, AlertTriangle,
   RefreshCw, FileText, Users, Building2, Cog, FlaskConical,
-  LogOut, ChevronLeft, Menu, X, KeyRound, ShieldCheck, Hammer,
+  LogOut, ChevronLeft, Menu, X, KeyRound, ShieldCheck, ClipboardCheck,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
@@ -120,7 +120,7 @@ function SidebarContent({ isAdmin, onNavigate }: { isAdmin: boolean; onNavigate?
     <nav className="flex-1 overflow-y-auto py-3 px-3">
       {/* Modo operador: atalho para o fluxo guiado de produção (precisa de empresa definida) */}
       {(!isAdmin || selectedCompany) && (
-        <NavItemLink to="/operador" icon={Hammer} label={nav.operatorMode} onNavigate={onNavigate} />
+        <NavItemLink to="/operador" icon={ClipboardCheck} label={nav.operatorMode} onNavigate={onNavigate} />
       )}
       {/* Dashboard — sempre no topo */}
       <NavItemLink to="/dashboard" icon={LayoutDashboard} label={nav.dashboard} onNavigate={onNavigate} />
@@ -193,6 +193,7 @@ export function AppLayout() {
   const { t } = useLocale()
   const { selectedCompany } = useAdminContextStore()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const { pathname } = useLocation()
   const [pwOpen, setPwOpen] = useState(false)
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'MANAGER'
 
@@ -313,9 +314,9 @@ export function AppLayout() {
             {isAdmin && selectedCompany ? selectedCompany.name : 'Punch Control'}
           </p>
           {/* Sair fica dentro do menu: um toque errado aqui deslogava o operador */}
-          {(!isAdmin || selectedCompany) ? (
+          {(!isAdmin || selectedCompany) && !pathname.startsWith('/operador') ? (
             <NavLink to="/operador" className="h-10 px-3 inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium">
-              <Hammer className="h-4 w-4" /> <span className="hidden sm:inline">{t.nav.operatorMode}</span>
+              <ClipboardCheck className="h-4 w-4" /> <span className="hidden sm:inline">{t.nav.operatorMode}</span>
             </NavLink>
           ) : <span className="w-10" />}
         </header>

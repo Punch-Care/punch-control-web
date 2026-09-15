@@ -101,7 +101,7 @@ export function NewBatch() {
 
   // Os passos dependem das configurações: sem os dados, um recarregamento no
   // passo de setup parecia um passo inexistente e voltava ao início
-  if (carregando) return <p className="text-lg text-[#52606D]">{t.common.loading}</p>
+  if (carregando) return <p className="text-sm text-muted-foreground">{t.common.loading}</p>
 
   // O passo de setup só existe quando há parâmetros configurados para produto + máquina
   const passos = STEPS.filter(s => s !== 'setup' || params.length > 0)
@@ -139,7 +139,7 @@ export function NewBatch() {
               detail={[m.code, m.fabricante, m.modelo].filter(Boolean).join(' · ') || undefined}
             />
           ))}
-          {ativas.length === 0 && <p className="text-base text-[#52606D]">{o.noMachines}</p>}
+          {ativas.length === 0 && <p className="text-base text-muted-foreground">{o.noMachines}</p>}
         </div>
       </div>
     )
@@ -160,10 +160,10 @@ export function NewBatch() {
               onClick={() => { set({ productId: p.id, setup: draft.productId === p.id ? draft.setup : {} }); proximo() }}
               title={p.name}
               detail={p.code ?? undefined}
-              note={comConfig.has(p.id) ? <span className="text-[#1E8E3E]">{o.hasSetup}</span> : undefined}
+              note={comConfig.has(p.id) ? <span className="text-green-600">{o.hasSetup}</span> : undefined}
             />
           ))}
-          {ativos.length === 0 && <p className="text-base text-[#52606D]">{o.noProducts}</p>}
+          {ativos.length === 0 && <p className="text-base text-muted-foreground">{o.noProducts}</p>}
         </div>
       </div>
     )
@@ -187,19 +187,19 @@ export function NewBatch() {
                 selected={draft.punchSetId === s.id}
                 disabled={!!bloqueio}
                 onClick={() => { set({ punchSetId: s.id }); proximo() }}
-                title={<>{s.code} <span className="font-normal text-[#52606D]">· {s.name}</span></>}
+                title={<>{s.code} <span className="font-normal text-muted-foreground">· {s.name}</span></>}
                 detail={o.usefulLife(Math.round(s.usefulValue))}
                 note={bloqueio
-                  ? <span className="text-[#C62828] inline-flex items-center gap-1"><Lock className="h-4 w-4" /> {bloqueio}</span>
-                  : s.statusJogo !== 'LIMPO' ? <span className="text-[#9A6B00]">{o.managerOverride(t.jogo.statuses[s.statusJogo])}</span> : undefined}
+                  ? <span className="text-red-600 inline-flex items-center gap-1"><Lock className="h-4 w-4" /> {bloqueio}</span>
+                  : s.statusJogo !== 'LIMPO' ? <span className="text-amber-700">{o.managerOverride(t.jogo.statuses[s.statusJogo])}</span> : undefined}
               />
             )
           })}
-          {ordenados.length === 0 && <p className="text-base text-[#52606D]">{o.noSets}</p>}
+          {ordenados.length === 0 && <p className="text-base text-muted-foreground">{o.noSets}</p>}
         </div>
         {ordenados.some(s => motivo(s)) && (
-          <div className="rounded-2xl border-2 border-dashed border-[#9AA5B1] p-4 space-y-3">
-            <p className="text-base text-[#52606D]">{o.cleanBlockedHint}</p>
+          <div className="rounded-xl border border-dashed border-muted-foreground/40 p-4 space-y-3">
+            <p className="text-base text-muted-foreground">{o.cleanBlockedHint}</p>
             <SecondaryButton onClick={() => navigate('/operador/limpeza/jogo?voltar=lote')}>
               <Sparkles className="h-5 w-5" /> {o.cleanBlockedSet}
             </SecondaryButton>
@@ -219,18 +219,18 @@ export function NewBatch() {
             <label htmlFor="lote" className="block text-base font-medium">{o.lotNumberLabel}</label>
             <input id="lote" autoFocus value={draft.loteNumero} onChange={e => set({ loteNumero: e.target.value.toUpperCase() })}
               placeholder="Z0032" autoComplete="off"
-              className="w-full h-14 rounded-xl border-2 border-[#D9DEE3] bg-white px-4 text-2xl tracking-wide focus:outline-none focus:ring-4 focus:ring-primary/25" />
+              className="w-full h-12 rounded-lg border border-input bg-background px-3 text-lg tracking-wide focus:outline-none focus:ring-2 focus:ring-ring" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <label htmlFor="data" className="block text-base font-medium">{o.date}</label>
               <input id="data" type="date" value={draft.dataProducao} onChange={e => set({ dataProducao: e.target.value })}
-                className="w-full h-14 rounded-xl border-2 border-[#D9DEE3] bg-white px-3 text-lg focus:outline-none focus:ring-4 focus:ring-primary/25" />
+                className="w-full h-12 rounded-lg border border-input bg-background px-3 text-lg focus:outline-none focus:ring-2 focus:ring-ring" />
             </div>
             <div className="space-y-1">
               <label htmlFor="hora" className="block text-base font-medium">{o.startTime}</label>
               <input id="hora" type="time" value={draft.horaInicio} onChange={e => set({ horaInicio: e.target.value })}
-                className="w-full h-14 rounded-xl border-2 border-[#D9DEE3] bg-white px-3 text-lg focus:outline-none focus:ring-4 focus:ring-primary/25" />
+                className="w-full h-12 rounded-lg border border-input bg-background px-3 text-lg focus:outline-none focus:ring-2 focus:ring-ring" />
             </div>
           </div>
         </div>
@@ -267,7 +267,7 @@ export function NewBatch() {
           ))}
         </div>
         <BottomAction>
-          {fora > 0 && <p className="text-base text-[#C62828] font-medium mb-2 flex items-center gap-2"><XCircle className="h-5 w-5" /> {o.outOfRange(fora)}</p>}
+          {fora > 0 && <p className="text-base text-red-600 font-medium mb-2 flex items-center gap-2"><XCircle className="h-5 w-5" /> {o.outOfRange(fora)}</p>}
           <PrimaryButton type="submit">{o.continue}</PrimaryButton>
         </BottomAction>
       </form>
@@ -286,11 +286,11 @@ export function NewBatch() {
   return (
     <div className="space-y-5">
       {header(o.stepReview, o.stepReviewHint)}
-      <dl className="rounded-2xl bg-white border divide-y">
+      <dl className="rounded-xl bg-card shadow-sm border divide-y">
         {linhas.map(([rotulo, valor, destino]) => (
           <div key={rotulo} className="flex items-center gap-3 px-4 py-3 min-h-16">
             <div className="flex-1 min-w-0">
-              <dt className="text-sm text-[#52606D]">{rotulo}</dt>
+              <dt className="text-sm text-muted-foreground">{rotulo}</dt>
               <dd className="text-lg font-medium truncate">{valor}</dd>
             </div>
             <button type="button" onClick={() => irPara(destino)} className="h-11 px-3 rounded-lg text-base text-primary hover:bg-primary/10">{o.change}</button>
@@ -299,8 +299,8 @@ export function NewBatch() {
         {params.length > 0 && (
           <div className="flex items-center gap-3 px-4 py-3 min-h-16">
             <div className="flex-1">
-              <dt className="text-sm text-[#52606D]">{o.stepSetup}</dt>
-              <dd className={cn('text-lg font-medium flex items-center gap-2', preenchidos === params.length ? 'text-[#1E8E3E]' : 'text-[#9A6B00]')}>
+              <dt className="text-sm text-muted-foreground">{o.stepSetup}</dt>
+              <dd className={cn('text-lg font-medium flex items-center gap-2', preenchidos === params.length ? 'text-green-600' : 'text-amber-700')}>
                 {preenchidos === params.length && <CheckCircle2 className="h-5 w-5" />}{o.setupFilled(preenchidos, params.length)}
               </dd>
             </div>

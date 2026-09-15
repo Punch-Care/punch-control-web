@@ -113,11 +113,11 @@ export function MeasurementPage() {
       <div className="space-y-1">
         <label htmlFor="horario" className="block text-base font-medium">{o.measurementTime}</label>
         <input id="horario" type="time" value={horario} onChange={e => setHorario(e.target.value)}
-          className="w-44 h-14 rounded-xl border-2 border-[#D9DEE3] bg-white px-3 text-2xl tabular-nums focus:outline-none focus:ring-4 focus:ring-primary/25" />
+          className="w-44 h-12 rounded-lg border border-input bg-background px-3 text-lg tabular-nums focus:outline-none focus:ring-2 focus:ring-ring" />
       </div>
 
       {GRUPOS.map(g => (
-        <fieldset key={g.key} className="rounded-2xl bg-white border p-4 space-y-3">
+        <fieldset key={g.key} className="rounded-xl bg-card shadow-sm border p-4 space-y-3">
           <legend className="px-1 text-lg font-semibold">{o.groups[g.key]}</legend>
           <div className="grid grid-cols-2 gap-3">
             {g.fields.map((f, i) => {
@@ -144,24 +144,24 @@ export function MeasurementPage() {
         <div className="space-y-1">
           <label htmlFor="resp" className="block text-base font-medium">{o.whoMeasured}</label>
           <input id="resp" value={responsavel} onChange={e => setResponsavel(e.target.value)}
-            className="w-full h-14 rounded-xl border-2 border-[#D9DEE3] bg-white px-4 text-lg focus:outline-none focus:ring-4 focus:ring-primary/25" />
+            className="w-full h-12 rounded-lg border border-input bg-background px-3 text-lg focus:outline-none focus:ring-2 focus:ring-ring" />
         </div>
         <div className="space-y-1">
           <label htmlFor="obs" className="block text-base font-medium">{o.noteOptional}</label>
           <input id="obs" value={observacoes} onChange={e => setObservacoes(e.target.value)}
-            className="w-full h-14 rounded-xl border-2 border-[#D9DEE3] bg-white px-4 text-lg focus:outline-none focus:ring-4 focus:ring-primary/25" />
+            className="w-full h-12 rounded-lg border border-input bg-background px-3 text-lg focus:outline-none focus:ring-2 focus:ring-ring" />
         </div>
       </div>
 
       {mid && (
         <button type="button" onClick={() => { if (confirm(o.deleteMeasurementConfirm)) excluir.mutate() }}
-          className="h-12 px-3 rounded-lg text-base text-[#C62828] inline-flex items-center gap-2 hover:bg-[#FDECEA]">
+          className="h-12 px-3 rounded-lg text-base text-red-600 inline-flex items-center gap-2 hover:bg-red-50">
           <Trash2 className="h-5 w-5" /> {o.deleteMeasurement}
         </button>
       )}
 
       <BottomAction>
-        {preenchidos === 0 && <p className="text-base text-[#52606D] mb-2">{o.fillAtLeastOne}</p>}
+        {preenchidos === 0 && <p className="text-base text-muted-foreground mb-2">{o.fillAtLeastOne}</p>}
         <PrimaryButton type="submit" disabled={!horarioValido || preenchidos === 0} loading={salvar.isPending}>
           {o.saveMeasurement}
         </PrimaryButton>

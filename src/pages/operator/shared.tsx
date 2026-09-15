@@ -37,29 +37,29 @@ export function ScreenHeader({ title, subtitle, back, step, help }: {
   const o = t.operator
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between min-h-11">
+      <div className="flex items-center justify-between min-h-10">
         {back ? (
           <button
             type="button"
             onClick={() => (typeof back === 'function' ? back() : navigate(back))}
-            className="inline-flex items-center gap-2 -ml-2 px-2 h-11 rounded-lg text-base text-[#1F2933] hover:bg-black/5"
+            className="inline-flex items-center gap-1.5 -ml-2 px-2 h-10 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted"
           >
-            <ArrowLeft className="h-5 w-5" /> {o.back}
+            <ArrowLeft className="h-4 w-4" /> {o.back}
           </button>
         ) : <span />}
-        {step && <span className="text-sm text-[#52606D]">{o.stepOf(step.current, step.total)}</span>}
+        {step && <span className="text-sm text-muted-foreground">{o.stepOf(step.current, step.total)}</span>}
       </div>
       {step && (
-        <div className="h-1.5 rounded-full bg-[#D9DEE3] overflow-hidden" aria-hidden>
+        <div className="h-1.5 rounded-full bg-muted overflow-hidden" aria-hidden>
           <div className="h-full bg-primary transition-all" style={{ width: `${(step.current / step.total) * 100}%` }} />
         </div>
       )}
       <div>
         <div className="flex items-start gap-2">
-          <h1 className="flex-1 text-[26px] leading-tight font-semibold text-[#1F2933]">{title}</h1>
-          {help && <HelpButton content={help} size="lg" className="-mt-1 -mr-2" />}
+          <h1 className="flex-1 text-xl sm:text-2xl leading-tight font-bold tracking-tight text-foreground">{title}</h1>
+          {help && <HelpButton content={help} className="-mt-1 -mr-2" />}
         </div>
-        {subtitle && <p className="mt-1 text-base text-[#52606D]">{subtitle}</p>}
+        {subtitle && <p className="mt-1 text-sm sm:text-base text-muted-foreground">{subtitle}</p>}
       </div>
     </div>
   )
@@ -82,19 +82,19 @@ export function ChoiceButton({ selected, disabled, onClick, title, detail, aside
       onClick={onClick}
       aria-pressed={selected}
       className={cn(
-        'w-full text-left rounded-xl border-2 px-4 py-3 min-h-16 flex items-center gap-3 transition-colors bg-white',
-        selected ? 'border-primary bg-primary/5' : 'border-[#D9DEE3] hover:border-[#9AA5B1]',
-        disabled && 'opacity-60 cursor-not-allowed hover:border-[#D9DEE3]',
+        'w-full text-left rounded-xl border px-4 py-3 min-h-16 flex items-center gap-3 transition-colors bg-card shadow-sm',
+        selected ? 'border-primary ring-1 ring-primary bg-primary/5' : 'border-border hover:border-primary/50 hover:bg-muted/30',
+        disabled && 'opacity-60 cursor-not-allowed hover:border-input',
       )}
     >
       <div className="flex-1 min-w-0">
-        <p className="text-lg font-medium text-[#1F2933] truncate">{title}</p>
-        {detail && <p className="text-sm text-[#52606D] truncate">{detail}</p>}
+        <p className="text-base font-semibold text-foreground truncate">{title}</p>
+        {detail && <p className="text-sm text-muted-foreground truncate">{detail}</p>}
         {note && <p className="text-sm mt-0.5">{note}</p>}
       </div>
       {aside}
       {selected && (
-        <span className="h-7 w-7 rounded-full bg-primary text-white flex items-center justify-center flex-shrink-0">
+        <span className="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center flex-shrink-0">
           <Check className="h-4 w-4" />
         </span>
       )}
@@ -105,7 +105,7 @@ export function ChoiceButton({ selected, disabled, onClick, title, detail, aside
 /** Barra da ação principal, presa ao rodapé ao alcance do polegar */
 export function BottomAction({ children }: { children: ReactNode }) {
   return (
-    <div className="sticky bottom-0 -mx-4 px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] bg-gradient-to-t from-[#EEF1F4] via-[#EEF1F4] to-transparent">
+    <div className="sticky bottom-0 -mx-4 px-4 sm:-mx-6 sm:px-6 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] bg-gradient-to-t from-background via-background to-transparent">
       {children}
     </div>
   )
@@ -117,9 +117,9 @@ export function PrimaryButton({ children, loading, className, ...props }: React.
       {...props}
       disabled={props.disabled || loading}
       className={cn(
-        'w-full h-14 rounded-xl bg-primary text-white text-lg font-semibold inline-flex items-center justify-center gap-2',
-        'disabled:opacity-50 disabled:cursor-not-allowed active:scale-[.99] transition-transform',
-        'focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/40',
+        'w-full h-12 rounded-lg bg-primary text-primary-foreground text-base font-semibold shadow-sm inline-flex items-center justify-center gap-2 hover:bg-primary/90',
+        'disabled:opacity-50 disabled:cursor-not-allowed transition-colors',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
         className,
       )}
     >
@@ -134,8 +134,8 @@ export function SecondaryButton({ children, className, ...props }: React.ButtonH
     <button
       {...props}
       className={cn(
-        'w-full h-14 rounded-xl border-2 border-[#9AA5B1] bg-white text-[#1F2933] text-lg font-medium inline-flex items-center justify-center gap-2',
-        'disabled:opacity-50 hover:border-[#1F2933] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/30',
+        'w-full h-12 rounded-lg border border-input bg-background text-foreground text-base font-medium inline-flex items-center justify-center gap-2 hover:bg-muted',
+        'disabled:opacity-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
         className,
       )}
     >
@@ -160,10 +160,10 @@ export function BigNumberField({ id, label, unit, value, onChange, min, max, ran
   const n = value.trim() === '' ? null : Number(value.replace(',', '.'))
   const valido = n !== null && Number.isFinite(n)
   const fora = valido && ((min != null && n! < min) || (max != null && n! > max))
-  const tom = !valido ? 'border-[#D9DEE3]' : fora ? (strict ? 'border-[#C62828] bg-[#FDECEA]' : 'border-[#E8A317] bg-[#FFF8E6]') : (min != null || max != null) ? 'border-[#1E8E3E]' : 'border-[#D9DEE3]'
+  const tom = !valido ? 'border-input' : fora ? (strict ? 'border-red-600 bg-red-50' : 'border-amber-500 bg-amber-50') : (min != null || max != null) ? 'border-green-600' : 'border-input'
   return (
     <div className="space-y-1">
-      <label htmlFor={id} className="block text-base font-medium text-[#1F2933]">{label}</label>
+      <label htmlFor={id} className="block text-sm font-medium text-foreground">{label}</label>
       <div className="flex items-center gap-2">
         <input
           id={id}
@@ -171,11 +171,11 @@ export function BigNumberField({ id, label, unit, value, onChange, min, max, ran
           autoComplete="off"
           value={value}
           onChange={(e) => onChange(e.target.value.replace(/[^\d.,-]/g, ''))}
-          className={cn('w-full h-14 rounded-xl border-2 bg-white px-4 text-2xl tabular-nums text-[#1F2933] focus:outline-none focus:ring-4 focus:ring-primary/25', tom)}
+          className={cn('w-full h-12 rounded-lg border bg-background px-3 text-xl tabular-nums text-foreground focus:outline-none focus:ring-2 focus:ring-ring', tom)}
         />
-        {unit && <span className="text-base text-[#52606D] w-12">{unit}</span>}
+        {unit && <span className="text-sm text-muted-foreground w-12">{unit}</span>}
       </div>
-      {rangeLabel && <p className={cn('text-sm', fora ? (strict ? 'text-[#C62828] font-medium' : 'text-[#9A6B00] font-medium') : 'text-[#52606D]')}>{rangeLabel}</p>}
+      {rangeLabel && <p className={cn('text-sm', fora ? (strict ? 'text-red-600 font-medium' : 'text-amber-700 font-medium') : 'text-muted-foreground')}>{rangeLabel}</p>}
     </div>
   )
 }
@@ -207,15 +207,15 @@ export function SetChoiceList({ sets, selectedId, onPick, disabledReason, emptyT
             selected={selectedId === s.id}
             disabled={!!motivo}
             onClick={() => onPick(s)}
-            title={<>{s.code} <span className="font-normal text-[#52606D]">· {s.name}</span></>}
+            title={<>{s.code} <span className="font-normal text-muted-foreground">· {s.name}</span></>}
             detail={o.usefulLife(Math.round(s.usefulValue))}
             note={motivo
-              ? <span className="text-[#C62828]">{motivo}</span>
-              : <span className={limpo ? 'text-[#1E8E3E]' : 'text-[#9A6B00]'}>{t.jogo.statuses[s.statusJogo]}</span>}
+              ? <span className="text-red-600">{motivo}</span>
+              : <span className={limpo ? 'text-green-600' : 'text-amber-700'}>{t.jogo.statuses[s.statusJogo]}</span>}
           />
         )
       })}
-      {ordenados.length === 0 && <p className="text-base text-[#52606D]">{emptyText}</p>}
+      {ordenados.length === 0 && <p className="text-base text-muted-foreground">{emptyText}</p>}
     </div>
   )
 }
@@ -224,11 +224,11 @@ export function SetChoiceList({ sets, selectedId, onPick, disabledReason, emptyT
 export function ReviewList({ rows }: { rows: { label: string; value: ReactNode; onChange?: () => void }[] }) {
   const { t } = useLocale()
   return (
-    <dl className="rounded-2xl bg-white border divide-y">
+    <dl className="rounded-xl bg-card shadow-sm border divide-y">
       {rows.map(r => (
         <div key={r.label} className="flex items-center gap-3 px-4 py-3 min-h-16">
           <div className="flex-1 min-w-0">
-            <dt className="text-sm text-[#52606D]">{r.label}</dt>
+            <dt className="text-sm text-muted-foreground">{r.label}</dt>
             <dd className="text-lg font-medium break-words">{r.value}</dd>
           </div>
           {r.onChange && (
@@ -253,10 +253,10 @@ export function DoneScreen({ title, text, tone = 'ok', children, primary, second
     <div className="space-y-6 pt-4">
       <div className="text-center space-y-3">
         {tone === 'ok'
-          ? <CheckCircle2 className="h-20 w-20 text-[#1E8E3E] mx-auto" />
-          : <AlertTriangle className="h-20 w-20 text-[#C27C00] mx-auto" />}
-        <h1 className="text-[28px] leading-tight font-semibold">{title}</h1>
-        {text && <p className="text-lg text-[#52606D]">{text}</p>}
+          ? <CheckCircle2 className="h-14 w-14 text-green-600 mx-auto" />
+          : <AlertTriangle className="h-14 w-14 text-amber-600 mx-auto" />}
+        <h1 className="text-xl sm:text-2xl leading-tight font-bold tracking-tight">{title}</h1>
+        {text && <p className="text-lg text-muted-foreground">{text}</p>}
       </div>
       {children}
       <div className="space-y-3">
@@ -279,7 +279,7 @@ export function QuantityStepper({ value, onChange, min = 1, max = 999, label }: 
   return (
     <div className="flex items-center justify-center gap-4" role="group" aria-label={label}>
       <button type="button" aria-label="−" onClick={() => ajustar(value - 1)} disabled={value <= min}
-        className="h-20 w-20 rounded-2xl border-2 border-[#9AA5B1] bg-white flex items-center justify-center disabled:opacity-40">
+        className="h-20 w-20 rounded-xl border border-input bg-background flex items-center justify-center disabled:opacity-40">
         <Minus className="h-8 w-8" />
       </button>
       <input
@@ -287,10 +287,10 @@ export function QuantityStepper({ value, onChange, min = 1, max = 999, label }: 
         aria-label={label}
         value={String(value)}
         onChange={e => { const n = parseInt(e.target.value.replace(/\D/g, ''), 10); ajustar(Number.isNaN(n) ? min : n) }}
-        className="h-20 w-28 rounded-2xl border-2 border-[#D9DEE3] bg-white text-center text-5xl font-semibold tabular-nums focus:outline-none focus:ring-4 focus:ring-primary/25"
+        className="h-20 w-28 rounded-xl border border-input bg-background text-center text-4xl font-semibold tabular-nums focus:outline-none focus:ring-2 focus:ring-ring"
       />
       <button type="button" aria-label="+" onClick={() => ajustar(value + 1)} disabled={value >= max}
-        className="h-20 w-20 rounded-2xl bg-primary text-white flex items-center justify-center disabled:opacity-40">
+        className="h-20 w-20 rounded-xl bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-40">
         <Plus className="h-8 w-8" />
       </button>
     </div>
