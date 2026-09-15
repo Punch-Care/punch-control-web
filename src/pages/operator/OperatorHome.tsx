@@ -58,7 +58,7 @@ export function OperatorHome() {
             const proxima = nextMeasurementTime(lote, lote.hourlyMeasurements ?? [])
             return (
               <article key={lote.id} className="rounded-xl bg-card shadow-sm border border-primary/40 overflow-hidden">
-                <button type="button" onClick={() => navigate(`/operador/lote/${lote.id}`)} className="w-full text-left px-5 pt-4 pb-3">
+                <button type="button" onClick={() => navigate(`/production/${lote.id}`)} className="w-full text-left px-5 pt-4 pb-3">
                   <p className="text-base text-muted-foreground">{o.lotNumber(lote.loteNumero)}</p>
                   <p className="text-lg font-medium truncate">{lote.product.name}</p>
                   <p className="text-sm text-muted-foreground truncate">{lote.machine.name} · {o.setShort(lote.punchSet.code)}</p>

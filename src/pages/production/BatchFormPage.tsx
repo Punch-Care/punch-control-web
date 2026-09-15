@@ -108,7 +108,7 @@ function generateBlankPdf(form: BatchData, config: ProductionConfig | null, numH
   doc.save(`formulario_${form.loteNumero || 'em_branco'}_${format(new Date(), 'yyyyMMdd')}.pdf`)
 }
 
-function generateCompletedPdf(batch: ProductionBatch, bf: Translations['batchForm']) {
+export function generateCompletedPdf(batch: ProductionBatch, bf: Translations['batchForm']) {
   const doc = new jsPDF({ orientation: 'landscape' })
   const W = doc.internal.pageSize.width
 
@@ -495,6 +495,7 @@ export function BatchFormPage() {
       isEdit ? api.put(`/production-batches/${id}`, buildPayload(status)) : api.post('/production-batches', buildPayload(status)),
     onSuccess: (_, status) => {
       qc.invalidateQueries({ queryKey: ['production-batches'] })
+      qc.invalidateQueries({ queryKey: ['production-batch', id] })
       toast.success(isEdit ? p.updated : p.created)
       if (status === 'COMPLETED' && form.punchSetId && form.kgProduzidos) {
         const set = sets.find(s => s.id === form.punchSetId)
@@ -502,7 +503,7 @@ export function BatchFormPage() {
         setCompletedSetCode(set ? `${set.code} — ${set.name}` : form.punchSetId)
         setShowLifecyclePrompt(true)
       } else if (status === 'COMPLETED') {
-        navigate('/production')
+        navigate(isEdit ? `/production/${id}` : '/production')
       }
     },
     onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? (isEdit ? p.updateError : p.createError)),
@@ -576,7 +577,7 @@ export function BatchFormPage() {
       <div className="sticky top-0 z-20 bg-background/95 backdrop-blur border-b px-4 sm:px-6 py-3">
         <div className="max-w-3xl mx-auto flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
-            <Button variant="ghost" size="icon" className="flex-shrink-0" onClick={() => navigate('/production')}>
+            <Button variant="ghost" size="icon" className="flex-shrink-0" onClick={() => navigate(isEdit ? `/production/${id}` : '/production')}>
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div className="min-w-0">

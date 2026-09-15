@@ -1,28 +1,21 @@
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
-  Plus, FileText, Settings, BarChart3, Pencil, Trash2, CopyPlus,
-  CheckCircle2, Clock, FlaskConical, ChevronRight, ArrowRight,
+  Plus, FileText, Settings, BarChart3,
+  CheckCircle2, Clock, FlaskConical, ArrowRight,
   Tablet,
 } from 'lucide-react'
-import { toast } from 'sonner'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { format } from 'date-fns'
+import { useQuery } from '@tanstack/react-query'
 
 import { api } from '@/lib/api'
-import { parseDateOnly, matchesSearch } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { SearchInput } from '@/components/ui/search-input'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent } from '@/components/ui/card'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useLocale } from '@/hooks/useLocale'
-import { usePermissions } from '@/hooks/usePermissions'
 import { useAdminCompany } from '@/hooks/useAdminCompany'
 import type { ProductionBatch } from '@/types'
 import { ProductionConfigsTab } from './ProductionConfigsTab'
 import { CepTab } from './CepTab'
 import { HelpButton } from '@/components/ui/help-button'
+import { BatchList } from './BatchList'
 
 type Tab = 'batches' | 'cep' | 'configs'
 
@@ -106,11 +99,9 @@ function EmptyBatches({ navigate, canEdit, onOpenConfigs }: { navigate: ReturnTy
 
 export function ProductionPage() {
   const navigate = useNavigate()
-  const qc = useQueryClient()
   const { t } = useLocale()
   const { companyId: adminCompanyId } = useAdminCompany()
   const p = t.production
-  const pp = t.productionPage
   const [searchParams] = useSearchParams()
   const [activeTab, setActiveTab] = useState<Tab>(() => {
     const param = searchParams.get('tab')
@@ -119,18 +110,11 @@ export function ProductionPage() {
   })
   // Técnico (CLIENT) também registra lotes; só a exclusão fica com o gestor
   const canEdit = true
-  const { canManage } = usePermissions()
 
   const { data: batches = [], isLoading } = useQuery<ProductionBatch[]>({
     queryKey: ['production-batches', adminCompanyId],
     queryFn: () => api.get('/production-batches', { params: { companyId: adminCompanyId } }).then(r => r.data),
     enabled: activeTab === 'batches',
-  })
-
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => api.delete(`/production-batches/${id}`),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['production-batches'] }); toast.success(p.deleted) },
-    onError: (e: { response?: { data?: { message?: string } } }) => toast.error(e.response?.data?.message ?? p.deleteError),
   })
 
   const tabs = [
@@ -140,33 +124,31 @@ export function ProductionPage() {
   ]
 
   const hasData = !isLoading && batches.length > 0
-  const [busca, setBusca] = useState('')
-  const lotesVisiveis = batches.filter((b) => matchesSearch(busca, [b.loteNumero, b.product.name, b.machine.name, b.punchSet.code, b.punchSet.name]))
 
   return (
     <div className="flex flex-col min-h-screen bg-muted/20">
       {/* Cabeçalho da página */}
       <div className="bg-background border-b px-4 sm:px-6 py-5">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
               <FlaskConical className="h-5 w-5 text-primary" />
             </div>
             <div>
               <div className="flex items-center gap-1">
-          <h2 className="text-lg font-bold tracking-tight">{p.title}</h2>
-          <HelpButton content={t.moduleHelp.production} size="sm" />
-        </div>
+                <h2 className="text-lg font-bold tracking-tight">{p.title}</h2>
+                <HelpButton content={t.moduleHelp.production} size="sm" />
+              </div>
               <p className="text-xs text-muted-foreground">{p.subtitle}</p>
             </div>
           </div>
           {activeTab === 'batches' && canEdit && hasData && (
-            <div className="flex items-center gap-2 flex-wrap justify-end">
-              <Button variant="outline" title={p.fullFormHint} onClick={() => navigate('/production/new')}>
-                {p.fullForm}
+            <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-end">
+              <Button variant="ghost" className="text-muted-foreground" title={t.batchPage.oldBatchHint} onClick={() => navigate('/production/new')}>
+                {t.batchPage.oldBatch}
               </Button>
               <Button onClick={() => navigate('/operador/lote/novo/maquina')}>
-                <Plus className="h-4 w-4" /> {p.newBatch}
+                <Plus className="h-4 w-4" /> {t.batchPage.startBatch}
               </Button>
             </div>
           )}
@@ -209,104 +191,7 @@ export function ProductionPage() {
               <EmptyBatches navigate={navigate} canEdit={canEdit} onOpenConfigs={() => setActiveTab('configs')} />
             )}
 
-            {hasData && (
-              <div className="space-y-3">
-                {/* Resumo rápido */}
-                <div className="grid grid-cols-3 gap-3 mb-4">
-                  {[
-                    { label: pp.totalLots, value: batches.length, color: 'text-foreground' },
-                    { label: pp.completed, value: batches.filter(b => b.status === 'COMPLETED').length, color: 'text-green-600' },
-                    { label: pp.drafts, value: batches.filter(b => b.status === 'DRAFT').length, color: 'text-muted-foreground' },
-                  ].map(s => (
-                    <Card key={s.label} className="border-0 shadow-sm">
-                      <CardContent className="p-3">
-                        <p className={`text-2xl font-bold tabular-nums ${s.color}`}>{s.value}</p>
-                        <p className="text-xs text-muted-foreground">{s.label}</p>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-
-                <SearchInput value={busca} onChange={setBusca} placeholder={t.search.batches} />
-
-                {/* Tabela */}
-                <div className="rounded-xl border bg-background shadow-sm overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="bg-muted/30">
-                        <TableHead className="font-semibold">{pp.colLot}</TableHead>
-                        <TableHead className="font-semibold">{t.common.status}</TableHead>
-                        <TableHead className="font-semibold">{pp.colDate}</TableHead>
-                        <TableHead className="font-semibold">{pp.colProduct}</TableHead>
-                        <TableHead className="font-semibold">{pp.colMachine}</TableHead>
-                        <TableHead className="font-semibold">{pp.colSet}</TableHead>
-                        <TableHead className="font-semibold">KG</TableHead>
-                        <TableHead className="w-20" />
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {lotesVisiveis.length === 0 && (
-                        <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">{t.search.noResults}</TableCell></TableRow>
-                      )}
-                      {lotesVisiveis.map((b) => (
-                        <TableRow
-                          key={b.id}
-                          className="cursor-pointer hover:bg-muted/30 transition-colors"
-                          onClick={() => navigate(`/production/${b.id}`)}
-                        >
-                          <TableCell className="font-mono font-bold text-primary">{b.loteNumero}</TableCell>
-                          <TableCell>
-                            <Badge variant={b.status === 'COMPLETED' ? 'success' : 'secondary'} className="gap-1 text-xs">
-                              {b.status === 'COMPLETED'
-                                ? <><CheckCircle2 className="h-3 w-3" /> {pp.statusCompleted}</>
-                                : <><Clock className="h-3 w-3" /> {pp.statusDraft}</>}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-muted-foreground text-sm">
-                            {format(parseDateOnly(b.dataProducao), 'dd/MM/yyyy')}
-                            <span className="ml-1 text-muted-foreground/60">{b.horaInicio}</span>
-                          </TableCell>
-                          <TableCell className="text-sm">{b.product.name}</TableCell>
-                          <TableCell className="text-sm">{b.machine.name}</TableCell>
-                          <TableCell className="font-mono text-xs text-muted-foreground">{b.punchSet.code}</TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {b.kgProduzidos ? `${b.kgProduzidos} kg` : '—'}
-                          </TableCell>
-                          <TableCell onClick={e => e.stopPropagation()}>
-                            <div className="flex gap-1 justify-end">
-                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/production/${b.id}`)}>
-                                <Pencil className="h-3.5 w-3.5" />
-                              </Button>
-                              {canEdit && (
-                                <Button
-                                  variant="ghost" size="icon" className="h-7 w-7"
-                                  title={pp.duplicateLot}
-                                  onClick={() => navigate(
-                                    `/operador/lote/novo/identificacao?productId=${b.productId}&machineId=${b.machineId}&setId=${b.punchSetId}`,
-                                  )}
-                                >
-                                  <CopyPlus className="h-3.5 w-3.5" />
-                                </Button>
-                              )}
-                              {canManage && (
-                                <Button
-                                  variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive"
-                                  disabled={deleteMutation.isPending}
-                                  onClick={() => { if (confirm(p.deleteBatchConfirm(b.loteNumero))) deleteMutation.mutate(b.id) }}
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </Button>
-                              )}
-                              <ChevronRight className="h-4 w-4 text-muted-foreground/40 self-center" />
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-            )}
+            {hasData && <BatchList batches={batches} />}
           </>
         )}
 

@@ -77,7 +77,7 @@ export function MeasurementPage() {
       qc.invalidateQueries({ queryKey: ['production-batch', id] })
       qc.invalidateQueries({ queryKey: ['production-batches'] })
       toast.success(o.measurementSaved(horario))
-      navigate(`/operador/lote/${id}`)
+      navigate(`/production/${id}`)
     },
     onError: (e) => toast.error(apiMessage(e, o.saveError)),
   })
@@ -87,7 +87,7 @@ export function MeasurementPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['production-batch', id] })
       toast.success(o.measurementDeleted)
-      navigate(`/operador/lote/${id}`)
+      navigate(`/production/${id}`)
     },
     onError: (e) => toast.error(apiMessage(e, o.saveError)),
   })
@@ -106,7 +106,7 @@ export function MeasurementPage() {
       <ScreenHeader
         title={mid ? o.fixMeasurementTitle : o.measurementTitle}
         subtitle={lote ? `${o.lotNumber(lote.loteNumero)} · ${lote.product.name}` : undefined}
-        back={`/operador/lote/${id}`}
+        back={`/production/${id}`}
         help={o.helpMeasurement}
       />
 

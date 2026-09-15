@@ -94,7 +94,7 @@ export function NewBatch() {
       qc.invalidateQueries({ queryKey: ['production-batches'] })
       qc.invalidateQueries({ queryKey: ['stats-dashboard'] })
       toast.success(o.lotStarted(lote.loteNumero))
-      navigate(`/operador/lote/${lote.id}`, { replace: true })
+      navigate(`/production/${lote.id}`, { replace: true })
     },
     onError: (e) => toast.error(apiMessage(e, o.startError)),
   })

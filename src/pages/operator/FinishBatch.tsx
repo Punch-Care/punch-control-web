@@ -68,9 +68,9 @@ export function FinishBatch() {
   if (indice === -1) return <Navigate to={`/operador/lote/${id}/encerrar/kg`} replace />
   const kg = toNumberOrNull(draft.kg)
   if (indice > 0 && !(kg && kg > 0)) return <Navigate to={`/operador/lote/${id}/encerrar/kg`} replace />
-  if (lote?.status === 'COMPLETED') return <Navigate to={`/operador/lote/${id}`} replace />
+  if (lote?.status === 'COMPLETED') return <Navigate to={`/production/${id}`} replace />
 
-  const voltar = indice === 0 ? `/operador/lote/${id}` : `/operador/lote/${id}/encerrar/${STEPS[indice - 1]}`
+  const voltar = indice === 0 ? `/production/${id}` : `/operador/lote/${id}/encerrar/${STEPS[indice - 1]}`
   const proximo = () => navigate(`/operador/lote/${id}/encerrar/${STEPS[indice + 1]}`)
   const subtitulo = lote ? `${o.lotNumber(lote.loteNumero)} · ${lote.product.name}` : undefined
   const passo = { current: indice + 1, total: STEPS.length }

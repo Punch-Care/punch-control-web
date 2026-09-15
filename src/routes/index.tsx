@@ -23,7 +23,8 @@ import { RouteError } from '@/components/layout/RouteError'
 import { OperatorLayout } from '@/pages/operator/OperatorLayout'
 import { OperatorHome } from '@/pages/operator/OperatorHome'
 import { NewBatch } from '@/pages/operator/NewBatch'
-import { BatchRun } from '@/pages/operator/BatchRun'
+import { BatchDetailPage } from '@/pages/production/BatchDetailPage'
+import { RedirectToBatch } from '@/pages/production/RedirectToBatch'
 import { MeasurementPage } from '@/pages/operator/MeasurementPage'
 import { FinishBatch } from '@/pages/operator/FinishBatch'
 import { BatchDone } from '@/pages/operator/BatchDone'
@@ -57,7 +58,7 @@ export const router = createBrowserRouter([
                   { index: true, element: <OperatorHome /> },
                   { path: 'lote/novo/:step', element: <NewBatch /> },
                   { path: 'lote/novo', element: <Navigate to="/operador/lote/novo/maquina" replace /> },
-                  { path: 'lote/:id', element: <BatchRun /> },
+                  { path: 'lote/:id', element: <RedirectToBatch /> },
                   { path: 'lote/:id/medicao', element: <MeasurementPage /> },
                   { path: 'lote/:id/medicao/:mid', element: <MeasurementPage /> },
                   { path: 'lote/:id/encerrar/:step', element: <FinishBatch /> },
@@ -83,7 +84,8 @@ export const router = createBrowserRouter([
               { path: '/machines', element: <MachinesPage /> },
               { path: '/production', element: <ProductionPage /> },
               { path: '/production/new', element: <BatchFormPage /> },
-              { path: '/production/:id', element: <BatchFormPage /> },
+              { path: '/production/:id', element: <BatchDetailPage /> },
+              { path: '/production/:id/editar', element: <BatchFormPage /> },
               { path: '/users', element: <UsersPage /> },
               { path: '/audit', element: <AuditPage /> },
               { path: '*', element: <Navigate to="/dashboard" replace /> },
