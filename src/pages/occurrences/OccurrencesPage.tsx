@@ -15,7 +15,6 @@ import { SearchInput } from '@/components/ui/search-input'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -223,9 +222,18 @@ export function OccurrencesPage() {
       {showAnalytics && <OccurrencesAnalytics />}
 
       <div className="grid grid-cols-3 gap-3">
-        <Card className="border-red-200"><CardContent className="p-3"><p className="text-xs text-muted-foreground">{t.occurrences.open}</p><p className="text-2xl font-bold text-red-500">{occurrences.filter((o) => o.status === 'OPEN').length}</p></CardContent></Card>
-        <Card className="border-yellow-200"><CardContent className="p-3"><p className="text-xs text-muted-foreground">{t.occurrences.monitoring}</p><p className="text-2xl font-bold text-yellow-500">{occurrences.filter((o) => o.status === 'MONITORING').length}</p></CardContent></Card>
-        <Card className="border-green-200"><CardContent className="p-3"><p className="text-xs text-muted-foreground">{t.occurrences.closed}</p><p className="text-2xl font-bold text-green-500">{occurrences.filter((o) => o.status === 'CLOSED').length}</p></CardContent></Card>
+        {/* Os números também filtram a lista */}
+        {([
+          ['OPEN', t.occurrences.open, 'border-red-200', 'text-red-500'],
+          ['MONITORING', t.occurrences.monitoring, 'border-yellow-200', 'text-yellow-500'],
+          ['CLOSED', t.occurrences.closed, 'border-green-200', 'text-green-500'],
+        ] as const).map(([st, rotulo, borda, cor]) => (
+          <button key={st} type="button" onClick={() => setStatusFilter(statusFilter === st ? 'all' : st)}
+            className={`rounded-xl border bg-card text-left p-3 transition-shadow hover:shadow-sm ${borda} ${statusFilter === st ? 'ring-2 ring-primary' : ''}`}>
+            <p className="text-xs text-muted-foreground">{rotulo}</p>
+            <p className={`text-2xl font-bold ${cor}`}>{occurrences.filter((o) => o.status === st).length}</p>
+          </button>
+        ))}
       </div>
 
       <div className="flex items-center gap-2 flex-wrap">
@@ -262,17 +270,25 @@ export function OccurrencesPage() {
             ) : visiveis.length === 0 ? (
               <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">{occurrences.length === 0 ? t.occurrences.noOccurrencesFound : t.search.noResults}</TableCell></TableRow>
             ) : visiveis.map((o) => (
-              <TableRow key={o.id}>
+              <TableRow key={o.id} className="cursor-pointer hover:bg-muted/30" onClick={() => {
+                setEditOcc(o)
+                updateForm.reset({ status: o.status, type: o.type, description: o.description, resolution: o.resolution ?? '' })
+              }}>
                 <TableCell>
                   <p className="font-medium font-mono text-xs">{o.set.code}</p>
                   <p className="text-xs text-muted-foreground">{o.set.name}</p>
                 </TableCell>
-                <TableCell><Badge variant="secondary">{t.occurrenceType[o.type]}</Badge></TableCell>
+                <TableCell className="max-w-[18rem]">
+                  <Badge variant="secondary">{t.occurrenceType[o.type]}</Badge>
+                  {/* O que aconteceu é o que o gestor precisa ler primeiro */}
+                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{o.description}</p>
+                  {o.openedBy && <p className="text-[11px] text-muted-foreground/80 mt-0.5">{t.setHistory.by(o.openedBy)}</p>}
+                </TableCell>
                 <TableCell><Badge variant={STATUS_VARIANTS[o.status]}>{t.occurrenceStatus[o.status]}</Badge></TableCell>
                 <TableCell className="text-sm text-muted-foreground">{o.machine?.name ?? '—'}</TableCell>
                 <TableCell className="text-sm text-muted-foreground">{o.product?.name ?? '—'}</TableCell>
                 <TableCell className="text-sm text-muted-foreground">{format(new Date(o.openedAt), 'dd/MM/yyyy')}</TableCell>
-                <TableCell>
+                <TableCell onClick={(e) => e.stopPropagation()}>
                   <Button variant="ghost" size="icon" onClick={() => {
                     setEditOcc(o)
                     updateForm.reset({ status: o.status, type: o.type, description: o.description, resolution: o.resolution ?? '' })
@@ -428,6 +444,10 @@ export function OccurrencesPage() {
               <div className="p-3 bg-muted rounded-lg text-sm">
                 <p className="font-medium">{editOcc.set.code} — {editOcc.set.name}</p>
                 <p className="text-muted-foreground mt-0.5">{editOcc.description}</p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  {format(new Date(editOcc.openedAt), 'dd/MM/yyyy HH:mm')}{editOcc.openedBy ? ` · ${t.setHistory.by(editOcc.openedBy)}` : ''}
+                  {editOcc.closedAt && <> — {t.occurrenceStatus.CLOSED} {format(new Date(editOcc.closedAt), 'dd/MM/yyyy')}{editOcc.closedBy ? ` · ${t.setHistory.by(editOcc.closedBy)}` : ''}</>}
+                </p>
               </div>
               <form onSubmit={updateForm.handleSubmit((d) => updateMutation.mutate(d))} className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">

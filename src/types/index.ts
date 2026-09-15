@@ -303,6 +303,8 @@ export interface Occurrence {
   set: { id: string; code: string; name: string }
   machine: { id: string; name: string; code: string | null } | null
   product: { id: string; name: string; code: string | null } | null
+  openedBy?: string | null
+  closedBy?: string | null
 }
 
 export interface Company {
