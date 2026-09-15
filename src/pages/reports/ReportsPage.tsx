@@ -17,33 +17,15 @@ import { useAdminCompany } from '@/hooks/useAdminCompany'
 import type { PunchSet, DimensionRecord, Occurrence, OccurrenceType, OccurrenceStatus, SetStatus } from '@/types'
 import { HelpButton } from '@/components/ui/help-button'
 
-// ── CSV ───────────────────────────────────────────────────────────────────────
-
-function exportCSV(filename: string, headers: string[], rows: string[][]) {
-  const bom = '\uFEFF'
-  // Aspas dentro do texto são duplicadas (padrão CSV); sem isso uma descrição com
-  // aspas desalinha todas as colunas seguintes
-  const cell = (v: string) => `"${String(v ?? '').replace(/"/g, '""')}"`
-  const csv = bom + [headers, ...rows].map((r) => r.map(cell).join(';')).join('\n')
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  a.click()
-  URL.revokeObjectURL(url)
-}
-
-// ── PDF helpers ───────────────────────────────────────────────────────────────
-
-const BRAND_COLOR: [number, number, number] = [240, 89, 34]
+import { exportCSV, BRAND_COLOR } from './report-utils'
+import { ProductionReport } from './ProductionReport'
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export function ReportsPage() {
-  const [activeTab, setActiveTab] = useState<'dimensional' | 'ocorrencias' | 'conjuntos'>('conjuntos')
+  const [activeTab, setActiveTab] = useState<'dimensional' | 'ocorrencias' | 'conjuntos' | 'producao'>('conjuntos')
   const [selectedSetId, setSelectedSetId] = useState<string>('')
-  const { t } = useLocale()
+  const { t, locale } = useLocale()
   const { companyId: adminCompanyId } = useAdminCompany()
 
   const { data: sets = [] } = useQuery<PunchSet[]>({
@@ -230,6 +212,7 @@ export function ReportsPage() {
 
   const tabs = [
     { id: 'conjuntos' as const, label: t.reports.tabSets, icon: BarChart3 },
+    { id: 'producao' as const, label: t.reportsProd.tab, icon: FileText },
     { id: 'dimensional' as const, label: t.reports.tabDimensional, icon: FileText },
     { id: 'ocorrencias' as const, label: t.reports.tabOccurrences, icon: FileText },
   ]
@@ -244,7 +227,7 @@ export function ReportsPage() {
         <p className="text-muted-foreground text-sm mt-0.5">{t.reports.subtitle}</p>
       </div>
 
-      <div className="flex gap-2 border-b">
+      <div className="flex gap-2 border-b overflow-x-auto">
         {tabs.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
@@ -293,7 +276,7 @@ export function ReportsPage() {
                     <TableCell className="font-mono text-xs">{s.code}</TableCell>
                     <TableCell>{s.name}</TableCell>
                     <TableCell><Badge variant="secondary">{t.status[s.status as SetStatus]}</Badge></TableCell>
-                    <TableCell className="tabular-nums">{s.usefulValue.toFixed(1)}%</TableCell>
+                    <TableCell className="tabular-nums">{s.usefulValue.toLocaleString(locale, { maximumFractionDigits: 1 })}%</TableCell>
                     <TableCell>{s._count.punches}</TableCell>
                     <TableCell className="text-muted-foreground text-xs">{s.company.name}</TableCell>
                   </TableRow>
@@ -366,6 +349,8 @@ export function ReportsPage() {
           )}
         </div>
       )}
+
+      {activeTab === 'producao' && <ProductionReport pdfHeader={pdfHeader} pdfFooter={pdfFooter} />}
 
       {/* ── Ocorrências tab ── */}
       {activeTab === 'ocorrencias' && (

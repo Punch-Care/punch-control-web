@@ -450,6 +450,8 @@ export interface ProductionBatch {
   observacoesTecnico: string | null
   separadoPor: string | null
   status: BatchStatus
+  closedBy?: string | null
+  closedAt?: string | null
   createdAt: string
   product: { id: string; name: string; code: string | null }
   machine: { id: string; name: string; code: string | null; fabricante?: string | null; modelo?: string | null }
