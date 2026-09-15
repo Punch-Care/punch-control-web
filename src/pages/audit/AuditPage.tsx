@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useLocale } from '@/hooks/useLocale'
 import { useAuth } from '@/hooks/useAuth'
 import type { AuditLogResponse } from '@/types'
+import { describeAudit } from './describe-audit'
 import { HelpButton } from '@/components/ui/help-button'
 
 const ACTION_VARIANT: Record<string, 'success' | 'warning' | 'secondary' | 'destructive'> = {
@@ -25,7 +26,7 @@ const ACTION_VARIANT: Record<string, 'success' | 'warning' | 'secondary' | 'dest
 }
 
 export function AuditPage() {
-  const { t } = useLocale()
+  const { t, locale } = useLocale()
   const { user } = useAuth()
   const a = t.audit
 
@@ -102,7 +103,7 @@ export function AuditPage() {
               <TableHead>{a.date}</TableHead>
               <TableHead>{a.user}</TableHead>
               <TableHead>{a.action}</TableHead>
-              <TableHead>{a.endpoint}</TableHead>
+              <TableHead>{t.auditDesc.what}</TableHead>
               <TableHead>{a.status}</TableHead>
               <TableHead>IP</TableHead>
             </TableRow>
@@ -114,7 +115,7 @@ export function AuditPage() {
               <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">{a.noLogs}</TableCell></TableRow>
             ) : data.rows.map((log) => (
               <TableRow key={log.id}>
-                <TableCell className="text-xs whitespace-nowrap">{new Date(log.createdAt).toLocaleString()}</TableCell>
+                <TableCell className="text-xs whitespace-nowrap">{new Date(log.createdAt).toLocaleString(locale)}</TableCell>
                 <TableCell className="text-xs">
                   <div className="font-medium">{log.userEmail ?? '—'}</div>
                   {log.userRole && <div className="text-muted-foreground">{log.userRole}</div>}
@@ -122,8 +123,13 @@ export function AuditPage() {
                 <TableCell>
                   <Badge variant={ACTION_VARIANT[log.action] ?? 'secondary'}>{a.actions[log.action as keyof typeof a.actions] ?? log.action}</Badge>
                 </TableCell>
-                <TableCell className="text-xs font-mono max-w-[280px] truncate">
-                  <span className="text-muted-foreground">{log.method}</span> {log.path}
+                <TableCell className="text-sm max-w-[320px]">
+                  {/* Frase para o gestor; o caminho da API fica como detalhe técnico */}
+                  <div className="font-medium">
+                    {describeAudit(log.method, log.path, log.action, t.auditDesc) ?? `${log.method} ${log.path}`}
+                    {log.statusCode >= 400 && <span className="ml-1 text-xs font-normal text-destructive">({t.auditDesc.failed})</span>}
+                  </div>
+                  <div className="text-[11px] font-mono text-muted-foreground truncate" title={`${log.method} ${log.path}`}>{log.method} {log.path}</div>
                 </TableCell>
                 <TableCell className="text-xs">{log.statusCode}</TableCell>
                 <TableCell className="text-xs text-muted-foreground">{log.ip ?? '—'}</TableCell>
