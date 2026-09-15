@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { Navigate, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { AlertTriangle } from 'lucide-react'
@@ -19,9 +19,9 @@ const COMPONENTS: ComponentInventoryType[] = ['P_SUPERIOR', 'P_INFERIOR', 'MATRI
 type Step = 'jogo' | 'acao' | 'peca' | 'quantidade' | 'revisar' | 'pronto'
 const DRAFT_KEY = 'punch-operator-cleaning'
 
-type Draft = { setId: string; action: Action | ''; componente: ComponentInventoryType | ''; quantidade: number; notas: string }
+type Draft = { setId: string; action: Action | ''; componente: ComponentInventoryType | ''; quantidade: number; notas: string; voltarLote?: boolean }
 const vazio: Draft = { setId: '', action: '', componente: '', quantidade: 1, notas: '' }
-type DoneState = { code: string; statusJogo?: PunchSet['statusJogo']; sobra?: number | null; resumo?: string }
+type DoneState = { code: string; statusJogo?: PunchSet['statusJogo']; sobra?: number | null; resumo?: string; voltarLote?: boolean }
 
 const trocaDePecas = (a: Draft['action']) => a === 'COLOQUEI' || a === 'DEVOLVI'
 
@@ -34,7 +34,9 @@ export function CleaningFlow() {
   const { t } = useLocale()
   const f = t.opFlows
   const { companyId } = useAdminCompany()
-  const [draft, setDraft] = useState<Draft>(() => readDraft(DRAFT_KEY, vazio))
+  const [searchParams] = useSearchParams()
+  // Veio do Iniciar lote com jogo bloqueado: no fim, volta para escolher o jogo
+  const [draft, setDraft] = useState<Draft>(() => ({ ...readDraft(DRAFT_KEY, vazio), ...(searchParams.get('voltar') === 'lote' ? { voltarLote: true } : {}) }))
   useEffect(() => { sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft)) }, [draft])
   const set = (patch: Partial<Draft>) => setDraft(d => ({ ...d, ...patch }))
 
@@ -69,7 +71,7 @@ export function CleaningFlow() {
         }
       }
       const r = await api.post<PunchSet>(`/punch-sets/${draft.setId}/cleaning`, { acao: draft.action })
-      return { code, statusJogo: r.data.statusJogo }
+      return { code, statusJogo: r.data.statusJogo, voltarLote: draft.voltarLote }
     },
     onSuccess: (done) => {
       qc.invalidateQueries({ queryKey: ['punch-sets'] })
@@ -86,7 +88,9 @@ export function CleaningFlow() {
       <DoneScreen
         title={f.cleaningDoneTitle}
         text={state?.statusJogo ? f.setNowIs(state.code, t.jogo.statuses[state.statusJogo]) : state?.resumo}
-        primary={{ label: f.backHome, onClick: () => navigate('/operador') }}
+        primary={state?.voltarLote && state.statusJogo === 'LIMPO'
+          ? { label: f.backToBatch, onClick: () => navigate('/operador/lote/novo/jogo') }
+          : { label: f.backHome, onClick: () => navigate('/operador') }}
         secondary={{ label: f.recordAnother, onClick: recomecar }}
       >
         {state?.sobra != null && (
@@ -118,7 +122,7 @@ export function CleaningFlow() {
       <div className="space-y-5">
         {header(f.pickSet, f.pickSetHint, true)}
         <SetChoiceList
-          sets={sets.filter(s => s.status === 'ACTIVE' || s.status === 'IN_REPAIR')}
+          sets={sets.filter(s => (s.status === 'ACTIVE' || s.status === 'IN_REPAIR') && (!draft.voltarLote || s.statusJogo !== 'LIMPO'))}
           selectedId={draft.setId}
           onPick={s => { set({ setId: s.id }); irPara('acao') }}
           emptyText={f.noSets}

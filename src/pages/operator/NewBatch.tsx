@@ -3,14 +3,14 @@ import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
-import { CheckCircle2, XCircle, Lock } from 'lucide-react'
+import { CheckCircle2, XCircle, Lock, Sparkles } from 'lucide-react'
 import { api } from '@/lib/api'
 import { useAuth } from '@/hooks/useAuth'
 import { useLocale } from '@/hooks/useLocale'
 import { useAdminCompany } from '@/hooks/useAdminCompany'
 import { useMachinesQuery, useProductsQuery, usePunchSetsQuery, useProductionConfigsQuery } from '@/hooks/queries'
 import { cn } from '@/lib/utils'
-import { ScreenHeader, ChoiceButton, BottomAction, PrimaryButton, BigNumberField, apiMessage, toNumberOrNull } from './shared'
+import { ScreenHeader, ChoiceButton, BottomAction, PrimaryButton, SecondaryButton, BigNumberField, apiMessage, toNumberOrNull } from './shared'
 import type { ProductionBatch } from '@/types'
 
 const STEPS = ['maquina', 'produto', 'jogo', 'identificacao', 'setup', 'revisar'] as const
@@ -190,6 +190,14 @@ export function NewBatch() {
           })}
           {ordenados.length === 0 && <p className="text-base text-[#52606D]">{o.noSets}</p>}
         </div>
+        {ordenados.some(s => motivo(s)) && (
+          <div className="rounded-2xl border-2 border-dashed border-[#9AA5B1] p-4 space-y-3">
+            <p className="text-base text-[#52606D]">{o.cleanBlockedHint}</p>
+            <SecondaryButton onClick={() => navigate('/operador/limpeza/jogo?voltar=lote')}>
+              <Sparkles className="h-5 w-5" /> {o.cleanBlockedSet}
+            </SecondaryButton>
+          </div>
+        )}
       </div>
     )
   }
