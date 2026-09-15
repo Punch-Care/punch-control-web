@@ -27,6 +27,9 @@ import { BatchRun } from '@/pages/operator/BatchRun'
 import { MeasurementPage } from '@/pages/operator/MeasurementPage'
 import { FinishBatch } from '@/pages/operator/FinishBatch'
 import { BatchDone } from '@/pages/operator/BatchDone'
+import { ReportProblem } from '@/pages/operator/ReportProblem'
+import { CleaningFlow } from '@/pages/operator/CleaningFlow'
+import { MeasureSet } from '@/pages/operator/MeasureSet'
 
 export const router = createBrowserRouter([
   { path: '/', element: <LandingPage />, errorElement: <RouteError /> },
@@ -52,6 +55,12 @@ export const router = createBrowserRouter([
           { path: 'lote/:id/medicao/:mid', element: <MeasurementPage /> },
           { path: 'lote/:id/encerrar/:step', element: <FinishBatch /> },
           { path: 'lote/:id/concluido', element: <BatchDone /> },
+          { path: 'problema/:step', element: <ReportProblem /> },
+          { path: 'problema', element: <Navigate to="/operador/problema/jogo" replace /> },
+          { path: 'limpeza/:step', element: <CleaningFlow /> },
+          { path: 'limpeza', element: <Navigate to="/operador/limpeza/jogo" replace /> },
+          { path: 'medir/:step', element: <MeasureSet /> },
+          { path: 'medir', element: <Navigate to="/operador/medir/jogo" replace /> },
         ],
       },
       {

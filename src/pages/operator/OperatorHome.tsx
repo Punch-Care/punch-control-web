@@ -28,9 +28,9 @@ export function OperatorHome() {
 
   const tarefas = [
     { key: 'start', icon: FlaskConical, title: o.taskStart, desc: o.taskStartDesc, to: '/operador/lote/novo/maquina' },
-    { key: 'problem', icon: AlertTriangle, title: o.taskProblem, desc: o.taskProblemDesc, to: '/occurrences' },
-    { key: 'cleaning', icon: Sparkles, title: o.taskCleaning, desc: o.taskCleaningDesc, to: '/lifecycle' },
-    { key: 'measure', icon: Ruler, title: o.taskMeasure, desc: o.taskMeasureDesc, to: '/dimensioning' },
+    { key: 'problem', icon: AlertTriangle, title: o.taskProblem, desc: o.taskProblemDesc, to: '/operador/problema/jogo' },
+    { key: 'cleaning', icon: Sparkles, title: o.taskCleaning, desc: o.taskCleaningDesc, to: '/operador/limpeza/jogo' },
+    { key: 'measure', icon: Ruler, title: o.taskMeasure, desc: o.taskMeasureDesc, to: '/operador/medir/jogo' },
   ]
 
   return (

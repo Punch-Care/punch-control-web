@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react'
-import { ArrowLeft, Check, Loader2 } from 'lucide-react'
+import { ArrowLeft, Check, Loader2, CheckCircle2, AlertTriangle, Minus, Plus } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useLocale } from '@/hooks/useLocale'
 import { HelpButton, type HelpContent } from '@/components/ui/help-button'
 import { cn } from '@/lib/utils'
-import type { BatchHourlyMeasurement, ProductionBatch } from '@/types'
+import type { BatchHourlyMeasurement, ProductionBatch, PunchSet } from '@/types'
 
 /** Mensagem que a API devolveu, ou o texto padrão */
 export const apiMessage = (e: unknown, fallback: string) =>
@@ -183,4 +183,121 @@ export function BigNumberField({ id, label, unit, value, onChange, min, max, ran
 export const toNumberOrNull = (v: string) => {
   const n = v.trim() === '' ? null : Number(v.replace(',', '.'))
   return n !== null && Number.isFinite(n) ? n : null
+}
+
+/** Lista de jogos para tocar e escolher, com a condição de limpeza à vista */
+export function SetChoiceList({ sets, selectedId, onPick, disabledReason, emptyText }: {
+  sets: PunchSet[]
+  selectedId?: string
+  onPick: (s: PunchSet) => void
+  disabledReason?: (s: PunchSet) => string | null
+  emptyText: string
+}) {
+  const { t } = useLocale()
+  const o = t.operator
+  const ordenados = [...sets].sort((a, b) => a.code.localeCompare(b.code))
+  return (
+    <div className="space-y-3">
+      {ordenados.map(s => {
+        const motivo = disabledReason?.(s) ?? null
+        const limpo = s.statusJogo === 'LIMPO'
+        return (
+          <ChoiceButton
+            key={s.id}
+            selected={selectedId === s.id}
+            disabled={!!motivo}
+            onClick={() => onPick(s)}
+            title={<>{s.code} <span className="font-normal text-[#52606D]">· {s.name}</span></>}
+            detail={o.usefulLife(Math.round(s.usefulValue))}
+            note={motivo
+              ? <span className="text-[#C62828]">{motivo}</span>
+              : <span className={limpo ? 'text-[#1E8E3E]' : 'text-[#9A6B00]'}>{t.jogo.statuses[s.statusJogo]}</span>}
+          />
+        )
+      })}
+      {ordenados.length === 0 && <p className="text-base text-[#52606D]">{emptyText}</p>}
+    </div>
+  )
+}
+
+/** Linhas de conferência antes de salvar, cada uma com "Trocar" */
+export function ReviewList({ rows }: { rows: { label: string; value: ReactNode; onChange?: () => void }[] }) {
+  const { t } = useLocale()
+  return (
+    <dl className="rounded-2xl bg-white border divide-y">
+      {rows.map(r => (
+        <div key={r.label} className="flex items-center gap-3 px-4 py-3 min-h-16">
+          <div className="flex-1 min-w-0">
+            <dt className="text-sm text-[#52606D]">{r.label}</dt>
+            <dd className="text-lg font-medium break-words">{r.value}</dd>
+          </div>
+          {r.onChange && (
+            <button type="button" onClick={r.onChange} className="h-11 px-3 rounded-lg text-base text-primary hover:bg-primary/10">{t.operator.change}</button>
+          )}
+        </div>
+      ))}
+    </dl>
+  )
+}
+
+/** Tela final: o que aconteceu, em letras grandes, e para onde ir agora */
+export function DoneScreen({ title, text, tone = 'ok', children, primary, secondary }: {
+  title: string
+  text?: ReactNode
+  tone?: 'ok' | 'warn'
+  children?: ReactNode
+  primary: { label: string; onClick: () => void }
+  secondary?: { label: string; onClick: () => void }
+}) {
+  return (
+    <div className="space-y-6 pt-4">
+      <div className="text-center space-y-3">
+        {tone === 'ok'
+          ? <CheckCircle2 className="h-20 w-20 text-[#1E8E3E] mx-auto" />
+          : <AlertTriangle className="h-20 w-20 text-[#C27C00] mx-auto" />}
+        <h1 className="text-[28px] leading-tight font-semibold">{title}</h1>
+        {text && <p className="text-lg text-[#52606D]">{text}</p>}
+      </div>
+      {children}
+      <div className="space-y-3">
+        <PrimaryButton onClick={primary.onClick}>{primary.label}</PrimaryButton>
+        {secondary && <SecondaryButton onClick={secondary.onClick}>{secondary.label}</SecondaryButton>}
+      </div>
+    </div>
+  )
+}
+
+/** Quantidade com botões grandes de − e + (dedo sujo, luva, tela pequena) */
+export function QuantityStepper({ value, onChange, min = 1, max = 999, label }: {
+  value: number
+  onChange: (n: number) => void
+  min?: number
+  max?: number
+  label: string
+}) {
+  const ajustar = (n: number) => onChange(Math.min(max, Math.max(min, n)))
+  return (
+    <div className="flex items-center justify-center gap-4" role="group" aria-label={label}>
+      <button type="button" aria-label="−" onClick={() => ajustar(value - 1)} disabled={value <= min}
+        className="h-20 w-20 rounded-2xl border-2 border-[#9AA5B1] bg-white flex items-center justify-center disabled:opacity-40">
+        <Minus className="h-8 w-8" />
+      </button>
+      <input
+        inputMode="numeric"
+        aria-label={label}
+        value={String(value)}
+        onChange={e => { const n = parseInt(e.target.value.replace(/\D/g, ''), 10); ajustar(Number.isNaN(n) ? min : n) }}
+        className="h-20 w-28 rounded-2xl border-2 border-[#D9DEE3] bg-white text-center text-5xl font-semibold tabular-nums focus:outline-none focus:ring-4 focus:ring-primary/25"
+      />
+      <button type="button" aria-label="+" onClick={() => ajustar(value + 1)} disabled={value >= max}
+        className="h-20 w-20 rounded-2xl bg-primary text-white flex items-center justify-center disabled:opacity-40">
+        <Plus className="h-8 w-8" />
+      </button>
+    </div>
+  )
+}
+
+/** Rascunho do fluxo guardado na aba: voltar e recarregar não perdem o que foi feito */
+export function readDraft<T>(key: string, empty: T): T {
+  try { return { ...empty, ...JSON.parse(sessionStorage.getItem(key) ?? '{}') } } catch { return empty }
 }
