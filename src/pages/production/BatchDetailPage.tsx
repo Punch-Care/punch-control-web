@@ -128,7 +128,7 @@ export function BatchDetailPage() {
         ) : (
           <section className="rounded-xl border border-green-200 bg-green-50/60 p-4 flex items-center gap-3">
             <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
-            <p className="text-sm">{b.completedHint(num(lote.kgProduzidos))}</p>
+            <p className="text-sm">{b.completedHint(num(lote.kgProduzidos))}{lote.closedBy && <span className="text-muted-foreground"> {t.setHistory.by(lote.closedBy)}{lote.closedAt ? `, ${format(new Date(lote.closedAt), 'dd/MM/yyyy HH:mm')}` : ''}.</span>}</p>
           </section>
         )}
 

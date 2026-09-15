@@ -1744,6 +1744,7 @@ const translations = {
           'Na aba Visão geral ficam os dados e as punções do jogo.',
           'Na aba RFQ você monta o pedido para o fornecedor e gera o PDF.',
           'Na aba Anexos ficam fotos e desenhos.',
+          'Na aba Histórico está tudo o que aconteceu com o jogo, com data e quem fez.',
         ],
       },
       setBasics: {
@@ -3914,6 +3915,7 @@ const translations = {
           'The Overview tab has the set data and punches.',
           'The RFQ tab builds the supplier request and the PDF.',
           'The Attachments tab holds photos and drawings.',
+          'The History tab shows everything that happened to the set, with date and who did it.',
         ],
       },
       setBasics: {
@@ -6084,6 +6086,7 @@ const translations = {
           'La pestaña Visión general tiene los datos y los punzones.',
           'La pestaña RFQ arma el pedido al proveedor y genera el PDF.',
           'La pestaña Adjuntos guarda fotos y dibujos.',
+          'La pestaña Historial muestra todo lo que pasó con el juego, con fecha y quién lo hizo.',
         ],
       },
       setBasics: {

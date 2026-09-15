@@ -218,7 +218,7 @@ function DashboardMockup() {
         <div className="w-3 h-3 rounded-full bg-[#E84A43]" />
         <div className="w-3 h-3 rounded-full bg-[#F4A623]" />
         <div className="w-3 h-3 rounded-full bg-[#27C93F]" />
-        <span className="ml-3 text-white/20 text-xs font-mono">punch-control.vercel.app</span>
+        <span className="ml-3 text-white/20 text-xs font-mono">punchcontrol.com.br</span>
       </div>
 
       <div className="flex">
@@ -291,33 +291,33 @@ function DashboardMockup() {
 const features = [
   {
     icon: LayoutDashboard,
-    title: 'Dashboard & Visualização',
-    desc: 'Indicadores consolidados com gráficos U-Waveguide, BW e LDS. Visão em tempo real de todos os jogos.',
+    title: 'Produção no tablet',
+    desc: 'O mecânico inicia o lote, registra as medições de cada hora e encerra passo a passo. O setup da máquina é conferido na hora.',
   },
   {
     icon: Package,
     title: 'Cadastro de Jogos',
-    desc: 'Registre punções, matrizes e jogos com código, parâmetros e limites de vida útil configuráveis por jogo (ex.: 30%, 60%).',
+    desc: 'Punções, matrizes e ferramental com limites de vida útil por jogo (ex.: 30%, 60%) e RFQ pronto para enviar ao fornecedor.',
+  },
+  {
+    icon: RefreshCw,
+    title: 'Vida útil e previsão',
+    desc: 'Os kg de cada lote descontam a vida útil do jogo, e o sistema avisa quando ele vai chegar ao limite.',
   },
   {
     icon: Ruler,
     title: 'Controle Dimensional',
-    desc: 'Registre medições críticas e receba alertas automáticos de desvio dimensional por jogo.',
+    desc: 'Medidas com faixa aceita por jogo. Valor fora da faixa abre uma ocorrência automaticamente.',
   },
   {
     icon: AlertTriangle,
     title: 'Controle de Ocorrências',
-    desc: 'Vincule falhas a máquinas, produtos e josgos. Fluxo de status: abertura → acompanhamento → encerramento.',
-  },
-  {
-    icon: RefreshCw,
-    title: 'Ciclo de Vida',
-    desc: 'Rastreabilidade completa: Ativo → Em Reparo → Inativo → Descartado. Histórico de todas as transições.',
+    desc: 'Vincule falhas a máquinas, produtos e jogos. Fluxo: aberta → acompanhamento → encerrada, com quem abriu e quem encerrou.',
   },
   {
     icon: FileText,
-    title: 'Relatórios & Exportação',
-    desc: 'Gere e exporte relatórios dimensionais e de ocorrências em formatos padronizados para auditoria.',
+    title: 'Rastreabilidade e relatórios',
+    desc: 'Histórico de cada jogo com data e responsável, e relatórios de produção, dimensional e ocorrências para auditoria.',
   },
 ]
 
