@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Plus, FileText, Settings, BarChart3, Pencil, Trash2, CopyPlus,
   CheckCircle2, Clock, FlaskConical, ChevronRight, ArrowRight,
-  Printer, PenLine, Monitor,
+  Tablet,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -28,13 +28,13 @@ type Tab = 'batches' | 'cep' | 'configs'
 
 // ── Empty state guiado ─────────────────────────────────────────────────────────
 
-function EmptyBatches({ navigate, canEdit }: { navigate: ReturnType<typeof useNavigate>; canEdit: boolean }) {
+function EmptyBatches({ navigate, canEdit, onOpenConfigs }: { navigate: ReturnType<typeof useNavigate>; canEdit: boolean; onOpenConfigs: () => void }) {
   const pp = useLocale().t.productionPage
   const steps = [
     { num: '1', label: pp.step1, desc: pp.step1Desc, path: '/machines', done: false },
     { num: '2', label: pp.step2, desc: pp.step2Desc, path: '/sets', done: false },
     { num: '3', label: pp.step3, desc: pp.step3Desc, path: null, action: 'configs', done: false },
-    { num: '4', label: pp.step4, desc: pp.step4Desc, path: '/production/new', done: false },
+    { num: '4', label: pp.step4, desc: pp.step4Desc, path: '/operador/lote/novo/maquina', done: false },
   ]
 
   return (
@@ -55,9 +55,9 @@ function EmptyBatches({ navigate, canEdit }: { navigate: ReturnType<typeof useNa
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">{pp.howItWorks}</p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
           {[
-            { icon: Printer,  title: pp.how1, desc: pp.how1Desc },
-            { icon: PenLine,  title: pp.how2, desc: pp.how2Desc },
-            { icon: Monitor,  title: pp.how3, desc: pp.how3Desc },
+            { icon: Tablet,       title: pp.how1, desc: pp.how1Desc },
+            { icon: Clock,        title: pp.how2, desc: pp.how2Desc },
+            { icon: CheckCircle2, title: pp.how3, desc: pp.how3Desc },
           ].map(item => (
             <div key={item.title} className="flex gap-3">
               <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -91,7 +91,7 @@ function EmptyBatches({ navigate, canEdit }: { navigate: ReturnType<typeof useNa
                     {i === 3 ? <><Plus className="h-3.5 w-3.5" /> {pp.createLot}</> : <>{pp.go} <ArrowRight className="h-3.5 w-3.5" /></>}
                   </Button>
                 ) : (
-                  <Badge variant="secondary" className="text-xs cursor-default">{pp.thisTabConfigs}</Badge>
+                  <Button size="sm" variant="outline" onClick={onOpenConfigs}>{pp.thisTabConfigs} <ArrowRight className="h-3.5 w-3.5" /></Button>
                 )}
               </div>
             ))}
@@ -206,7 +206,7 @@ export function ProductionPage() {
             )}
 
             {!isLoading && batches.length === 0 && (
-              <EmptyBatches navigate={navigate} canEdit={canEdit} />
+              <EmptyBatches navigate={navigate} canEdit={canEdit} onOpenConfigs={() => setActiveTab('configs')} />
             )}
 
             {hasData && (
