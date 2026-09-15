@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { AlertTriangle, CheckCircle2, ChevronRight, Clock, Package, Sparkles, TrendingDown, FlaskConical } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, ChevronRight, Clock, Package, Sparkles, TrendingDown, FlaskConical, Ruler } from 'lucide-react'
 import { api } from '@/lib/api'
 import { useLocale } from '@/hooks/useLocale'
 import type { DashboardStats } from '@/types'
@@ -79,6 +79,14 @@ export function AttentionPanel({ companyId }: { companyId?: string }) {
         to: `/sets/${s.id}?tab=anexos`,
       })),
       action: { label: a.viewAll, to: '/sets' },
+    })
+  }
+  if (at?.setsWithoutSpec && at.setsWithoutSpec.length > 0) {
+    grupos.push({
+      key: 'spec', icon: Ruler, tone: 'text-slate-700 bg-slate-100',
+      title: a.setsWithoutSpec(at.setsWithoutSpec.length), hint: a.setsWithoutSpecHint,
+      items: at.setsWithoutSpec.map(s => ({ key: s.id, label: <><span className="font-mono">{s.code}</span> · {s.name}</>, to: `/dimensioning?setId=${s.id}` })),
+      action: { label: a.openSpec, to: `/dimensioning?setId=${at.setsWithoutSpec[0].id}` },
     })
   }
   if (stats.componentsToRestock.length > 0) {

@@ -86,6 +86,7 @@ export function NewBatch() {
     onSuccess: (lote) => {
       sessionStorage.removeItem(DRAFT_KEY)
       qc.invalidateQueries({ queryKey: ['production-batches'] })
+      qc.invalidateQueries({ queryKey: ['stats-dashboard'] })
       toast.success(o.lotStarted(lote.loteNumero))
       navigate(`/operador/lote/${lote.id}`, { replace: true })
     },

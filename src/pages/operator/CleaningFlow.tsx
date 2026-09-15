@@ -75,6 +75,7 @@ export function CleaningFlow() {
     },
     onSuccess: (done) => {
       qc.invalidateQueries({ queryKey: ['punch-sets'] })
+      qc.invalidateQueries({ queryKey: ['stats-dashboard'] })
       qc.invalidateQueries({ queryKey: ['lifecycle', draft.setId] })
       sessionStorage.removeItem(DRAFT_KEY)
       navigate('/operador/limpeza/pronto', { replace: true, state: done })

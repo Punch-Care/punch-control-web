@@ -58,6 +58,7 @@ export function FinishBatch() {
       qc.invalidateQueries({ queryKey: ['production-batches'] })
       qc.invalidateQueries({ queryKey: ['production-batch', id] })
       qc.invalidateQueries({ queryKey: ['punch-sets'] })
+      qc.invalidateQueries({ queryKey: ['stats-dashboard'] })
       navigate(`/operador/lote/${id}/concluido`, { replace: true, state: vida })
     },
     onError: (e) => toast.error(apiMessage(e, o.finishError)),

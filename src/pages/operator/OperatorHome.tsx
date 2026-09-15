@@ -7,7 +7,7 @@ import { useLocale } from '@/hooks/useLocale'
 import { useAdminCompany } from '@/hooks/useAdminCompany'
 import { HelpButton } from '@/components/ui/help-button'
 import { nextMeasurementTime } from './shared'
-import type { ProductionBatch } from '@/types'
+import type { DashboardStats, ProductionBatch } from '@/types'
 
 export function OperatorHome() {
   const navigate = useNavigate()
@@ -25,6 +25,14 @@ export function OperatorHome() {
     },
     refetchInterval: 60_000,
   })
+
+  // Jogos ativos sujos: o mecânico resolve pelo fluxo de limpeza
+  const { data: stats } = useQuery<DashboardStats>({
+    queryKey: ['stats-dashboard', companyId],
+    queryFn: () => api.get('/stats/dashboard', { params: companyId ? { companyId } : {} }).then(r => r.data),
+    refetchInterval: 5 * 60_000,
+  })
+  const sujos = stats?.attention?.setsNotClean ?? []
 
   const tarefas = [
     { key: 'start', icon: FlaskConical, title: o.taskStart, desc: o.taskStartDesc, to: '/operador/lote/novo/maquina' },
@@ -74,6 +82,22 @@ export function OperatorHome() {
             )
           })}
         </section>
+      )}
+
+      {sujos.length > 0 && (
+        <button
+          type="button"
+          onClick={() => navigate('/operador/limpeza/jogo')}
+          className="w-full text-left rounded-2xl border-2 border-[#E8A317] bg-[#FFF8E6] px-4 py-4 flex items-center gap-4"
+        >
+          <Sparkles className="h-7 w-7 text-[#9A6B00] flex-shrink-0" />
+          <span className="flex-1 min-w-0">
+            <span className="block text-lg font-semibold">{o.needsCleaning(sujos.length)}</span>
+            <span className="block text-sm text-[#52606D] truncate">{sujos.map(s => s.code).join(', ')}</span>
+            <span className="block text-sm text-[#52606D]">{o.needsCleaningHint}</span>
+          </span>
+          <ChevronRight className="h-6 w-6 text-[#9A6B00]" />
+        </button>
       )}
 
       <section className="space-y-3" aria-labelledby="tarefas">

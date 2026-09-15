@@ -58,6 +58,7 @@ export function MeasureSet() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['dimension-records'] })
       qc.invalidateQueries({ queryKey: ['occurrences'] })
+      qc.invalidateQueries({ queryKey: ['stats-dashboard'] })
       const fora = medidas.filter(({ sp, v }) => foraDaFaixa(sp, v)).length
       sessionStorage.removeItem(DRAFT_KEY)
       navigate('/operador/medir/pronto', { replace: true, state: { fora } })

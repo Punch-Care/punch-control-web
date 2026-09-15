@@ -500,6 +500,7 @@ export interface DashboardStats {
   /** O que precisa de alguém hoje */
   attention?: {
     setsNotClean: { id: string; code: string; name: string; statusJogo: JogoStatus }[]
+    setsWithoutSpec?: { id: string; code: string; name: string }[]
     batchesInProgress: { id: string; loteNumero: string; dataProducao: string; horaInicio: string; productName: string; machineName: string; setCode: string }[]
     recentOpenOccurrences: { id: string; type: OccurrenceType; description: string; openedAt: string; setId: string; setCode: string }[]
   }

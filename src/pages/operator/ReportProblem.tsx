@@ -43,6 +43,7 @@ export function ReportProblem() {
     }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['occurrences'] })
+      qc.invalidateQueries({ queryKey: ['stats-dashboard'] })
       navigate('/operador/problema/pronto', { replace: true })
     },
     onError: (e) => toast.error(apiMessage(e, f.saveError)),
