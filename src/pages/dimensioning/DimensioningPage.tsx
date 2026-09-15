@@ -25,6 +25,8 @@ import { HelpButton } from '@/components/ui/help-button'
 
 function RecordRow({ record, t }: { record: DimensionRecord; t: ReturnType<typeof useLocale>['t'] }) {
   const [open, setOpen] = useState(false)
+  const { locale } = useLocale()
+  const num = (v: number | null | undefined) => (v == null ? '—' : v.toLocaleString(locale, { maximumFractionDigits: 4 }))
   const allOk = record.values.every((v) => v.isOk)
   const nokCount = record.values.filter((v) => !v.isOk).length
 
@@ -33,6 +35,7 @@ function RecordRow({ record, t }: { record: DimensionRecord; t: ReturnType<typeo
       <TableRow className="cursor-pointer hover:bg-muted/40" onClick={() => setOpen(!open)}>
         <TableCell className="font-medium">
           {format(new Date(record.measuredAt), 'dd/MM/yyyy HH:mm')}
+          {record.userName && <p className="text-xs font-normal text-muted-foreground">{t.setHistory.by(record.userName)}</p>}
         </TableCell>
         <TableCell>
           <Badge variant={allOk ? 'success' : 'destructive'}>
@@ -63,9 +66,9 @@ function RecordRow({ record, t }: { record: DimensionRecord; t: ReturnType<typeo
                   {record.values.map((v) => (
                     <tr key={v.id} className={v.isOk ? '' : 'bg-red-50 dark:bg-red-950/20'}>
                       <td className="py-1">{v.parameter}</td>
-                      <td className="text-right py-1 tabular-nums">{v.value} {v.unit}</td>
-                      <td className="text-right py-1 tabular-nums text-muted-foreground">{v.lowerLimit ?? '—'}</td>
-                      <td className="text-right py-1 tabular-nums text-muted-foreground">{v.upperLimit ?? '—'}</td>
+                      <td className="text-right py-1 tabular-nums">{num(v.value)} {v.unit}</td>
+                      <td className="text-right py-1 tabular-nums text-muted-foreground">{num(v.lowerLimit)}</td>
+                      <td className="text-right py-1 tabular-nums text-muted-foreground">{num(v.upperLimit)}</td>
                       <td className="text-center py-1">
                         {v.isOk
                           ? <CheckCircle2 className="h-4 w-4 text-green-500 mx-auto" />
@@ -214,8 +217,9 @@ function SpecEditor({
 
 export function DimensioningPage() {
   const qc = useQueryClient()
-  const { t } = useLocale()
+  const { t, locale } = useLocale()
   const d = t.dimensioning
+  const fmtNum = (v: number | null | undefined) => (v == null ? '—' : v.toLocaleString(locale, { maximumFractionDigits: 4 }))
   const { canManage } = usePermissions()
   const { companyId: adminCompanyId } = useAdminCompany()
   const [searchParams] = useSearchParams()
@@ -388,9 +392,9 @@ export function DimensioningPage() {
                     {specs.map((sp) => (
                       <tr key={sp.id} className="border-b last:border-0">
                         <td className="py-1">{sp.parameter}</td>
-                        <td className="text-right py-1 tabular-nums">{sp.nominal ?? '—'}</td>
-                        <td className="text-right py-1 tabular-nums">{sp.lowerLimit ?? '—'}</td>
-                        <td className="text-right py-1 tabular-nums">{sp.upperLimit ?? '—'}</td>
+                        <td className="text-right py-1 tabular-nums">{fmtNum(sp.nominal)}</td>
+                        <td className="text-right py-1 tabular-nums">{fmtNum(sp.lowerLimit)}</td>
+                        <td className="text-right py-1 tabular-nums">{fmtNum(sp.upperLimit)}</td>
                         <td className="text-right py-1 text-muted-foreground">{sp.unit}</td>
                       </tr>
                     ))}

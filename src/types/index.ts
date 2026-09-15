@@ -134,6 +134,7 @@ export interface DimensionRecord {
   setId: string
   measuredAt: string
   notes: string | null
+  userName?: string | null
   createdAt: string
   values: DimensionValue[]
 }
