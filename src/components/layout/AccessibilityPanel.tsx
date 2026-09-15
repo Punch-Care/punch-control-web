@@ -6,10 +6,23 @@ import { Label } from '@/components/ui/label'
 import { useSettingsStore } from '@/store/settings.store'
 import { useLocale } from '@/hooks/useLocale'
 
-function VLibrasSync({ enabled }: { enabled: boolean }) {
+/**
+ * Mostra ou esconde o widget do VLibras. O plugin do governo cria uma cópia
+ * própria (#vlibras-access-wrapper) depois de carregar — sem esconder essa cópia,
+ * o botão azul ficava por cima dos campos mesmo com Libras desligado.
+ */
+export function VLibrasSync({ enabled }: { enabled: boolean }) {
   useEffect(() => {
-    const wrapper = document.getElementById('vlibras-wrapper')
-    if (wrapper) wrapper.style.display = enabled ? '' : 'none'
+    const aplicar = () => {
+      for (const id of ['vlibras-wrapper', 'vlibras-access-wrapper']) {
+        const el = document.getElementById(id)
+        if (el) el.style.display = enabled ? '' : 'none'
+      }
+    }
+    aplicar()
+    const observer = new MutationObserver(aplicar)
+    observer.observe(document.body, { childList: true })
+    return () => observer.disconnect()
   }, [enabled])
   return null
 }
