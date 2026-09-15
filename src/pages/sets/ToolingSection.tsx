@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useLocale } from '@/hooks/useLocale'
 import { knToTf } from '@/lib/utils'
 import type { ToolingComponent, ToolingComponentType } from '@/types'
+import { HelpButton } from '@/components/ui/help-button'
 
 // ── Tabela A — Formato do Comprimido (Nomenclatura de Formatos, Adamus) ────────
 // Códigos conforme o PDF "Dimensões dos Comprimidos – Nomenclatura de Formatos".
@@ -505,6 +506,7 @@ export function ToolingSection({ setId, canEdit }: { setId: string; canEdit: boo
         <div className="flex items-center gap-2">
           <Wrench className="h-4 w-4 text-muted-foreground" />
           <h3 className="font-semibold text-base">{t.tooling.title}</h3>
+                <HelpButton content={t.moduleHelp.tooling} size="sm" />
           <span className="text-xs text-muted-foreground">{t.toolingForm.subtitle}</span>
         </div>
         {canEdit && (

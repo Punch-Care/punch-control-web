@@ -21,6 +21,7 @@ import { useLocale } from '@/hooks/useLocale'
 import { useAdminCompany } from '@/hooks/useAdminCompany'
 import { usePermissions } from '@/hooks/usePermissions'
 import type { PunchSet, DimensionRecord, DimensionSpecsResponse } from '@/types'
+import { HelpButton } from '@/components/ui/help-button'
 
 function RecordRow({ record, t }: { record: DimensionRecord; t: ReturnType<typeof useLocale>['t'] }) {
   const [open, setOpen] = useState(false)
@@ -321,7 +322,10 @@ export function DimensioningPage() {
     <div className="p-4 sm:p-6 space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
+          <div className="flex items-center gap-1">
           <h2 className="text-xl sm:text-2xl font-bold tracking-tight">{d.title}</h2>
+          <HelpButton content={t.moduleHelp.dimensioning} size="md" />
+        </div>
           <p className="text-muted-foreground text-sm mt-0.5">{d.subtitle}</p>
         </div>
         {selectedSetId && (
@@ -356,7 +360,10 @@ export function DimensioningPage() {
           <CardContent className="p-4 space-y-3">
             <div className="flex items-start justify-between gap-3 flex-wrap">
               <div>
-                <p className="font-semibold text-sm">{d.specTitle}</p>
+                <div className="flex items-center gap-1">
+          <p className="font-semibold text-sm">{d.specTitle}</p>
+          <HelpButton content={t.moduleHelp.dimensionSpec} size="sm" />
+        </div>
                 <p className="text-xs text-muted-foreground">{d.specSubtitle}</p>
               </div>
               {canManage && (

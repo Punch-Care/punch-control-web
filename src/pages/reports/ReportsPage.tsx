@@ -15,6 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useLocale } from '@/hooks/useLocale'
 import { useAdminCompany } from '@/hooks/useAdminCompany'
 import type { PunchSet, DimensionRecord, Occurrence, OccurrenceType, OccurrenceStatus, SetStatus } from '@/types'
+import { HelpButton } from '@/components/ui/help-button'
 
 // ── CSV ───────────────────────────────────────────────────────────────────────
 
@@ -236,7 +237,10 @@ export function ReportsPage() {
   return (
     <div className="p-4 sm:p-6 space-y-5">
       <div>
-        <h2 className="text-xl sm:text-2xl font-bold tracking-tight">{t.reports.title}</h2>
+        <div className="flex items-center gap-1">
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight">{t.reports.title}</h2>
+          <HelpButton content={t.moduleHelp.reports} size="md" />
+        </div>
         <p className="text-muted-foreground text-sm mt-0.5">{t.reports.subtitle}</p>
       </div>
 

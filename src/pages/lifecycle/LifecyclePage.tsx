@@ -22,6 +22,7 @@ import { usePermissions } from '@/hooks/usePermissions'
 import { useAdminCompany } from '@/hooks/useAdminCompany'
 import type { PunchSet, SetStatus, LifecycleData, ComponentInventoryType } from '@/types'
 import { toast } from 'sonner'
+import { HelpButton } from '@/components/ui/help-button'
 
 const STATUS_VARIANTS: Record<SetStatus, 'success' | 'warning' | 'secondary' | 'destructive'> = {
   ACTIVE: 'success',
@@ -214,7 +215,10 @@ export function LifecyclePage() {
   return (
     <div className="p-4 sm:p-6 space-y-5">
       <div>
-        <h2 className="text-xl sm:text-2xl font-bold tracking-tight">{t.lifecycle.title}</h2>
+        <div className="flex items-center gap-1">
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight">{t.lifecycle.title}</h2>
+          <HelpButton content={t.moduleHelp.lifecycle} size="md" />
+        </div>
         <p className="text-muted-foreground text-sm mt-0.5">{t.lifecycle.subtitle}</p>
       </div>
 
@@ -282,6 +286,7 @@ export function LifecyclePage() {
               <div className="flex items-center gap-2">
                 <TrendingDown className="h-4 w-4 text-muted-foreground" />
                 <h3 className="font-semibold text-sm">{t.forecast.title}</h3>
+                <HelpButton content={t.moduleHelp.forecast} size="sm" />
               </div>
               {!lifecycleData.forecast ? (
                 <p className="text-sm text-muted-foreground">{t.forecast.noData}</p>
@@ -313,6 +318,7 @@ export function LifecyclePage() {
               <div className="flex items-center gap-2">
                 <Settings className="h-4 w-4 text-muted-foreground" />
                 <h3 className="font-semibold text-sm">{lp.depreciationConfig}</h3>
+                <HelpButton content={t.moduleHelp.depreciation} size="sm" />
               </div>
               {canManage && (
                 <Button size="sm" variant="outline" onClick={() => setEditConfig(!editConfig)}>
@@ -374,6 +380,7 @@ export function LifecyclePage() {
               <div className="flex items-center gap-2">
                 <Package className="h-4 w-4 text-muted-foreground" />
                 <h3 className="font-semibold text-sm">{lp.toolingStock}</h3>
+                <HelpButton content={t.moduleHelp.stock} size="sm" />
               </div>
               {canManage && (
                 <Button size="sm" onClick={() => saveInventoryMutation.mutate()} disabled={saveInventoryMutation.isPending}>
@@ -445,6 +452,7 @@ export function LifecyclePage() {
               <div className="flex items-center gap-2">
                 <Activity className="h-4 w-4 text-muted-foreground" />
                 <h3 className="font-semibold text-sm">{lp.productionRecord}</h3>
+                <HelpButton content={t.moduleHelp.lifecycleProduction} size="sm" />
                 <span className="text-xs text-muted-foreground">{lp.lotsCount(lifecycleData.production.length)}</span>
               </div>
               {canManage && (
@@ -508,6 +516,7 @@ export function LifecyclePage() {
               <div className="flex items-center gap-2">
                 <TrendingDown className="h-4 w-4 text-muted-foreground" />
                 <h3 className="font-semibold text-sm">{lp.maintenanceSection}</h3>
+                <HelpButton content={t.moduleHelp.maintenance} size="sm" />
               </div>
               <Button size="sm" variant="outline" onClick={() => setAddMaintOpen(true)}>
                 <Plus className="h-3.5 w-3.5" /> {lp.register}

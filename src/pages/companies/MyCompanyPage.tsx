@@ -9,6 +9,7 @@ import { useLocale } from '@/hooks/useLocale'
 import { Card, CardContent } from '@/components/ui/card'
 import type { Company } from '@/types'
 import { CompanyForm, type CompanyFormData } from './CompanyForm'
+import { HelpButton } from '@/components/ui/help-button'
 
 export function MyCompanyPage() {
   const qc = useQueryClient()
@@ -41,7 +42,10 @@ export function MyCompanyPage() {
           <Building2 className="h-5 w-5 text-primary" />
         </div>
         <div>
+          <div className="flex items-center gap-1">
           <h2 className="text-lg font-bold tracking-tight">{t.nav.myCompany}</h2>
+          <HelpButton content={t.moduleHelp.myCompany} size="sm" />
+        </div>
           <p className="text-xs text-muted-foreground">{t.companies.myCompanySubtitle}</p>
         </div>
       </div>

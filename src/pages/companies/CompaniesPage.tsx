@@ -15,6 +15,7 @@ import { useLocale } from '@/hooks/useLocale'
 import { useAdminContextStore } from '@/store/admin-context.store'
 import type { Company } from '@/types'
 import { CompanyForm, type CompanyFormData as FormData } from './CompanyForm'
+import { HelpButton } from '@/components/ui/help-button'
 
 export function CompaniesPage() {
   const qc = useQueryClient()
@@ -72,7 +73,10 @@ export function CompaniesPage() {
     <div className="p-6 space-y-5">
       <div className="flex items-center justify-between">
         <div>
+          <div className="flex items-center gap-1">
           <h2 className="text-2xl font-bold tracking-tight">{t.companies.title}</h2>
+          <HelpButton content={t.moduleHelp.companies} size="md" />
+        </div>
           <p className="text-muted-foreground text-sm mt-0.5">{t.companies.subtitle}</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>

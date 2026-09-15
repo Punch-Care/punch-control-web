@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useLocale } from '@/hooks/useLocale'
 import { useAuth } from '@/hooks/useAuth'
 import type { AuditLogResponse } from '@/types'
+import { HelpButton } from '@/components/ui/help-button'
 
 const ACTION_VARIANT: Record<string, 'success' | 'warning' | 'secondary' | 'destructive'> = {
   LOGIN: 'secondary',
@@ -60,7 +61,10 @@ export function AuditPage() {
           <ShieldCheck className="h-5 w-5 text-primary" />
         </div>
         <div>
+          <div className="flex items-center gap-1">
           <h2 className="text-2xl font-bold tracking-tight">{a.title}</h2>
+          <HelpButton content={t.moduleHelp.audit} size="md" />
+        </div>
           <p className="text-muted-foreground text-sm mt-0.5">{a.subtitle}</p>
         </div>
       </div>

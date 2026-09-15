@@ -12,6 +12,7 @@ import { useLocale } from '@/hooks/useLocale'
 import { ToolingSection, CARACTERISTICAS_PRODUTO } from './ToolingSection'
 import { generateRfqPdf } from './rfq-pdf'
 import type { PunchSet, Company, Machine, ToolingComponent, Product } from '@/types'
+import { HelpButton } from '@/components/ui/help-button'
 
 // Parse do campo caracteristicas (JSON string array) com fallback seguro.
 function parseCaracteristicas(raw: string | null): string[] {
@@ -143,7 +144,8 @@ export function RfqSection({ set, canEdit }: { set: PunchSet; canEdit: boolean }
     <div className="space-y-4">
       {/* Cabeçalho — exportação no formato da planilha de RFQ */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs text-muted-foreground flex items-center gap-1">
+          <HelpButton content={t.moduleHelp.rfq} size="sm" />
           {r.docHint}
         </p>
         <Button size="sm" variant="outline" onClick={exportRfq}>

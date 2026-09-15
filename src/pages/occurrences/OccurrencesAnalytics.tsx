@@ -7,6 +7,7 @@ import {
 import { api } from '@/lib/api'
 import { useAdminCompany } from '@/hooks/useAdminCompany'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { HelpButton } from '@/components/ui/help-button'
 
 type OccurrenceType = 'CAPPING' | 'STICKING' | 'TRAVAMENTO' | 'QUEBRA' | 'OXIDACAO' | 'OUTROS'
 
@@ -68,7 +69,7 @@ export function OccurrencesAnalytics() {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-1">{u.analyticsTitle}</h3>
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1">{u.analyticsTitle} <HelpButton content={t.moduleHelp.occurrencesAnalytics} size="sm" /></h3>
         <p className="text-xs text-muted-foreground">
           {u.analyticsDesc}
         </p>

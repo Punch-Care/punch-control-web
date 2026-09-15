@@ -27,6 +27,7 @@ import {
   type LimitDraft,
 } from './LimitsEditor'
 import type { PunchSet, Product, SetStatus, JogoStatus } from '@/types'
+import { HelpButton } from '@/components/ui/help-button'
 
 const STATUS_VARIANTS: Record<SetStatus, 'success' | 'warning' | 'secondary' | 'destructive'> = {
   ACTIVE: 'success',
@@ -142,7 +143,10 @@ export function SetsPage() {
     <div className="p-4 sm:p-6 space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
+          <div className="flex items-center gap-1">
           <h2 className="text-xl sm:text-2xl font-bold tracking-tight">{t.sets.title}</h2>
+          <HelpButton content={t.moduleHelp.sets} size="md" />
+        </div>
           <p className="text-muted-foreground text-sm mt-0.5">{t.sets.subtitle}</p>
         </div>
         {canManage && (

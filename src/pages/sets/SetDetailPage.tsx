@@ -27,6 +27,7 @@ import { JogoSection } from './JogoSection'
 import { RfqSection } from './RfqSection'
 import { LimitsEditor, UsefulValueBar, limitsToPayload, validateLimits, type LimitDraft } from './LimitsEditor'
 import type { PunchSet, Punch, Product, SetStatus, LifecycleData } from '@/types'
+import { HelpButton } from '@/components/ui/help-button'
 
 /** ISO → valor de <input type="date"> */
 const toDateInput = (iso: string | null | undefined) => (iso ? iso.slice(0, 10) : '')
@@ -246,6 +247,7 @@ export function SetDetailPage() {
           <div className="flex items-center gap-2 flex-wrap">
             <h2 className="text-xl sm:text-2xl font-bold tracking-tight font-mono">{set.code}</h2>
             <Badge variant={STATUS_VARIANTS[set.status]}>{t.status[set.status]}</Badge>
+            <HelpButton content={t.moduleHelp.setDetail} size="sm" />
           </div>
         </div>
         {canEdit && (
@@ -280,7 +282,10 @@ export function SetDetailPage() {
       {/* Dados básicos — edição rápida */}
       <div className="rounded-xl border p-4 bg-background space-y-3">
         <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1">
           <h3 className="font-semibold text-base">{t.rfq.basicData}</h3>
+          <HelpButton content={t.moduleHelp.setBasics} size="sm" />
+        </div>
           {canEdit && (
             <Button
               size="sm"

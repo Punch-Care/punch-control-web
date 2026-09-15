@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useLocale } from '@/hooks/useLocale'
 import type { PunchSet, JogoStatus } from '@/types'
+import { HelpButton } from '@/components/ui/help-button'
 
 const JOGO_STATUSES: JogoStatus[] = [
   'LIMPO', 'NAO_LIMPO', 'EM_MANUTENCAO', 'EM_POLIMENTO', 'EXCLUIDO', 'AGUARDANDO_DECISAO',
@@ -223,6 +224,7 @@ export function JogoSection({ set, canEdit }: { set: PunchSet; canEdit: boolean 
         <div className="flex items-center gap-2">
           <Layers className="h-4 w-4 text-muted-foreground" />
           <h3 className="font-semibold text-base">{j.title}</h3>
+                <HelpButton content={t.moduleHelp.jogoSection} size="sm" />
           <Badge variant={STATUS_VARIANT[draft.statusJogo]}>{j.statuses[draft.statusJogo]}</Badge>
         </div>
         {canEdit && (

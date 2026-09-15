@@ -23,6 +23,7 @@ import { usePermissions } from '@/hooks/usePermissions'
 import { useAdminCompany } from '@/hooks/useAdminCompany'
 import { knToTf, matchesSearch } from '@/lib/utils'
 import type { Machine, Company } from '@/types'
+import { HelpButton } from '@/components/ui/help-button'
 
 const NORMAS = [
   'EUB', 'EUBB', 'EUBD', 'TSMB', 'TSMBB', 'TSMDB',
@@ -505,7 +506,10 @@ export function MachinesPage() {
     <div className="p-6 space-y-5">
       <div className="flex items-center justify-between">
         <div>
+          <div className="flex items-center gap-1">
           <h2 className="text-2xl font-bold tracking-tight">{t.machines.title}</h2>
+          <HelpButton content={t.moduleHelp.machines} size="md" />
+        </div>
           <p className="text-muted-foreground text-sm mt-0.5">{t.machines.subtitle}</p>
         </div>
         <Dialog open={open} onOpenChange={(o) => (o ? setOpen(true) : closeCreate())}>

@@ -22,6 +22,7 @@ import { useAdminCompany } from '@/hooks/useAdminCompany'
 import type { ProductionBatch } from '@/types'
 import { ProductionConfigsTab } from './ProductionConfigsTab'
 import { CepTab } from './CepTab'
+import { HelpButton } from '@/components/ui/help-button'
 
 type Tab = 'batches' | 'cep' | 'configs'
 
@@ -152,7 +153,10 @@ export function ProductionPage() {
               <FlaskConical className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h2 className="text-lg font-bold tracking-tight">{p.title}</h2>
+              <div className="flex items-center gap-1">
+          <h2 className="text-lg font-bold tracking-tight">{p.title}</h2>
+          <HelpButton content={t.moduleHelp.production} size="sm" />
+        </div>
               <p className="text-xs text-muted-foreground">{p.subtitle}</p>
             </div>
           </div>

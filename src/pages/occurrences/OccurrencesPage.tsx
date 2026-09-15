@@ -25,6 +25,7 @@ import { usePermissions } from '@/hooks/usePermissions'
 import { useAdminCompany } from '@/hooks/useAdminCompany'
 import { OccurrencesAnalytics } from './OccurrencesAnalytics'
 import type { Occurrence, OccurrenceStatus, OccurrenceType, PunchSet, Machine, Product, BatchOccurrenceWithBatch } from '@/types'
+import { HelpButton } from '@/components/ui/help-button'
 
 const STATUS_VARIANTS: Record<OccurrenceStatus, 'destructive' | 'warning' | 'success'> = {
   OPEN: 'destructive',
@@ -201,7 +202,10 @@ export function OccurrencesPage() {
     <div className="p-4 sm:p-6 space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
+          <div className="flex items-center gap-1">
           <h2 className="text-xl sm:text-2xl font-bold tracking-tight">{t.occurrences.title}</h2>
+          <HelpButton content={t.moduleHelp.occurrences} size="md" />
+        </div>
           <p className="text-muted-foreground text-sm mt-0.5">{t.occurrences.subtitle}</p>
         </div>
         <div className="flex gap-2">
@@ -285,7 +289,10 @@ export function OccurrencesPage() {
       {/* Ocorrências anotadas nos lotes de produção */}
       <div className="space-y-2">
         <div>
+          <div className="flex items-center gap-1">
           <h3 className="font-semibold text-sm">{t.occurrences.fromBatchesTitle}</h3>
+          <HelpButton content={t.moduleHelp.occurrencesFromBatches} size="sm" />
+        </div>
           <p className="text-xs text-muted-foreground">{t.occurrences.fromBatchesSubtitle}</p>
         </div>
         <div className="rounded-xl border overflow-x-auto">

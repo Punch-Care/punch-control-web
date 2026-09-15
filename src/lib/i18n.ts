@@ -1699,6 +1699,318 @@ const translations = {
         tip: 'Se uma medida sair fora da faixa, o gestor é avisado automaticamente.',
       },
     },
+    moduleHelp: {
+      dashboard: {
+        title: 'Início',
+        what: 'Mostra de uma vez como estão os jogos da empresa: o que precisa de atenção, lotes recentes e atalhos.',
+        steps: [
+          'Olhe primeiro os avisos em destaque: jogos perto do fim da vida útil, sujos ou com problema aberto.',
+          'Toque num aviso para ir direto ao jogo ou à ocorrência.',
+          'Use os atalhos para as tarefas mais comuns.',
+        ],
+        tip: 'No chão de fábrica, prefira o Modo operador: ele guia passo a passo.',
+      },
+      sets: {
+        title: 'Jogos',
+        what: 'Lista todos os jogos de punções da empresa, com a situação e quanto de vida útil ainda resta.',
+        steps: [
+          'Use a busca para achar um jogo pelo código ou nome.',
+          'Toque no jogo para ver os detalhes, as peças e o histórico.',
+          'O gestor pode cadastrar um jogo novo no botão do topo.',
+        ],
+        tip: 'Jogo com histórico não é apagado: ele fica inativo, para não perder os registros.',
+      },
+      setDetail: {
+        title: 'Detalhe do jogo',
+        what: 'Reúne tudo de um jogo: dados, condição de limpeza, ferramental, pedido de compra (RFQ) e anexos.',
+        steps: [
+          'Na aba Visão geral ficam os dados e as punções do jogo.',
+          'Na aba RFQ você monta o pedido para o fornecedor e gera o PDF.',
+          'Na aba Anexos ficam fotos e desenhos.',
+        ],
+      },
+      setBasics: {
+        title: 'Dados básicos',
+        what: 'Nome, situação, vida útil e limites de alerta do jogo.',
+        steps: [
+          'Altere o que precisar.',
+          'Os limites (ex.: 80%, 50%) avisam quando o jogo se aproxima do fim da vida.',
+          'Toque em Salvar.',
+        ],
+        tip: 'A vida útil cai sozinha conforme os lotes encerrados. Só ajuste à mão se souber o motivo.',
+      },
+      jogoSection: {
+        title: 'Condição do jogo',
+        what: 'Guarda fabricante, datas e a condição de limpeza do jogo (limpo, não limpo, em manutenção…).',
+        steps: [
+          'Confira a condição antes de produzir: só jogo limpo inicia lote.',
+          'O mecânico pode marcar limpeza e polimento pelo Modo operador.',
+        ],
+      },
+      tooling: {
+        title: 'Ferramental',
+        what: 'Especificação técnica das peças do jogo: punção superior, inferior, matriz e segmentos.',
+        steps: [
+          'Escolha o tipo de peça.',
+          'Preencha as medidas e opções (aço, revestimento, formato).',
+          'Salve. Essas medidas alimentam o RFQ e a especificação dimensional.',
+        ],
+      },
+      rfq: {
+        title: 'RFQ (pedido de cotação)',
+        what: 'Monta o documento que a empresa envia ao fornecedor para comprar ou repor o jogo.',
+        steps: [
+          'Confira os dados da empresa e de quem pede.',
+          'Revise máquinas, ferramental e características do produto.',
+          'Toque em Gerar PDF e envie ao fornecedor.',
+        ],
+        tip: 'Quando o jogo chega ao limite de vida útil, o aviso leva direto para cá.',
+      },
+      attachments: {
+        title: 'Anexos',
+        what: 'Fotos e desenhos técnicos do jogo, guardados junto com o cadastro.',
+        steps: [
+          'Toque no espaço da foto ou desenho.',
+          'Escolha o arquivo (imagem ou PDF).',
+          'Para trocar, envie outro arquivo no mesmo lugar.',
+        ],
+      },
+      machines: {
+        title: 'Máquinas',
+        what: 'Cadastro das compressoras da empresa, com fabricante, modelo e capacidade.',
+        steps: [
+          'Toque em Nova máquina para cadastrar.',
+          'Toque numa máquina para editar.',
+          'Desative a máquina que não está mais em uso, sem apagar o histórico.',
+        ],
+      },
+      products: {
+        title: 'Produtos',
+        what: 'Cadastro dos produtos (comprimidos) fabricados, e quais jogos servem para cada um.',
+        steps: [
+          'Toque em Novo produto para cadastrar.',
+          'Vincule os jogos que produzem esse produto.',
+          'O produto aparece para escolha ao iniciar um lote.',
+        ],
+      },
+      production: {
+        title: 'Produção',
+        what: 'Lista os lotes produzidos e em andamento, com gráficos de controle e o setup de cada máquina.',
+        steps: [
+          'Na aba Lotes, veja e abra cada produção.',
+          'Na aba CEP, acompanhe se as medições da hora estão estáveis.',
+          'Na aba Configurações, cadastre o setup de cada produto em cada máquina.',
+        ],
+        tip: 'Para o mecânico, iniciar e encerrar lote é mais fácil pelo Modo operador.',
+      },
+      cep: {
+        title: 'CEP (controle estatístico)',
+        what: 'Gráficos das medições da hora de todos os lotes, para ver se o processo está estável ou saindo do normal.',
+        steps: [
+          'Escolha o produto e a máquina.',
+          'Pontos fora das linhas de controle indicam algo diferente do habitual.',
+          'Investigue os lotes onde isso aconteceu.',
+        ],
+      },
+      configs: {
+        title: 'Configurações de produção',
+        what: 'Define os valores de setup de cada produto em cada máquina: mínimo, máximo e sugerido.',
+        steps: [
+          'Escolha produto e máquina.',
+          'Informe os parâmetros e as faixas aceitas.',
+          'Ao iniciar um lote, esses valores aparecem para o operador conferir.',
+        ],
+      },
+      batchForm: {
+        title: 'Formulário do lote',
+        what: 'Versão completa do registro de produção, igual ao formulário impresso, em 5 partes.',
+        steps: [
+          'Identifique o lote (produto, máquina, jogo).',
+          'Registre o setup e as medições da hora.',
+          'Anote ocorrências, os kg produzidos e conclua.',
+        ],
+        tip: 'Ao concluir, os kg descontam a vida útil do jogo.',
+      },
+      batchSetup: {
+        title: 'Setup da máquina',
+        what: 'Valores reais dos parâmetros medidos no início da produção.',
+        steps: [
+          'Digite cada valor medido.',
+          'Valor fora da faixa fica vermelho.',
+        ],
+      },
+      batchHourly: {
+        title: 'Medições da hora',
+        what: 'Valores coletados a cada hora de produção.',
+        steps: [
+          'Adicione uma linha por hora.',
+          'Preencha os valores medidos em cada lado.',
+          'Quem mediu fica registrado.',
+        ],
+      },
+      batchOccurrences: {
+        title: 'Ocorrências do lote',
+        what: 'Problemas vistos durante a produção, como capping (tampa soltando), sticking (pó grudando), quebra ou travamento.',
+        steps: [
+          'Marque os problemas que aconteceram.',
+          'Escreva uma observação se ajudar.',
+        ],
+        tip: 'Esses registros aparecem em Ocorrências e nos gráficos por produto.',
+      },
+      batchFinish: {
+        title: 'Finalização',
+        what: 'Kg produzidos, observações e conclusão do lote.',
+        steps: [
+          'Informe os kg produzidos.',
+          'Escreva as observações.',
+          'Conclua o lote.',
+        ],
+        tip: 'Lote concluído não aceita mais medições.',
+      },
+      occurrences: {
+        title: 'Ocorrências',
+        what: 'Problemas registrados nos jogos, com a situação de cada um: aberta, em acompanhamento ou encerrada.',
+        steps: [
+          'Veja os problemas abertos primeiro.',
+          'Toque num problema para acompanhar ou encerrar.',
+          'Medição fora da faixa abre ocorrência sozinha.',
+        ],
+      },
+      occurrencesFromBatches: {
+        title: 'Ocorrências dos lotes',
+        what: 'Problemas marcados pelos operadores ao encerrar cada lote.',
+        steps: [
+          'Filtre pelo tipo de problema.',
+          'Toque no lote para ver o registro completo.',
+        ],
+      },
+      occurrencesAnalytics: {
+        title: 'Análise de ocorrências',
+        what: 'Quantos problemas de cada tipo aconteceram por produto e por ano.',
+        steps: [
+          'Compare os produtos.',
+          'Produto com muitos problemas pode precisar de ajuste no setup ou no jogo.',
+        ],
+      },
+      dimensioning: {
+        title: 'Dimensionamento',
+        what: 'Medições das peças dos jogos, comparadas com a faixa aceita.',
+        steps: [
+          'Escolha o jogo.',
+          'Confira a especificação (faixa aceita de cada medida).',
+          'Registre uma nova medição. O que ficar fora da faixa abre uma ocorrência.',
+        ],
+        tip: 'O mecânico também pode medir pelo Modo operador, uma medida por tela.',
+      },
+      dimensionSpec: {
+        title: 'Especificação dimensional',
+        what: 'Lista do que medir em cada jogo e a faixa aceita de cada medida.',
+        steps: [
+          'Toque em Editar especificação.',
+          'Importe as medidas nominais do ferramental ou digite.',
+          'Informe os limites inferior e superior e salve.',
+        ],
+        tip: 'Sem especificação, o mecânico não consegue medir pelo Modo operador.',
+      },
+      lifecycle: {
+        title: 'Ciclo de vida',
+        what: 'Mostra quanto cada jogo já produziu, quanto de vida útil resta e quando deve chegar ao limite.',
+        steps: [
+          'Escolha o jogo.',
+          'Veja a previsão, o estoque de peças e o histórico de produção e manutenção.',
+        ],
+        tip: 'A vida útil é calculada pelos kg dos lotes concluídos.',
+      },
+      forecast: {
+        title: 'Previsão',
+        what: 'Estimativa de quando o jogo vai atingir cada limite, com base no ritmo de produção recente.',
+        steps: [
+          'Veja a data prevista de cada limite.',
+          'Planeje a compra do jogo novo antes de chegar lá.',
+        ],
+        tip: 'Com pouca produção registrada a previsão fica menos precisa.',
+      },
+      depreciation: {
+        title: 'Configuração de desgaste',
+        what: 'Quanto de vida útil o jogo perde por kg produzido, e o peso médio do comprimido.',
+        steps: [
+          'Informe o fator de desgaste.',
+          'Informe o peso médio para converter kg em unidades.',
+          'Salve.',
+        ],
+        tip: 'Mudar o fator recalcula a vida útil de todo o histórico.',
+      },
+      stock: {
+        title: 'Estoque de peças',
+        what: 'Quantas punções e matrizes de reposição existem para o jogo.',
+        steps: [
+          'Informe a quantidade comprada e a já usada.',
+          'Defina o ponto de encomenda para ser avisado.',
+          'As trocas registradas na manutenção descontam do estoque.',
+        ],
+      },
+      lifecycleProduction: {
+        title: 'Registro de produção',
+        what: 'Kg produzidos com o jogo. Os lotes concluídos entram aqui sozinhos.',
+        steps: [
+          'Confira os lotes que entraram.',
+          'Lance à mão só produção antiga, feita antes do sistema.',
+        ],
+      },
+      maintenance: {
+        title: 'Manutenção',
+        what: 'Trocas de peças do jogo: o que foi colocado ou devolvido ao estoque.',
+        steps: [
+          'Registre a data, a peça e a quantidade.',
+          'Positivo tira do estoque; negativo devolve.',
+        ],
+        tip: 'O mecânico registra isso pelo Modo operador em Limpeza e manutenção.',
+      },
+      reports: {
+        title: 'Relatórios',
+        what: 'Exporta os dados de jogos, medições e ocorrências em planilha (CSV) ou PDF.',
+        steps: [
+          'Escolha a aba do relatório.',
+          'Filtre o que precisar.',
+          'Toque em exportar.',
+        ],
+      },
+      users: {
+        title: 'Usuários',
+        what: 'Pessoas que acessam o sistema e o que cada uma pode fazer.',
+        steps: [
+          'Toque em Novo usuário para cadastrar.',
+          'Escolha o papel: técnico opera, gestor administra.',
+          'Desative quem saiu da empresa.',
+        ],
+        tip: 'Senha criada ou redefinida por outra pessoa precisa ser trocada no primeiro acesso.',
+      },
+      companies: {
+        title: 'Empresas',
+        what: 'Clientes que usam o sistema. Cada empresa só vê os próprios dados.',
+        steps: [
+          'Cadastre a empresa com nome e CNPJ.',
+          'Toque na empresa para entrar nos dados dela.',
+          'Desative a empresa para bloquear o acesso de todos os usuários dela.',
+        ],
+      },
+      myCompany: {
+        title: 'Minha empresa',
+        what: 'Dados cadastrais da sua empresa, usados nos documentos como o RFQ.',
+        steps: [
+          'Confira razão social, CNPJ e endereço.',
+          'Corrija o que estiver errado e salve.',
+        ],
+      },
+      audit: {
+        title: 'Auditoria',
+        what: 'Registro de quem fez o quê e quando no sistema.',
+        steps: [
+          'Filtre por usuário ou tipo de ação.',
+          'Use para investigar alterações inesperadas.',
+        ],
+      },
+    },
   },
   en: {
     nav: {
@@ -3398,6 +3710,318 @@ const translations = {
         tip: 'If a measurement is out of range, your manager is warned automatically.',
       },
     },
+    moduleHelp: {
+      dashboard: {
+        title: 'Home',
+        what: 'Shows at a glance how the company sets are doing: what needs attention, recent batches and shortcuts.',
+        steps: [
+          'Look first at the highlighted warnings: sets near end of life, dirty or with an open problem.',
+          'Tap a warning to go straight to the set or occurrence.',
+          'Use the shortcuts for the most common tasks.',
+        ],
+        tip: 'On the shop floor, prefer Operator mode: it guides step by step.',
+      },
+      sets: {
+        title: 'Sets',
+        what: 'Lists all the company punch sets, with their status and how much useful life is left.',
+        steps: [
+          'Use search to find a set by code or name.',
+          'Tap a set to see details, parts and history.',
+          'A manager can add a new set with the top button.',
+        ],
+        tip: 'A set with history is not deleted: it becomes inactive so records are kept.',
+      },
+      setDetail: {
+        title: 'Set details',
+        what: 'Gathers everything about a set: data, cleaning condition, tooling, purchase request (RFQ) and attachments.',
+        steps: [
+          'The Overview tab has the set data and punches.',
+          'The RFQ tab builds the supplier request and the PDF.',
+          'The Attachments tab holds photos and drawings.',
+        ],
+      },
+      setBasics: {
+        title: 'Basic data',
+        what: 'Set name, status, useful life and warning limits.',
+        steps: [
+          'Change what you need.',
+          'Limits (e.g. 80%, 50%) warn when the set approaches end of life.',
+          'Tap Save.',
+        ],
+        tip: 'Useful life drops by itself with completed batches. Only adjust it by hand if you know why.',
+      },
+      jogoSection: {
+        title: 'Set condition',
+        what: 'Holds manufacturer, dates and the cleaning condition of the set (clean, not clean, under maintenance…).',
+        steps: [
+          'Check the condition before producing: only a clean set can start a batch.',
+          'Mechanics can record cleaning and polishing in Operator mode.',
+        ],
+      },
+      tooling: {
+        title: 'Tooling',
+        what: 'Technical specification of the set parts: upper punch, lower punch, die and segments.',
+        steps: [
+          'Pick the part type.',
+          'Fill in sizes and options (steel, coating, shape).',
+          'Save. These sizes feed the RFQ and the dimensional specification.',
+        ],
+      },
+      rfq: {
+        title: 'RFQ (request for quotation)',
+        what: 'Builds the document the company sends to the supplier to buy or replace the set.',
+        steps: [
+          'Check the company and requester data.',
+          'Review machines, tooling and product characteristics.',
+          'Tap Generate PDF and send it to the supplier.',
+        ],
+        tip: 'When the set reaches its useful life limit, the warning leads straight here.',
+      },
+      attachments: {
+        title: 'Attachments',
+        what: 'Photos and technical drawings of the set, stored with its record.',
+        steps: [
+          'Tap the photo or drawing slot.',
+          'Pick the file (image or PDF).',
+          'To replace, upload another file in the same slot.',
+        ],
+      },
+      machines: {
+        title: 'Machines',
+        what: 'Record of the company tablet presses, with manufacturer, model and capacity.',
+        steps: [
+          'Tap New machine to add one.',
+          'Tap a machine to edit it.',
+          'Deactivate a machine no longer in use without losing its history.',
+        ],
+      },
+      products: {
+        title: 'Products',
+        what: 'Record of the products (tablets) made, and which sets fit each one.',
+        steps: [
+          'Tap New product to add one.',
+          'Link the sets that produce this product.',
+          'The product can then be picked when starting a batch.',
+        ],
+      },
+      production: {
+        title: 'Production',
+        what: 'Lists produced and running batches, with control charts and the setup of each machine.',
+        steps: [
+          'In the Batches tab, see and open each production.',
+          'In the SPC tab, check whether hourly measurements are stable.',
+          'In the Settings tab, set up each product on each machine.',
+        ],
+        tip: 'For mechanics, starting and finishing batches is easier in Operator mode.',
+      },
+      cep: {
+        title: 'SPC (statistical control)',
+        what: 'Charts of the hourly measurements of all batches, to see if the process is stable or drifting.',
+        steps: [
+          'Pick the product and machine.',
+          'Points outside the control lines show something unusual.',
+          'Look into the batches where that happened.',
+        ],
+      },
+      configs: {
+        title: 'Production settings',
+        what: 'Defines the setup values of each product on each machine: minimum, maximum and suggested.',
+        steps: [
+          'Pick product and machine.',
+          'Enter the parameters and accepted ranges.',
+          'When a batch starts, these values show up for the operator to check.',
+        ],
+      },
+      batchForm: {
+        title: 'Batch form',
+        what: 'Full version of the production record, like the printed form, in 5 parts.',
+        steps: [
+          'Identify the batch (product, machine, set).',
+          'Record the setup and hourly measurements.',
+          'Note occurrences and kg produced, then complete.',
+        ],
+        tip: 'On completion, the kg reduce the set useful life.',
+      },
+      batchSetup: {
+        title: 'Machine setup',
+        what: 'Actual parameter values measured at the start of production.',
+        steps: [
+          'Type each measured value.',
+          'A value out of range turns red.',
+        ],
+      },
+      batchHourly: {
+        title: 'Hourly measurements',
+        what: 'Values collected each hour of production.',
+        steps: [
+          'Add one row per hour.',
+          'Fill in the values measured on each side.',
+          'Who measured is recorded.',
+        ],
+      },
+      batchOccurrences: {
+        title: 'Batch occurrences',
+        what: 'Problems seen during production, such as capping, sticking, breakage or jamming.',
+        steps: [
+          'Mark the problems that happened.',
+          'Write a note if it helps.',
+        ],
+        tip: 'These records show up in Occurrences and in the per-product charts.',
+      },
+      batchFinish: {
+        title: 'Completion',
+        what: 'Kg produced, notes and batch completion.',
+        steps: [
+          'Enter the kg produced.',
+          'Write the notes.',
+          'Complete the batch.',
+        ],
+        tip: 'A completed batch no longer accepts measurements.',
+      },
+      occurrences: {
+        title: 'Occurrences',
+        what: 'Problems recorded on sets, with the status of each: open, monitoring or closed.',
+        steps: [
+          'Look at open problems first.',
+          'Tap a problem to follow it up or close it.',
+          'A measurement out of range opens an occurrence by itself.',
+        ],
+      },
+      occurrencesFromBatches: {
+        title: 'Batch occurrences',
+        what: 'Problems marked by operators when finishing each batch.',
+        steps: [
+          'Filter by problem type.',
+          'Tap the batch to see the full record.',
+        ],
+      },
+      occurrencesAnalytics: {
+        title: 'Occurrence analysis',
+        what: 'How many problems of each type happened per product and per year.',
+        steps: [
+          'Compare products.',
+          'A product with many problems may need a setup or set adjustment.',
+        ],
+      },
+      dimensioning: {
+        title: 'Dimensioning',
+        what: 'Measurements of set parts, compared with the accepted range.',
+        steps: [
+          'Pick the set.',
+          'Check the specification (accepted range for each measurement).',
+          'Record a new measurement. Anything out of range opens an occurrence.',
+        ],
+        tip: 'Mechanics can also measure in Operator mode, one measurement per screen.',
+      },
+      dimensionSpec: {
+        title: 'Dimensional specification',
+        what: 'List of what to measure on each set and the accepted range of each measurement.',
+        steps: [
+          'Tap Edit specification.',
+          'Import nominal sizes from tooling or type them.',
+          'Enter lower and upper limits and save.',
+        ],
+        tip: 'Without a specification, mechanics cannot measure in Operator mode.',
+      },
+      lifecycle: {
+        title: 'Life cycle',
+        what: 'Shows how much each set has produced, how much useful life is left and when it should reach its limit.',
+        steps: [
+          'Pick the set.',
+          'See the forecast, parts stock and production and maintenance history.',
+        ],
+        tip: 'Useful life is calculated from the kg of completed batches.',
+      },
+      forecast: {
+        title: 'Forecast',
+        what: 'Estimate of when the set will reach each limit, based on recent production pace.',
+        steps: [
+          'See the expected date for each limit.',
+          'Plan buying the new set before getting there.',
+        ],
+        tip: 'With little recorded production the forecast is less accurate.',
+      },
+      depreciation: {
+        title: 'Wear settings',
+        what: 'How much useful life the set loses per kg produced, and the average tablet weight.',
+        steps: [
+          'Enter the wear factor.',
+          'Enter the average weight to convert kg into units.',
+          'Save.',
+        ],
+        tip: 'Changing the factor recalculates useful life for the whole history.',
+      },
+      stock: {
+        title: 'Parts stock',
+        what: 'How many spare punches and dies exist for the set.',
+        steps: [
+          'Enter the quantity bought and already used.',
+          'Set the reorder point to be warned.',
+          'Replacements recorded in maintenance come off the stock.',
+        ],
+      },
+      lifecycleProduction: {
+        title: 'Production record',
+        what: 'Kg produced with the set. Completed batches come in by themselves.',
+        steps: [
+          'Check the batches that came in.',
+          'Only enter old production, made before the system, by hand.',
+        ],
+      },
+      maintenance: {
+        title: 'Maintenance',
+        what: 'Set part replacements: what was put in or returned to stock.',
+        steps: [
+          'Record the date, part and quantity.',
+          'Positive takes from stock; negative returns.',
+        ],
+        tip: 'Mechanics record this in Operator mode under Cleaning and maintenance.',
+      },
+      reports: {
+        title: 'Reports',
+        what: 'Exports sets, measurements and occurrences data as a spreadsheet (CSV) or PDF.',
+        steps: [
+          'Pick the report tab.',
+          'Filter what you need.',
+          'Tap export.',
+        ],
+      },
+      users: {
+        title: 'Users',
+        what: 'People who access the system and what each can do.',
+        steps: [
+          'Tap New user to add one.',
+          'Pick the role: technicians operate, managers administer.',
+          'Deactivate people who left the company.',
+        ],
+        tip: 'A password created or reset by someone else must be changed on first access.',
+      },
+      companies: {
+        title: 'Companies',
+        what: 'Clients using the system. Each company only sees its own data.',
+        steps: [
+          'Add the company with name and tax ID.',
+          'Tap the company to enter its data.',
+          'Deactivate a company to block access for all its users.',
+        ],
+      },
+      myCompany: {
+        title: 'My company',
+        what: 'Your company registration data, used in documents such as the RFQ.',
+        steps: [
+          'Check legal name, tax ID and address.',
+          'Fix what is wrong and save.',
+        ],
+      },
+      audit: {
+        title: 'Audit',
+        what: 'Record of who did what and when in the system.',
+        steps: [
+          'Filter by user or action type.',
+          'Use it to look into unexpected changes.',
+        ],
+      },
+    },
   },
   es: {
     nav: {
@@ -5095,6 +5719,318 @@ const translations = {
           'Revise todo y toque Guardar medición.',
         ],
         tip: 'Si una medida sale del rango, el gestor recibe el aviso automáticamente.',
+      },
+    },
+    moduleHelp: {
+      dashboard: {
+        title: 'Inicio',
+        what: 'Muestra de un vistazo cómo están los juegos de la empresa: lo que necesita atención, lotes recientes y accesos rápidos.',
+        steps: [
+          'Mire primero los avisos destacados: juegos cerca del fin de vida útil, sucios o con problema abierto.',
+          'Toque un aviso para ir directo al juego o a la ocurrencia.',
+          'Use los accesos rápidos para las tareas más comunes.',
+        ],
+        tip: 'En planta, prefiera el Modo operador: guía paso a paso.',
+      },
+      sets: {
+        title: 'Juegos',
+        what: 'Lista todos los juegos de punzones de la empresa, con su situación y cuánta vida útil queda.',
+        steps: [
+          'Use la búsqueda para encontrar un juego por código o nombre.',
+          'Toque el juego para ver detalles, piezas e historial.',
+          'El gestor puede registrar un juego nuevo con el botón de arriba.',
+        ],
+        tip: 'Un juego con historial no se borra: queda inactivo para no perder los registros.',
+      },
+      setDetail: {
+        title: 'Detalle del juego',
+        what: 'Reúne todo sobre un juego: datos, condición de limpieza, herramental, pedido de compra (RFQ) y adjuntos.',
+        steps: [
+          'La pestaña Visión general tiene los datos y los punzones.',
+          'La pestaña RFQ arma el pedido al proveedor y genera el PDF.',
+          'La pestaña Adjuntos guarda fotos y dibujos.',
+        ],
+      },
+      setBasics: {
+        title: 'Datos básicos',
+        what: 'Nombre, situación, vida útil y límites de alerta del juego.',
+        steps: [
+          'Cambie lo que necesite.',
+          'Los límites (ej.: 80%, 50%) avisan cuando el juego se acerca al fin de su vida.',
+          'Toque Guardar.',
+        ],
+        tip: 'La vida útil baja sola con los lotes concluidos. Ajústela a mano solo si sabe el motivo.',
+      },
+      jogoSection: {
+        title: 'Condición del juego',
+        what: 'Guarda fabricante, fechas y la condición de limpieza del juego (limpio, no limpio, en mantenimiento…).',
+        steps: [
+          'Revise la condición antes de producir: solo un juego limpio inicia lote.',
+          'El mecánico puede registrar limpieza y pulido en el Modo operador.',
+        ],
+      },
+      tooling: {
+        title: 'Herramental',
+        what: 'Especificación técnica de las piezas del juego: punzón superior, inferior, matriz y segmentos.',
+        steps: [
+          'Elija el tipo de pieza.',
+          'Complete medidas y opciones (acero, recubrimiento, forma).',
+          'Guarde. Estas medidas alimentan el RFQ y la especificación dimensional.',
+        ],
+      },
+      rfq: {
+        title: 'RFQ (solicitud de cotización)',
+        what: 'Arma el documento que la empresa envía al proveedor para comprar o reponer el juego.',
+        steps: [
+          'Revise los datos de la empresa y de quien solicita.',
+          'Revise máquinas, herramental y características del producto.',
+          'Toque Generar PDF y envíelo al proveedor.',
+        ],
+        tip: 'Cuando el juego llega al límite de vida útil, el aviso lleva directo aquí.',
+      },
+      attachments: {
+        title: 'Adjuntos',
+        what: 'Fotos y dibujos técnicos del juego, guardados junto con su registro.',
+        steps: [
+          'Toque el espacio de la foto o dibujo.',
+          'Elija el archivo (imagen o PDF).',
+          'Para cambiarlo, suba otro archivo en el mismo lugar.',
+        ],
+      },
+      machines: {
+        title: 'Máquinas',
+        what: 'Registro de las compresoras de la empresa, con fabricante, modelo y capacidad.',
+        steps: [
+          'Toque Nueva máquina para registrar.',
+          'Toque una máquina para editar.',
+          'Desactive la máquina que ya no se usa, sin borrar el historial.',
+        ],
+      },
+      products: {
+        title: 'Productos',
+        what: 'Registro de los productos (comprimidos) fabricados y qué juegos sirven para cada uno.',
+        steps: [
+          'Toque Nuevo producto para registrar.',
+          'Vincule los juegos que producen ese producto.',
+          'El producto aparece para elegir al iniciar un lote.',
+        ],
+      },
+      production: {
+        title: 'Producción',
+        what: 'Lista los lotes producidos y en curso, con gráficos de control y el setup de cada máquina.',
+        steps: [
+          'En la pestaña Lotes, vea y abra cada producción.',
+          'En la pestaña CEP, siga si las mediciones horarias están estables.',
+          'En la pestaña Configuraciones, registre el setup de cada producto en cada máquina.',
+        ],
+        tip: 'Para el mecánico, iniciar y cerrar lote es más fácil en el Modo operador.',
+      },
+      cep: {
+        title: 'CEP (control estadístico)',
+        what: 'Gráficos de las mediciones horarias de todos los lotes, para ver si el proceso está estable o se desvía.',
+        steps: [
+          'Elija producto y máquina.',
+          'Puntos fuera de las líneas de control indican algo distinto de lo habitual.',
+          'Investigue los lotes donde pasó.',
+        ],
+      },
+      configs: {
+        title: 'Configuraciones de producción',
+        what: 'Define los valores de setup de cada producto en cada máquina: mínimo, máximo y sugerido.',
+        steps: [
+          'Elija producto y máquina.',
+          'Indique los parámetros y rangos aceptados.',
+          'Al iniciar un lote, estos valores aparecen para que el operador los revise.',
+        ],
+      },
+      batchForm: {
+        title: 'Formulario del lote',
+        what: 'Versión completa del registro de producción, igual al formulario impreso, en 5 partes.',
+        steps: [
+          'Identifique el lote (producto, máquina, juego).',
+          'Registre el setup y las mediciones horarias.',
+          'Anote ocurrencias y kg producidos, y concluya.',
+        ],
+        tip: 'Al concluir, los kg descuentan la vida útil del juego.',
+      },
+      batchSetup: {
+        title: 'Setup de la máquina',
+        what: 'Valores reales de los parámetros medidos al inicio de la producción.',
+        steps: [
+          'Escriba cada valor medido.',
+          'Un valor fuera del rango queda en rojo.',
+        ],
+      },
+      batchHourly: {
+        title: 'Mediciones horarias',
+        what: 'Valores tomados en cada hora de producción.',
+        steps: [
+          'Agregue una línea por hora.',
+          'Complete los valores medidos en cada lado.',
+          'Queda registrado quién midió.',
+        ],
+      },
+      batchOccurrences: {
+        title: 'Ocurrencias del lote',
+        what: 'Problemas vistos durante la producción, como capping, sticking, rotura o atasco.',
+        steps: [
+          'Marque los problemas que ocurrieron.',
+          'Escriba una observación si ayuda.',
+        ],
+        tip: 'Estos registros aparecen en Ocurrencias y en los gráficos por producto.',
+      },
+      batchFinish: {
+        title: 'Finalización',
+        what: 'Kg producidos, observaciones y conclusión del lote.',
+        steps: [
+          'Indique los kg producidos.',
+          'Escriba las observaciones.',
+          'Concluya el lote.',
+        ],
+        tip: 'Un lote concluido ya no acepta mediciones.',
+      },
+      occurrences: {
+        title: 'Ocurrencias',
+        what: 'Problemas registrados en los juegos, con la situación de cada uno: abierta, en seguimiento o cerrada.',
+        steps: [
+          'Vea primero los problemas abiertos.',
+          'Toque un problema para seguirlo o cerrarlo.',
+          'Una medición fuera del rango abre una ocurrencia sola.',
+        ],
+      },
+      occurrencesFromBatches: {
+        title: 'Ocurrencias de los lotes',
+        what: 'Problemas marcados por los operadores al cerrar cada lote.',
+        steps: [
+          'Filtre por tipo de problema.',
+          'Toque el lote para ver el registro completo.',
+        ],
+      },
+      occurrencesAnalytics: {
+        title: 'Análisis de ocurrencias',
+        what: 'Cuántos problemas de cada tipo hubo por producto y por año.',
+        steps: [
+          'Compare los productos.',
+          'Un producto con muchos problemas puede necesitar ajuste en el setup o en el juego.',
+        ],
+      },
+      dimensioning: {
+        title: 'Dimensionamiento',
+        what: 'Mediciones de las piezas de los juegos, comparadas con el rango aceptado.',
+        steps: [
+          'Elija el juego.',
+          'Revise la especificación (rango aceptado de cada medida).',
+          'Registre una nueva medición. Lo que quede fuera del rango abre una ocurrencia.',
+        ],
+        tip: 'El mecánico también puede medir en el Modo operador, una medida por pantalla.',
+      },
+      dimensionSpec: {
+        title: 'Especificación dimensional',
+        what: 'Lista de qué medir en cada juego y el rango aceptado de cada medida.',
+        steps: [
+          'Toque Editar especificación.',
+          'Importe las medidas nominales del herramental o escríbalas.',
+          'Indique los límites inferior y superior y guarde.',
+        ],
+        tip: 'Sin especificación, el mecánico no puede medir en el Modo operador.',
+      },
+      lifecycle: {
+        title: 'Ciclo de vida',
+        what: 'Muestra cuánto produjo cada juego, cuánta vida útil queda y cuándo debe llegar al límite.',
+        steps: [
+          'Elija el juego.',
+          'Vea la previsión, el stock de piezas y el historial de producción y mantenimiento.',
+        ],
+        tip: 'La vida útil se calcula con los kg de los lotes concluidos.',
+      },
+      forecast: {
+        title: 'Previsión',
+        what: 'Estimación de cuándo el juego alcanzará cada límite, según el ritmo de producción reciente.',
+        steps: [
+          'Vea la fecha prevista de cada límite.',
+          'Planifique la compra del juego nuevo antes de llegar.',
+        ],
+        tip: 'Con poca producción registrada la previsión es menos precisa.',
+      },
+      depreciation: {
+        title: 'Configuración de desgaste',
+        what: 'Cuánta vida útil pierde el juego por kg producido y el peso medio del comprimido.',
+        steps: [
+          'Indique el factor de desgaste.',
+          'Indique el peso medio para convertir kg en unidades.',
+          'Guarde.',
+        ],
+        tip: 'Cambiar el factor recalcula la vida útil de todo el historial.',
+      },
+      stock: {
+        title: 'Stock de piezas',
+        what: 'Cuántos punzones y matrices de repuesto hay para el juego.',
+        steps: [
+          'Indique la cantidad comprada y la ya usada.',
+          'Defina el punto de pedido para recibir aviso.',
+          'Los cambios registrados en mantenimiento descuentan del stock.',
+        ],
+      },
+      lifecycleProduction: {
+        title: 'Registro de producción',
+        what: 'Kg producidos con el juego. Los lotes concluidos entran solos.',
+        steps: [
+          'Revise los lotes que entraron.',
+          'Cargue a mano solo producción antigua, anterior al sistema.',
+        ],
+      },
+      maintenance: {
+        title: 'Mantenimiento',
+        what: 'Cambios de piezas del juego: lo que se puso o se devolvió al stock.',
+        steps: [
+          'Registre fecha, pieza y cantidad.',
+          'Positivo saca del stock; negativo devuelve.',
+        ],
+        tip: 'El mecánico lo registra en el Modo operador, en Limpieza y mantenimiento.',
+      },
+      reports: {
+        title: 'Informes',
+        what: 'Exporta datos de juegos, mediciones y ocurrencias en planilla (CSV) o PDF.',
+        steps: [
+          'Elija la pestaña del informe.',
+          'Filtre lo que necesite.',
+          'Toque exportar.',
+        ],
+      },
+      users: {
+        title: 'Usuarios',
+        what: 'Personas que acceden al sistema y lo que cada una puede hacer.',
+        steps: [
+          'Toque Nuevo usuario para registrar.',
+          'Elija el rol: el técnico opera, el gestor administra.',
+          'Desactive a quien dejó la empresa.',
+        ],
+        tip: 'Una contraseña creada o restablecida por otra persona debe cambiarse en el primer acceso.',
+      },
+      companies: {
+        title: 'Empresas',
+        what: 'Clientes que usan el sistema. Cada empresa solo ve sus propios datos.',
+        steps: [
+          'Registre la empresa con nombre e identificación fiscal.',
+          'Toque la empresa para entrar en sus datos.',
+          'Desactive la empresa para bloquear el acceso de todos sus usuarios.',
+        ],
+      },
+      myCompany: {
+        title: 'Mi empresa',
+        what: 'Datos de registro de su empresa, usados en documentos como el RFQ.',
+        steps: [
+          'Revise razón social, identificación fiscal y dirección.',
+          'Corrija lo que esté mal y guarde.',
+        ],
+      },
+      audit: {
+        title: 'Auditoría',
+        what: 'Registro de quién hizo qué y cuándo en el sistema.',
+        steps: [
+          'Filtre por usuario o tipo de acción.',
+          'Úselo para investigar cambios inesperados.',
+        ],
       },
     },
   },

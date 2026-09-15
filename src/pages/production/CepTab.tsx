@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import type { Product, Machine, PunchSet } from '@/types'
 import { format } from 'date-fns'
+import { HelpButton } from '@/components/ui/help-button'
 
 type CepRow = {
   batchId: string
@@ -84,7 +85,7 @@ export function CepTab() {
 
   return (
     <div className="space-y-5">
-      <p className="text-sm text-muted-foreground">{p.cepSubtitle}</p>
+      <p className="text-sm text-muted-foreground flex items-center gap-1">{p.cepSubtitle} <HelpButton content={t.moduleHelp.cep} size="sm" /></p>
 
       {/* Filters */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

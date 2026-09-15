@@ -20,6 +20,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useLocale } from '@/hooks/useLocale'
 import { useAdminCompany } from '@/hooks/useAdminCompany'
 import type { Product } from '@/types'
+import { HelpButton } from '@/components/ui/help-button'
 
 export function ProductsPage() {
   const qc = useQueryClient()
@@ -123,7 +124,10 @@ export function ProductsPage() {
     <div className="p-4 sm:p-6 space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
+          <div className="flex items-center gap-1">
           <h2 className="text-xl sm:text-2xl font-bold tracking-tight">{t.products.title}</h2>
+          <HelpButton content={t.moduleHelp.products} size="md" />
+        </div>
           <p className="text-muted-foreground text-sm mt-0.5">{t.products.subtitle}</p>
         </div>
         {canEdit && (

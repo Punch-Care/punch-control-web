@@ -14,6 +14,7 @@ import { useLocale } from '@/hooks/useLocale'
 import { useAdminContextStore } from '@/store/admin-context.store'
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard'
 import type { DashboardStats, Occurrence, OccurrenceType, CompanyOverview, ProductionBatch } from '@/types'
+import { HelpButton } from '@/components/ui/help-button'
 
 const TYPE_LABELS_PT: Record<OccurrenceType, string> = {
   COMPRESSION: 'Compressão', DIMENSIONAL: 'Dimensional', MAINTENANCE: 'Manutenção', OTHER: 'Outro',
@@ -431,9 +432,12 @@ export function DashboardPage() {
           <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-0.5">
             {greeting}, {user?.name?.split(' ')[0]}
           </p>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
-            {isAdmin && !selectedCompany ? t.ui.overviewTitle : (selectedCompany?.name ?? user?.company?.name ?? 'Dashboard')}
-          </h1>
+          <div className="flex items-center gap-1">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
+              {isAdmin && !selectedCompany ? t.ui.overviewTitle : (selectedCompany?.name ?? user?.company?.name ?? 'Dashboard')}
+            </h1>
+            <HelpButton content={t.moduleHelp.dashboard} />
+          </div>
           {!isAdmin && user?.company && (
             <p className="text-sm text-muted-foreground mt-0.5">{user.company.name}</p>
           )}

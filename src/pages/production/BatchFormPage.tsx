@@ -30,6 +30,7 @@ import type {
   BatchOccurrenceType,
 } from '@/types'
 import { format } from 'date-fns'
+import { HelpButton, type HelpContent } from '@/components/ui/help-button'
 
 const BRAND: [number, number, number] = [240, 89, 34]
 const OCCURRENCE_TYPES: BatchOccurrenceType[] = ['CAPPING', 'STICKING', 'TRAVAMENTO', 'QUEBRA', 'OXIDACAO', 'OUTROS']
@@ -245,8 +246,9 @@ function toRaw(v: number | null | undefined): string {
 
 // ── Componente de seção ───────────────────────────────────────────────────────
 
-function Section({ stepText, icon: Icon, title, subtitle, children, alert }: {
+function Section({ stepText, icon: Icon, title, subtitle, children, alert, help }: {
   stepText: string
+  help?: HelpContent
   icon: React.ElementType
   title: string
   subtitle?: string
@@ -272,7 +274,7 @@ function Section({ stepText, icon: Icon, title, subtitle, children, alert }: {
             </Badge>
           )}
         </div>
-        <h3 className="text-base font-semibold tracking-tight">{title}</h3>
+        <h3 className="text-base font-semibold tracking-tight flex items-center gap-1">{title}{help && <HelpButton content={help} size="sm" />}</h3>
         {subtitle && <p className="text-sm text-muted-foreground mt-0.5 mb-4">{subtitle}</p>}
         <div className="mt-3">{children}</div>
       </div>
@@ -586,6 +588,7 @@ export function BatchFormPage() {
                 <h1 className="font-semibold text-sm truncate">
                   {isEdit ? bf.editLot : bf.newProductionLot}
                 </h1>
+                <HelpButton content={t.moduleHelp.batchForm} size="sm" />
                 {form.loteNumero && (
                   <span className="font-mono text-primary font-bold text-sm">{form.loteNumero}</span>
                 )}
@@ -758,6 +761,7 @@ export function BatchFormPage() {
           stepText={bf.step(2)}
           icon={Settings2}
           title={bf.s2Title}
+          help={t.moduleHelp.batchSetup}
           subtitle={bf.s2Subtitle}
           alert={hasAlerts ? bf.deviations(fixedParams.filter(fp => fp.isOk === false).length) : undefined}
         >
@@ -827,6 +831,7 @@ export function BatchFormPage() {
           stepText={bf.step(3)}
           icon={Clock}
           title={bf.s3Title}
+          help={t.moduleHelp.batchHourly}
           subtitle={bf.s3Subtitle}
         >
           {measurements.length === 0 ? (
@@ -1003,6 +1008,7 @@ export function BatchFormPage() {
           stepText={bf.step(4)}
           icon={AlertTriangle}
           title={bf.s4Title}
+          help={t.moduleHelp.batchOccurrences}
           subtitle={bf.s4Subtitle}
         >
           <div className="bg-background border rounded-xl p-4">
@@ -1049,6 +1055,7 @@ export function BatchFormPage() {
           stepText={bf.step(5)}
           icon={MessageSquare}
           title={bf.s5Title}
+          help={t.moduleHelp.batchFinish}
           subtitle={bf.s5Subtitle}
         >
           <div className="bg-background border rounded-xl p-4 space-y-4">

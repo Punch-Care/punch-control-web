@@ -14,6 +14,7 @@ import { useLocale } from '@/hooks/useLocale'
 import { usePermissions } from '@/hooks/usePermissions'
 import { useAdminCompany } from '@/hooks/useAdminCompany'
 import type { ProductionConfig, Product, Machine, ParamSuggestionSource } from '@/types'
+import { HelpButton } from '@/components/ui/help-button'
 
 interface ParamRow {
   ordem: number
@@ -418,7 +419,7 @@ export function ProductionConfigsTab() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">{p.configSubtitle}</p>
+        <p className="text-sm text-muted-foreground flex items-center gap-1">{p.configSubtitle} <HelpButton content={t.moduleHelp.configs} size="sm" /></p>
         {canManage && <Button size="sm" onClick={openCreate}><Plus className="h-4 w-4" /> {p.newConfig}</Button>}
       </div>
 

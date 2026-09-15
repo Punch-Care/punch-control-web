@@ -22,6 +22,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { HelpButton } from '@/components/ui/help-button'
 
 interface UserItem {
   id: string
@@ -275,7 +276,10 @@ export function UsersPage() {
             <Users className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h2 className="text-lg font-bold tracking-tight">{t.users.title}</h2>
+            <div className="flex items-center gap-1">
+          <h2 className="text-lg font-bold tracking-tight">{t.users.title}</h2>
+          <HelpButton content={t.moduleHelp.users} size="sm" />
+        </div>
             <p className="text-xs text-muted-foreground">
               {selectedCompany
                 ? selectedCompany.name
