@@ -441,9 +441,6 @@ export function DashboardPage() {
             </h1>
             <HelpButton content={t.moduleHelp.dashboard} />
           </div>
-          {!isAdmin && user?.company && (
-            <p className="text-sm text-muted-foreground mt-0.5">{user.company.name}</p>
-          )}
           {isAdmin && selectedCompany && (
             <div className="flex items-center gap-2 mt-1">
               <Badge variant="secondary" className="text-xs">{d.viewingCompany}</Badge>
@@ -490,8 +487,8 @@ export function DashboardPage() {
         {/* ── USUÁRIO DE EMPRESA ────────────────────────────────────── */}
         {!isAdmin && (
           <div className="space-y-6">
-            <OnboardingWizard />
             <AttentionPanel />
+            <OnboardingWizard />
             <div className="space-y-6 lg:space-y-0 lg:grid lg:grid-cols-5 lg:gap-6">
               <div className="lg:col-span-2 order-1">
                 <QuickActions navigate={navigate} canEdit={canEdit} lastBatches={recentBatches} />

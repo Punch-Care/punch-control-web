@@ -175,7 +175,7 @@ function SidebarContent({ isAdmin, onNavigate }: { isAdmin: boolean; onNavigate?
                 className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-xs text-sidebar-foreground/40 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
               >
                 <ChevronLeft className="h-3 w-3" />
-                Todas as empresas
+                {nav.allCompanies}
               </button>
             </div>
           )}
@@ -205,7 +205,7 @@ export function AppLayout() {
     <div className="flex h-screen overflow-hidden bg-background">
 
       {/* ── Sidebar desktop ──────────────────────────────────────────── */}
-      <aside className="hidden md:flex w-60 flex-shrink-0 bg-sidebar flex-col border-r border-sidebar-border">
+      <aside className="hidden lg:flex w-60 flex-shrink-0 bg-sidebar flex-col border-r border-sidebar-border">
         {/* Logo / empresa */}
         <div className="px-4 py-4 border-b border-sidebar-border">
           <p className="text-base font-bold text-sidebar-foreground tracking-tight leading-none">Punch Control</p>
@@ -248,13 +248,13 @@ export function AppLayout() {
       {/* ── Sidebar mobile (drawer) ──────────────────────────────────── */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/50 md:hidden"
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
           onClick={() => setMobileOpen(false)}
         />
       )}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] bg-sidebar flex flex-col border-r border-sidebar-border md:hidden transition-transform duration-200',
+          'fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] bg-sidebar flex flex-col border-r border-sidebar-border lg:hidden transition-transform duration-200',
           mobileOpen ? 'translate-x-0' : '-translate-x-full',
         )}
       >
@@ -282,6 +282,12 @@ export function AppLayout() {
         <div className="px-3 py-3 border-t border-sidebar-border space-y-1">
           <AccessibilityButton />
           <Button
+            variant="ghost" size="sm" onClick={() => { setMobileOpen(false); setPwOpen(true) }}
+            className="w-full justify-start text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          >
+            <KeyRound className="h-4 w-4 mr-2" /> {t.auth.changePassword}
+          </Button>
+          <Button
             variant="ghost" size="sm" onClick={logout}
             className="w-full justify-start text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
           >
@@ -293,21 +299,24 @@ export function AppLayout() {
       {/* ── Conteúdo principal ───────────────────────────────────────── */}
       <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
         {/* Topbar mobile */}
-        <header className="md:hidden flex-shrink-0 h-14 bg-background border-b border-border px-4 flex items-center justify-between gap-3 z-30">
+        <header className="lg:hidden flex-shrink-0 h-14 bg-background border-b border-border px-4 flex items-center justify-between gap-3 z-30">
           <button
             type="button"
-            className="p-2 rounded-md border border-border text-foreground hover:bg-muted"
+            className="h-10 px-3 inline-flex items-center gap-2 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-muted"
             onClick={() => setMobileOpen(true)}
             aria-label={t.ui.openMenu}
           >
-            <Menu className="h-4 w-4" />
+            <Menu className="h-5 w-5" /> Menu
           </button>
           <p className="text-sm font-semibold truncate flex-1 text-center">
             {isAdmin && selectedCompany ? selectedCompany.name : 'Punch Control'}
           </p>
-          <Button variant="ghost" size="sm" onClick={logout} className="h-8 w-8 p-0">
-            <LogOut className="h-4 w-4" />
-          </Button>
+          {/* Sair fica dentro do menu: um toque errado aqui deslogava o operador */}
+          {(!isAdmin || selectedCompany) ? (
+            <NavLink to="/operador" className="h-10 px-3 inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium">
+              <Hammer className="h-4 w-4" /> <span className="hidden sm:inline">{t.nav.operatorMode}</span>
+            </NavLink>
+          ) : <span className="w-10" />}
         </header>
 
         {/* Página */}
