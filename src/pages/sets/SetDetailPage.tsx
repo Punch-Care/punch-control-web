@@ -3,7 +3,7 @@ import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { ArrowLeft, Plus, Trash2, Loader2, Link2, Unlink, FlaskConical, AlertTriangle, Activity, Ruler, Save, LayoutDashboard, ClipboardList, Paperclip } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Loader2, Link2, Unlink, FlaskConical, AlertTriangle, Activity, Ruler, Save, LayoutDashboard, ClipboardList, Paperclip, History } from 'lucide-react'
 import { toast } from 'sonner'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
@@ -24,6 +24,7 @@ import { useAdminCompany } from '@/hooks/useAdminCompany'
 import { useProductsQuery } from '@/hooks/queries'
 import { Breadcrumb } from '@/components/ui/breadcrumb'
 import { JogoSection } from './JogoSection'
+import { SetHistory } from './SetHistory'
 import { RfqSection } from './RfqSection'
 import { LimitsEditor, UsefulValueBar, limitsToPayload, validateLimits, type LimitDraft } from './LimitsEditor'
 import type { PunchSet, Punch, Product, SetStatus, LifecycleData } from '@/types'
@@ -84,9 +85,9 @@ export function SetDetailPage() {
   const [selectedProductId, setSelectedProductId] = useState('')
   // ?tab=rfq abre direto na aba (usado pelos alertas de reposição)
   const [searchParams] = useSearchParams()
-  const [tab, setTab] = useState<'overview' | 'rfq' | 'anexos'>(() => {
+  const [tab, setTab] = useState<'overview' | 'rfq' | 'anexos' | 'historico'>(() => {
     const inicial = searchParams.get('tab')
-    return inicial === 'rfq' || inicial === 'anexos' ? inicial : 'overview'
+    return inicial === 'rfq' || inicial === 'anexos' || inicial === 'historico' ? inicial : 'overview'
   })
   const [basicsDraft, setBasicsDraft] = useState<Partial<{
     code: string; name: string; status: SetStatus; notes: string; usefulValue: string
@@ -270,6 +271,7 @@ export function SetDetailPage() {
           { id: 'overview', label: t.rfq.tabOverview, icon: LayoutDashboard },
           { id: 'rfq', label: t.rfq.tabRfq, icon: ClipboardList },
           { id: 'anexos', label: t.rfq.tabAttachments, icon: Paperclip },
+          { id: 'historico', label: t.setHistory.tab, icon: History },
         ] as const).map(({ id: tabId, label, icon: Icon }) => (
           <button
             key={tabId}
@@ -582,6 +584,7 @@ export function SetDetailPage() {
 
       {/* Aba Anexos — status do jogo, datas, fotos e desenhos */}
       {tab === 'anexos' && <JogoSection set={set} canEdit={canEdit} />}
+      {tab === 'historico' && <SetHistory setId={set.id} />}
 
       {/* Link product dialog */}
       <Dialog open={linkOpen} onOpenChange={(o) => { setLinkOpen(o); if (!o) setSelectedProductId('') }}>
